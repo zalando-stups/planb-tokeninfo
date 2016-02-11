@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
+    "os"
 	"net/http"
+	"encoding/json"
 	"time"
 )
 
@@ -65,7 +67,55 @@ func validateToken(req *http.Request) (*TokenInfo, error) {
 	}
 }
 
+var publicKeys map[string]interface{} = map[string]interface{}{}
+
+func fetchKey(kid string) (interface{}, error) {
+
+    // http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
+    // https://planb-provider.example.org/.well-known/openid-configuration
+    url := os.Getenv("OPENID_PROVIDER_CONFIGURATION_URL")
+
+    resp, err := http.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    body, err := ioutil.ReadAll(resp.Body)
+    config := make(map[string]interface{})
+    if err = json.Unmarshal(body, config); err != nil {
+        return nil, err
+    }
+    uri, ok := config["jwks_uri"].(string)
+    if !ok {
+        return nil, fmt.Errorf("Invalid OpenID Configuration: Invalid 'jwks_uri'")
+    }
+
+    // Example: https://www.googleapis.com/oauth2/v3/certs
+    resp, err = http.Get(uri)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    body, err = ioutil.ReadAll(resp.Body)
+    certs := make(map[string]interface{})
+    if err = json.Unmarshal(body, certs); err != nil {
+        return nil, err
+    }
+    // certs["keys"]
+
+    return nil, fmt.Errorf("Luis do it!")
+}
+
 func loadKey(t *jwt.Token) (interface{}, error) {
+    kid, ok := t.Claims["kid"].(string)
+    if !ok {
+        return nil, fmt.Errorf("Missing key ID")
+    }
+    _, has := publicKeys[kid]
+    if (!has) {
+        fetchKey(kid)
+    }
+
 	key, err := ioutil.ReadFile("sample_key.pub")
 	if err != nil {
 		return nil, err
