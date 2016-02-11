@@ -5,7 +5,18 @@ Plan B Token Info Agent
 .. image:: https://travis-ci.org/zalando/planb-agent.svg?branch=master
     :target: https://travis-ci.org/zalando/planb-agent
 
-WORK IN PROGRESS
+Lightweight agent providing an OAuth 2 token info HTTP endpoint to validate JWT tokens issued by the `Plan B OpenID Connect Provider`_.
+
+(Planned) Features:
+
+* Download public keys ("certs") from OpenID provider
+* Verify signed JWT tokens using the right public key (identified by "kid" JOSE header)
+* Download revocation lists from `Plan B Revocation Service`_
+* Deny JWT tokens matching any revocation list
+
+
+Building
+========
 
 Requires Go 1.5.1.
 
@@ -30,3 +41,6 @@ Now we can test our token info endpoint with a valid JWT access token:
 .. code-block:: bash
 
     $ curl localhost:9021/oauth2/tokeninfo?access_token=MjoxLjUuMS0wdW..
+
+.. _Plan B OpenID Connect Provider: https://github.com/zalando/planb-provider
+.. _Plan B Revocation Service: https://github.com/zalando/planb-revocation
