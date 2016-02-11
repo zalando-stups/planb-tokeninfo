@@ -1,14 +1,21 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
-    "os"
+	"math/big"
 	"net/http"
-	"encoding/json"
+	"os"
 	"time"
 )
+
+const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
 
 /*
 
@@ -34,7 +41,7 @@ import (
 }
 */
 type TokenInfo struct {
-	AccessToken  string
+	AccessToken  string `json:"access_token"`
 	RefreshToken string
 	Uid          string
 	GrantType    string
@@ -71,71 +78,115 @@ var publicKeys map[string]interface{} = map[string]interface{}{}
 
 func fetchKey(kid string) (interface{}, error) {
 
-    // http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
-    // https://planb-provider.example.org/.well-known/openid-configuration
-    url := os.Getenv("OPENID_PROVIDER_CONFIGURATION_URL")
+	// http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
+	// https://planb-provider.example.org/.well-known/openid-configuration
+	url := os.Getenv(OPENID_PROVIDER_CONFIGURATION_URL)
 
-    resp, err := http.Get(url)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-    body, err := ioutil.ReadAll(resp.Body)
-    config := make(map[string]interface{})
-    if err = json.Unmarshal(body, config); err != nil {
-        return nil, err
-    }
-    uri, ok := config["jwks_uri"].(string)
-    if !ok {
-        return nil, fmt.Errorf("Invalid OpenID Configuration: Invalid 'jwks_uri'")
-    }
-
-    // Example: https://www.googleapis.com/oauth2/v3/certs
-    resp, err = http.Get(uri)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-    body, err = ioutil.ReadAll(resp.Body)
-    certs := make(map[string]interface{})
-    if err = json.Unmarshal(body, certs); err != nil {
-        return nil, err
-    }
-    // certs["keys"]
-
-    return nil, fmt.Errorf("Luis do it!")
-}
-
-func loadKey(t *jwt.Token) (interface{}, error) {
-    kid, ok := t.Claims["kid"].(string)
-    if !ok {
-        return nil, fmt.Errorf("Missing key ID")
-    }
-    _, has := publicKeys[kid]
-    if (!has) {
-        fetchKey(kid)
-    }
-
-	key, err := ioutil.ReadFile("sample_key.pub")
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
-	return key, nil
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	config := make(map[string]interface{})
+	if err = json.Unmarshal(body, &config); err != nil {
+		return nil, err
+	}
+	uri, ok := config["jwks_uri"].(string)
+	if !ok {
+		return nil, fmt.Errorf("Invalid OpenID Configuration: Invalid 'jwks_uri'")
+	}
+
+	// Example: https://www.googleapis.com/oauth2/v3/certs
+	resp, err = http.Get(uri)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err = ioutil.ReadAll(resp.Body)
+	certs := make(map[string]interface{})
+	if err = json.Unmarshal(body, &certs); err != nil {
+		return nil, err
+	}
+	m, has := certs["keys"]
+	if !has {
+		return nil, fmt.Errorf("Missing keys")
+	}
+
+	keys, ok := m.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Invalid keys map")
+	}
+
+	for _, k := range keys {
+		km, ok := k.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("Invalid key map")
+		}
+		if km["kid"].(string) == kid {
+			return buildKey(km)
+		}
+	}
+
+	return nil, fmt.Errorf("Key '%s' not found", kid)
+}
+
+func buildKey(k map[string]interface{}) (interface{}, error) {
+	if k["alg"].(string) != "ES256" {
+		return nil, fmt.Errorf("Unsupported algorithm '%s'", k["alg"].(string))
+	}
+
+	xbuf, err := base64.RawURLEncoding.DecodeString(k["x"].(string))
+	if err != nil {
+		return nil, fmt.Errorf("Invalid ECDSA coordinate X")
+	}
+	ybuf, err := base64.RawURLEncoding.DecodeString(k["y"].(string))
+	if err != nil {
+		return nil, fmt.Errorf("Invalid ECDSA coordinate Y")
+	}
+
+	x := new(big.Int).SetBytes(xbuf)
+	y := new(big.Int).SetBytes(ybuf)
+
+	return &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}, nil
+}
+
+func loadKey(t *jwt.Token) (interface{}, error) {
+	kid, ok := t.Header["kid"].(string)
+	if !ok {
+		return nil, fmt.Errorf("Missing key ID")
+	}
+	_, has := publicKeys[kid]
+	if !has {
+		k, err := fetchKey(kid)
+		if err != nil {
+			return nil, err
+		}
+		publicKeys[kid] = k
+		return k, nil
+	}
+
+	return nil, fmt.Errorf("Key not found")
+}
+
+func buildScopes(s []interface{}) []string {
+	scopes := make([]string, len(s))
+	for i, scope := range s {
+		scopes[i] = scope.(string)
+	}
+	return scopes
 }
 
 func buildTokenInfo(t *jwt.Token) (*TokenInfo, error) {
-	scope, ok := t.Claims["scope"].([]string)
-	if !ok {
-		return nil, fmt.Errorf("Invalid scope claim %v", t.Claims["scope"])
-	}
+	scope := buildScopes(t.Claims["scopes"].([]interface{}))
 	sub, ok := t.Claims["sub"].(string)
 	if !ok {
 		return nil, fmt.Errorf("Invalid sub claim %v", t.Claims["sub"])
 	}
-	realm, ok := t.Claims["realm"].(string)
-	if !ok {
-		return nil, fmt.Errorf("Invalid realm claim %v", t.Claims["realm"])
-	}
+	//realm, ok := t.Claims["realm"].(string)
+	//if !ok {
+	//	return nil, fmt.Errorf("Invalid realm claim %v", t.Claims["realm"])
+	//}
 
 	return &TokenInfo{
 		AccessToken: t.Raw,
@@ -143,9 +194,9 @@ func buildTokenInfo(t *jwt.Token) (*TokenInfo, error) {
 		GrantType:   "password",
 		OpenId:      t.Raw,
 		Scope:       scope,
-		Realm:       realm,
-		TokenType:   "Bearer",
-		ExpiresIn:   calculateExpiration(t),
+		//Realm:       realm,
+		TokenType: "Bearer",
+		ExpiresIn: calculateExpiration(t),
 	}, nil
 }
 
