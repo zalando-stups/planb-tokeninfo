@@ -178,15 +178,15 @@ func buildScopes(s []interface{}) []string {
 }
 
 func buildTokenInfo(t *jwt.Token) (*TokenInfo, error) {
-	scope := buildScopes(t.Claims["scopes"].([]interface{}))
+	scope := buildScopes(t.Claims["scope"].([]interface{}))
 	sub, ok := t.Claims["sub"].(string)
 	if !ok {
 		return nil, fmt.Errorf("Invalid sub claim %v", t.Claims["sub"])
 	}
-	//realm, ok := t.Claims["realm"].(string)
-	//if !ok {
-	//	return nil, fmt.Errorf("Invalid realm claim %v", t.Claims["realm"])
-	//}
+	realm, ok := t.Claims["realm"].(string)
+	if !ok {
+		return nil, fmt.Errorf("Invalid realm claim %v", t.Claims["realm"])
+	}
 
 	return &TokenInfo{
 		AccessToken: t.Raw,
@@ -194,9 +194,9 @@ func buildTokenInfo(t *jwt.Token) (*TokenInfo, error) {
 		GrantType:   "password",
 		OpenId:      t.Raw,
 		Scope:       scope,
-		//Realm:       realm,
-		TokenType: "Bearer",
-		ExpiresIn: calculateExpiration(t),
+		Realm:       realm,
+		TokenType:   "Bearer",
+		ExpiresIn:   calculateExpiration(t),
 	}, nil
 }
 
