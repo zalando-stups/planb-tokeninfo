@@ -1,4 +1,4 @@
-package main
+package tokeninfo
 
 import (
 	"crypto/ecdsa"
@@ -15,31 +15,6 @@ import (
 	"time"
 )
 
-const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
-
-/*
-
- {
-  "links": [
-    {
-      "rel": "self",
-      "href": "https://tusk-api-integration.greendale-staging.zalan.do/api/tokens/1ec91d60-b38d-4139-be88-de517c86ca0c"
-    }
-  ],
-  "access_token": "1ec91d60-b38d-4139-be88-de517c86ca0c",
-  "refresh_token": "2ecae60-c49e-3028-b133-d3547c86cb0c",
-  "uid": "2342334",
-  "grant_type": "password",
-  "openid": "",
-  "scope": [
-    "uid",
-    "openid"
-  ],
-  "realm": "/customers",
-  "token_type": "Bearer",
-  "expires_in": 2599
-}
-*/
 type TokenInfo struct {
 	AccessToken  string   `json:"access_token"`
 	RefreshToken string   `json:"refresh_token"`
@@ -51,6 +26,8 @@ type TokenInfo struct {
 	TokenType    string   `json:"token_type"`
 	ExpiresIn    int      `json:"expires_in"`
 }
+
+const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
 
 func validateToken(req *http.Request) (*TokenInfo, error) {
 	token, err := jwt.ParseFromRequest(req, func(token *jwt.Token) (interface{}, error) {

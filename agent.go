@@ -1,45 +1,25 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	gometrics "github.com/rcrowley/go-metrics"
+	"github.com/zalando/planb-agent/handlers/healthcheck"
+	"github.com/zalando/planb-agent/handlers/metrics"
+	"github.com/zalando/planb-agent/handlers/tokeninfo"
 	"log"
 	"net/http"
 )
 
 const (
-	port = ":9021"
+	defaultListenAddr = ":9021"
 )
 
-func getHealth(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
-}
-
-func getTokenInfo(w http.ResponseWriter, r *http.Request) {
-	ti, err := validateToken(r)
-	if err != nil {
-		sendError(w, http.StatusUnauthorized)
-		return
-	}
-
-	resp, err := json.Marshal(ti)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
-}
-
-func sendError(w http.ResponseWriter, status int) {
-	w.WriteHeader(status)
-	w.Write([]byte("Request error"))
-}
-
 func main() {
-	fmt.Printf("Started server at %v.\n", port)
-	http.HandleFunc("/health", getHealth)
-	http.HandleFunc("/oauth2/tokeninfo", getTokenInfo)
-	log.Fatal(http.ListenAndServe(port, nil))
+	fmt.Printf("Started server at %v.\n", defaultListenAddr)
+	reg := gometrics.NewRegistry()
+	mux := http.NewServeMux()
+	mux.Handle("/health", healthcheck.DefaultHandler())
+	mux.Handle("/metrics", metrics.NewHandler(reg))
+	mux.Handle("/oauth2/tokeninfo", tokeninfo.NewTokenInfoHandler())
+	log.Fatal(http.ListenAndServe(defaultListenAddr, mux))
 }
