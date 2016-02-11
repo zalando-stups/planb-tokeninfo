@@ -1,25 +1,37 @@
 package main
 
 import (
-  "fmt"
-  "net/http"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
 )
 
 const (
-  port = ":8080"
+	port = ":9021"
 )
 
-var calls = 0
+func getTokenInfo(w http.ResponseWriter, r *http.Request) {
+	ti, err := validateToken(r)
+	if err != nil {
+		sendError(w, http.StatusUnauthorized)
+	}
 
-func HelloWorld(w http.ResponseWriter, r *http.Request) {
-  calls++
-  fmt.Fprintf(w, "Hello, world! You have called me %d times.\n", calls)
+	resp, err := json.Marshal(ti)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
 }
 
-func init() {
-  fmt.Printf("Started server at http://localhost%v.\n", port)
-  http.HandleFunc("/", HelloWorld)
-  http.ListenAndServe(port, nil)
+func sendError(w http.ResponseWriter, status int) {
+	w.WriteHeader(status)
+	w.Write([]byte("Request error"))
 }
 
-func main() {}
+func main() {
+	fmt.Printf("Started server at %v.\n", port)
+	http.HandleFunc("/oauth2/tokeninfo", getTokenInfo)
+	log.Fatal(http.ListenAndServe(port, nil))
+}
