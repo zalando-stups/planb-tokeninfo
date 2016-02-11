@@ -11,6 +11,11 @@ const (
 	port = ":9021"
 )
 
+func getHealth(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
 func getTokenInfo(w http.ResponseWriter, r *http.Request) {
 	ti, err := validateToken(r)
 	if err != nil {
@@ -34,6 +39,7 @@ func sendError(w http.ResponseWriter, status int) {
 
 func main() {
 	fmt.Printf("Started server at %v.\n", port)
+	http.HandleFunc("/health", getHealth)
 	http.HandleFunc("/oauth2/tokeninfo", getTokenInfo)
 	log.Fatal(http.ListenAndServe(port, nil))
 }
