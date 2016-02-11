@@ -9,8 +9,8 @@ Lightweight agent providing an OAuth 2 token info HTTP endpoint to validate JWT 
 
 (Planned) Features:
 
-* Download public keys ("certs") from OpenID provider
-* Verify signed JWT tokens using the right public key (identified by "kid" JOSE header)
+* Download public keys (`set of JWKs`_) from OpenID provider
+* Verify signed JWT tokens using the right public key (identified by "kid" `JOSE header`_)
 * Download revocation lists from `Plan B Revocation Service`_
 * Deny JWT tokens matching any revocation list
 
@@ -44,3 +44,5 @@ Now we can test our token info endpoint with a valid JWT access token:
 
 .. _Plan B OpenID Connect Provider: https://github.com/zalando/planb-provider
 .. _Plan B Revocation Service: https://github.com/zalando/planb-revocation
+.. _JOSE header: https://tools.ietf.org/html/rfc7515#section-4
+.. _set of JWKs: https://tools.ietf.org/html/rfc7517#section-5
