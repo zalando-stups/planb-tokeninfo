@@ -202,9 +202,9 @@ func buildTokenInfo(t *jwt.Token) (*TokenInfo, error) {
 }
 
 func calculateExpiration(t *jwt.Token) int {
-	ts, ok := t.Claims["exp"].(int64)
+	ts, ok := t.Claims["exp"].(float64)
 	if !ok {
 		return 0
 	}
-	return int(time.Unix(ts, 0).Sub(time.Now()).Seconds())
+	return int(time.Unix(int64(ts), 0).Sub(time.Now()).Seconds())
 }
