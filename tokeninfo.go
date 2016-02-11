@@ -41,15 +41,15 @@ const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
 }
 */
 type TokenInfo struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string
-	Uid          string
-	GrantType    string
-	OpenId       string
-	Scope        []string
-	Realm        string
-	TokenType    string
-	ExpiresIn    int
+	AccessToken  string   `json:"access_token"`
+	RefreshToken string   `json:"refresh_token"`
+	Uid          string   `json:"uid"`
+	GrantType    string   `json:"grant_type"`
+	OpenId       string   `json:"open_id"`
+	Scope        []string `json:"scope"`
+	Realm        string   `json:"realm"`
+	TokenType    string   `json:"token_type"`
+	ExpiresIn    int      `json:"expires_in"`
 }
 
 func validateToken(req *http.Request) (*TokenInfo, error) {
@@ -98,12 +98,12 @@ func fetchKey(kid string) (interface{}, error) {
 	}
 
 	// Example: https://www.googleapis.com/oauth2/v3/certs
-	resp, err = http.Get(uri)
-	if err != nil {
-		return nil, err
+	resp2, err2 := http.Get(uri)
+	if err2 != nil {
+		return nil, err2
 	}
-	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
+	defer resp2.Body.Close()
+	body, err = ioutil.ReadAll(resp2.Body)
 	certs := make(map[string]interface{})
 	if err = json.Unmarshal(body, &certs); err != nil {
 		return nil, err
@@ -162,7 +162,8 @@ func loadKey(t *jwt.Token) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		publicKeys[kid] = k
+		// TODO: store the key in our global map (concurrency issues!)
+		//publicKeys[kid] = k
 		return k, nil
 	}
 
