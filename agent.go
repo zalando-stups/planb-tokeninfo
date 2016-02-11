@@ -15,11 +15,13 @@ func getTokenInfo(w http.ResponseWriter, r *http.Request) {
 	ti, err := validateToken(r)
 	if err != nil {
 		sendError(w, http.StatusUnauthorized)
+		return
 	}
 
 	resp, err := json.Marshal(ti)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError)
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
