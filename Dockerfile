@@ -1,4 +1,4 @@
-FROM registry.opensource.zalan.do/stups/ubuntu:15.10-14
+FROM busybox:ubuntu-14.04
 
 EXPOSE 9021
 
