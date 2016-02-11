@@ -156,18 +156,18 @@ func loadKey(t *jwt.Token) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("Missing key ID")
 	}
-	_, has := publicKeys[kid]
+	key, has := publicKeys[kid]
 	if !has {
 		k, err := fetchKey(kid)
 		if err != nil {
 			return nil, err
 		}
-		// TODO: store the key in our global map (concurrency issues!)
-		//publicKeys[kid] = k
+		// TODO: synchronize for concurrency or whatever
+		publicKeys[kid] = k
 		return k, nil
 	}
 
-	return nil, fmt.Errorf("Key not found")
+	return key, nil
 }
 
 func buildScopes(s []interface{}) []string {
