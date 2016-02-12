@@ -2,35 +2,30 @@ package tokeninfo
 
 import (
 	"net/http"
+    "os"
+	"io/ioutil"
 )
 
 type legacyTokenHandler struct {
 }
 
-func (h *legacyTokenHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *legacyTokenHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
-		fmt.Errorf("Error reading http request. " + err.Error())
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 	}
 	token := req.Form.Get("access_token")
 
-	client := &http.Client{}
-	newReq, _ := http.NewRequest("GET", TOKENINFO_LEGACY_URL+token, nil)
-	res, err := client.Do(req)
-
+    url := os.Getenv("TOKENINFO_LEGACY_URL")
+	resp, err := http.Get(url + token)
 	if err != nil {
-		fmt.Errorf("Endpoint call failed. " + TOKENINFO_LEGACY_URL + ". " + err.Error())
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
-	w.Write(res)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
 
-	/*
-		var ti TokenInfo
-
-		err := json.Unmarshal(data, &ti)
-		if err != nil {
-			fmt.Errorf("Error unmarshalling data. " + err.Error())
-		}
-	*/
+	w.Write(body)
 }
 func DefaultLegacyTokenHandler() http.Handler {
 	return NewLegacyTokenHandler()

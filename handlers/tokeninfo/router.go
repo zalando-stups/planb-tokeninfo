@@ -10,21 +10,23 @@ type tokenRouterHandler struct {
 	legacyHandler http.Handler
 }
 
-func (h *routerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *tokenRouterHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
+	// TODO: read query param and Authorization header
 	if err := req.ParseForm(); err != nil {
-		fmt.Errorf("Error reading http request. " + err.Error())
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+
 	}
 	token := req.Form.Get("access_token")
 
 	validJWT := isJWTToken(token)
 
 	if validJWT {
-		jwtHandler.ServeHTTP(w, r)
+		h.jwtHandler.ServeHTTP(w, req)
 		return
 	}
 
-	return legacyHandler.ServeHTTP(w, r)
+	h.legacyHandler.ServeHTTP(w, req)
 }
 
 func DefaultTokenRouterHandler() http.Handler {
