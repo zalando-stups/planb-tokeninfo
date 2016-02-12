@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	defaultListenAddr = ":9021"
+	defaultListenAddr        = ":9021"
+	defaultMetricsListenAddr = ":9020"
 )
 
 var (
@@ -22,9 +23,8 @@ func main() {
 	fmt.Printf("Started server at %v.\n", defaultListenAddr)
 	reg := gometrics.NewRegistry()
 	mux := http.NewServeMux()
-	mux.Handle("/health", healthcheck.DefaultHandler())
-	mux.Handle("/metrics", metrics.NewHandler(reg))
-	//	mux.Handle("/oauth2/tokeninfo", tokeninfo.DefaultTokenInfoHandler())
+	mux.Handle("/health", healthcheck.Handler(fmt.Sprintf("OK\n%s", Version)))
+	mux.Handle("/metrics", metrics.Handler(reg))
 	mux.Handle("/oath2/tokeninfo", tokeninfo.tokenRouterHandler())
 	log.Fatal(http.ListenAndServe(defaultListenAddr, mux))
 }

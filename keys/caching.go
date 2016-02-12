@@ -1,45 +1,83 @@
 package keys
 
 type Cache struct {
-	get chan *request
-	set chan *request
+	req  chan *request
+	quit chan struct{}
 }
 
+type operation int
+
+const (
+	get operation = iota
+	set
+	snapshot
+)
+
 type request struct {
+	op       operation
 	key      string
 	value    interface{}
 	response chan interface{}
 }
 
 func NewCache() *Cache {
-	get := make(chan *request)
-	set := make(chan *request)
+	req := make(chan *request)
+	quit := make(chan struct{})
 
 	go func() {
 		m := make(map[string]interface{})
 
 		for {
 			select {
-			case r := <-get:
-				r.response <- m[r.key]
-			case r := <-set:
-				m[r.key] = r.value
-				r.response <- r.value
+			case r := <-req:
+				r.response <- doOp(m, r)
+			case <-quit:
+				return
 			}
+
 		}
 	}()
 
-	return &Cache{get, set}
+	return &Cache{req, quit}
+}
+
+func doOp(m map[string]interface{}, r *request) interface{} {
+	switch r.op {
+	case set:
+		m[r.key] = r.value
+		return r.value
+	case get:
+		return m[r.key]
+	case snapshot:
+		newMap := make(map[string]interface{})
+		for k, v := range m {
+			newMap[k] = v
+		}
+		return newMap
+	default:
+		panic("Unsupported cache operation")
+	}
 }
 
 func (c *Cache) Get(key string) interface{} {
 	response := make(chan interface{})
-	c.get <- &request{key: key, response: response}
+	c.req <- &request{key: key, response: response, op: get}
 	return <-response
 }
 
 func (c *Cache) Set(key string, value interface{}) interface{} {
 	response := make(chan interface{})
-	c.set <- &request{key: key, value: value, response: response}
+	c.req <- &request{key: key, value: value, response: response, op: set}
 	return <-response
+}
+
+func (c *Cache) Snapshot() map[string]interface{} {
+	resp := make(chan interface{})
+	c.req <- &request{response: resp, op: snapshot}
+	r := <-resp
+	return r.(map[string]interface{})
+}
+
+func (c *Cache) Close() {
+	close(c.quit)
 }

@@ -12,8 +12,8 @@ func TestHandler(t *testing.T) {
 		wantCode int
 		wantResp string
 	}{
-		{DefaultHandler(), http.StatusOK, defaultResponse},
-		{NewHandler("PlanB"), http.StatusOK, "PlanB"},
+		{Default, http.StatusOK, string(Default)},
+		{Handler("PlanB"), http.StatusOK, "PlanB"},
 	} {
 		rw := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "http://example.com", nil)

@@ -15,7 +15,7 @@ func TestHandler(t *testing.T) {
 
 	rw := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "http://example.com", nil)
-	h := NewHandler(gometrics.DefaultRegistry)
+	h := Handler(gometrics.DefaultRegistry)
 	h.ServeHTTP(rw, r)
 
 	if rw.Code != http.StatusOK {

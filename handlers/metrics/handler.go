@@ -15,6 +15,6 @@ func (h *metricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewHandler creates an http.Handler that returns metrics registry r serialized as JSON
-func NewHandler(r metrics.Registry) http.Handler {
+func Handler(r metrics.Registry) http.Handler {
 	return &metricsHandler{registry: r}
 }

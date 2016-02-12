@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"time"
 )
 
 // http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
@@ -20,6 +21,8 @@ type cachingOpenIdProviderLoader struct {
 	keyCache *Cache
 }
 
+const defaultRefreshInterval = 60 * time.Second
+
 const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
 
 func newCachingOpenIdProviderLoader() KeyLoader {
@@ -28,8 +31,7 @@ func newCachingOpenIdProviderLoader() KeyLoader {
 		log.Fatal("Missing OPENID_PROVIDER_CONFIGURATION_URL environment variable")
 	}
 	kl := &cachingOpenIdProviderLoader{url: u, keyCache: NewCache()}
-	// TODO: schedule background refresh of keys
-	kl.refreshKeys()
+	schedule(defaultRefreshInterval, kl.refreshKeys)
 	return kl
 }
 
