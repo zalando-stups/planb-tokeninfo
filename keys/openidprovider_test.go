@@ -50,10 +50,10 @@ func TestLoadKeys(t *testing.T) {
 	}
 
 	if k.X.String() != "115605682992956648477207773228188197675834354094591455680101846301827874884669" {
-		t.Error("Wrong value in the X coordinate of the key ", k.X.String())
+		t.Errorf("Wrong value in the X coordinate of the key %q", k.X.String())
 	}
 
 	if k.Y.String() != "95612535921063065667323916928898556799062466564160183670678964239934927686747" {
-		t.Error("Wrong value in the Y coordinate of the key ", k.Y.String())
+		t.Errorf("Wrong value in the Y coordinate of the key %q", k.Y.String())
 	}
 }
