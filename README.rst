@@ -21,14 +21,14 @@ Lightweight agent providing an OAuth 2 token info HTTP endpoint to validate JWT 
 Building
 ========
 
-Requires Go 1.5.1.
+Requires Go 1.5.1 or higher.
 
 .. code-block:: bash
 
     $ sudo apt-get install golang  # how to install Go on Ubuntu 15.10
     $ export GOPATH=$(pwd)         # first set GOPATH if not done already
     $ go get -t github.com/zalando/planb-agent
-    $ go test github.com/zalando/planb-agent
+    $ go test github.com/zalando/planb-agent/...
     $ go install github.com/zalando/planb-agent
 
 Running
