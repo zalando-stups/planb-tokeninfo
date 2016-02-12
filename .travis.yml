@@ -5,11 +5,13 @@ language: go
 go:
   - 1.5.3
 
-script:
-  - go test github.com/zalando/planb-agent/... -test.short
-
 before_install:
-  - pip install --user codecov
+  - go get github.com/onsi/gomega
+  - go get github.com/onsi/ginkgo
+  - go get code.google.com/p/go.tools/cmd/cover
+
+script:
+  - go test -coverprofile=coverage.txt -covermode=atomic
 
 after_success:
-  - codecov
+  - bash <(curl -s https://codecov.io/bash)
