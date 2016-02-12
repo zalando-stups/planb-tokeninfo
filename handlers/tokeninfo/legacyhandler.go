@@ -1,7 +1,6 @@
-package tokeninffo
+package tokeninfo
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
