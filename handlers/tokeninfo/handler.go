@@ -2,14 +2,17 @@ package tokeninfo
 
 import (
 	"encoding/json"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/zalando/planb-agent/keys"
 	"net/http"
 )
 
 type tokenInfoHandler struct {
+	keyLoader keys.KeyLoader
 }
 
 func (h *tokenInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ti, err := validateToken(r)
+	ti, err := h.validateToken(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -24,6 +27,19 @@ func (h *tokenInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func NewTokenInfoHandler() http.Handler {
-	return &tokenInfoHandler{}
+func (h *tokenInfoHandler) validateToken(req *http.Request) (*TokenInfo, error) {
+	token, err := jwt.ParseFromRequest(req, jwtValidator(h.keyLoader))
+	if err == nil && token.Valid {
+		return buildTokenInfo(token)
+	} else {
+		return nil, err
+	}
+}
+
+func DefaultTokenInfoHandler() http.Handler {
+	return NewTokenInfoHandler(keys.DefaultKeyLoader())
+}
+
+func NewTokenInfoHandler(kl keys.KeyLoader) http.Handler {
+	return &tokenInfoHandler{keyLoader: kl}
 }

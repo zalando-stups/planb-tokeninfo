@@ -1,4 +1,4 @@
-package tokeninfo
+package keys
 
 type Cache struct {
 	get chan *request
