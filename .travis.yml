@@ -6,12 +6,15 @@ go:
   - 1.5.3
 
 before_install:
-  - go get github.com/onsi/gomega
-  - go get github.com/onsi/ginkgo
-  - go get code.google.com/p/go.tools/cmd/cover
+  - go get github.com/modocache/gover
 
 script:
-  - go test -coverprofile=coverage.txt -covermode=atomic
-
+  # Run the unit tests suite
+  - go test -v ./...
+  # Collect coverage reports
+  - go list -f '{{if len .TestGoFiles}}"go test -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' ./... | xargs -i sh -c {}
+  # Merge coverage reports
+  - gover . coverprofile.txt
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  # Send coverage reports to Codecov
+  - bash < (curl -s https://codecov.io/bash) -f coverprofile.txt
