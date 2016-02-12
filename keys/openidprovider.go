@@ -24,6 +24,9 @@ const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
 
 func newCachingOpenIdProviderLoader() KeyLoader {
 	u := os.Getenv(OPENID_PROVIDER_CONFIGURATION_URL)
+	if u == "" {
+		log.Fatal("Missing OPENID_PROVIDER_CONFIGURATION_URL environment variable")
+	}
 	kl := &cachingOpenIdProviderLoader{url: u, keyCache: NewCache()}
 	// TODO: schedule background refresh of keys
 	kl.refreshKeys()
