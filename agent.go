@@ -24,6 +24,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthcheck.DefaultHandler())
 	mux.Handle("/metrics", metrics.NewHandler(reg))
-	mux.Handle("/oauth2/tokeninfo", tokeninfo.DefaultTokenInfoHandler())
+	//	mux.Handle("/oauth2/tokeninfo", tokeninfo.DefaultTokenInfoHandler())
+	mux.Handle("/oath2/tokeninfo", tokeninfo.tokenRouterHandler())
 	log.Fatal(http.ListenAndServe(defaultListenAddr, mux))
 }
