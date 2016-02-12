@@ -3,7 +3,13 @@ sudo: false
 language: go
 
 go:
-  - 1.5.1
+  - 1.5.3
 
 script:
   - go test github.com/zalando/planb-agent/... -test.short
+
+before_install:
+  - pip install --user codecov
+
+after_success:
+  - codecov
