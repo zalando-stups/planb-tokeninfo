@@ -53,8 +53,8 @@ func TestHostHeader(t *testing.T) {
 	var upstream string
 
 	handler := func(w http.ResponseWriter, req *http.Request) {
-		if req.Host == "PLEASE-FAIL" {
-			t.Fatal("Received thre wrong Host header")
+		if req.Host == "example.com" {
+			t.Fatalf("Received thre wrong Host header: %s", req.Host)
 		}
 	}
 
@@ -66,8 +66,6 @@ func TestHostHeader(t *testing.T) {
 	h := NewTokenInfoProxyHandler(url)
 
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("GET", "http://example.com?access_token=foo", nil)
-	r.Host = "PLEASE-FAIL"
+	r, _ := http.NewRequest("GET", "http://example.com/?access_token=foo", nil)
 	h.ServeHTTP(w, r)
-
 }
