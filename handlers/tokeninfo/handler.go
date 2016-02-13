@@ -14,15 +14,9 @@ type tokenInfoHandler struct {
 func (h *tokenInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ti, err := h.validateToken(r)
 	if err != nil {
-		tie := TokenInfoError{Error: "invalid_request", ErrorDescription: "Access Token not valid"}
-		str, err := json.Marshal(tie)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(str)
+		// TODO: consider a debug mode or log
+		// as we are no longer returning error details to the user
+		writeError(w, "invalid_request", "Access Token not valid")
 		return
 	}
 
