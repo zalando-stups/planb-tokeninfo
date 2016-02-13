@@ -49,7 +49,19 @@ Now we can test our token info endpoint with a valid JWT access token:
     $ # simple GET query parameter works too (not recommended!)
     $ curl localhost:9021/oauth2/tokeninfo?access_token=MjoxLjUuMS0wdW..
 
+Configuration
+=============
+
+The following environment variables are supported:
+
+``OPENID_PROVIDER_CONFIGURATION_URL``
+    URL of the `OpenID Connect configuration discovery document`_ containing the ``jwk_uri`` which points to a `set of JWKs`_.
+``UPSTREAM_TOKENINFO_URL``
+    URL of upstream OAuth 2 token info for non-JWT Bearer tokens.
+
+
 .. _Plan B OpenID Connect Provider: https://github.com/zalando/planb-provider
 .. _Plan B Revocation Service: https://github.com/zalando/planb-revocation
 .. _JOSE header: https://tools.ietf.org/html/rfc7515#section-4
 .. _set of JWKs: https://tools.ietf.org/html/rfc7517#section-5
+.. _OpenID Connect configuration discovery document: https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfigurationResponse
