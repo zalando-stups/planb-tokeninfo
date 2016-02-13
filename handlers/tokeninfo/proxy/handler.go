@@ -11,10 +11,13 @@ type tokenInfoProxyHandler struct {
 	upstream *httputil.ReverseProxy
 }
 
-func hostModifier(original func(req *http.Request)) func(req *http.Request) {
+func hostModifier(upstreamUrl *url.URL, original func(req *http.Request)) func(req *http.Request) {
 	return func(req *http.Request) {
 		original(req)
-		req.Host = req.URL.Host
+		// request upstream tokeninfo with correct host and path
+		// (httputil.ReverseProxy would otherwise concatenate paths)
+		req.Host = upstreamUrl.Host
+		req.URL.Path = upstreamUrl.Path
 	}
 }
 
@@ -29,6 +32,6 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 
 func NewTokenInfoProxyHandler(url *url.URL) http.Handler {
 	p := httputil.NewSingleHostReverseProxy(url)
-	p.Director = hostModifier(p.Director)
+	p.Director = hostModifier(url, p.Director)
 	return &tokenInfoProxyHandler{upstream: p}
 }

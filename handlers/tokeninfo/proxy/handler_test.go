@@ -54,18 +54,24 @@ func TestHostHeader(t *testing.T) {
 
 	handler := func(w http.ResponseWriter, req *http.Request) {
 		if req.Host == "example.com" {
-			t.Fatalf("Received thre wrong Host header: %s", req.Host)
+			t.Fatalf("Received the wrong Host header: %s", req.Host)
+		}
+		if req.URL.Path != "/upstream-tokeninfo" {
+			t.Fatalf("Received the wrong path: %s", req.URL.Path)
+		}
+		if req.URL.RawQuery != "access_token=foo" {
+			t.Fatalf("Received the wrong query: %s", req.URL.RawQuery)
 		}
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
+	upstream = fmt.Sprintf("http://%s/upstream-tokeninfo", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
 	h := NewTokenInfoProxyHandler(url)
 
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("GET", "http://example.com/?access_token=foo", nil)
+	r, _ := http.NewRequest("GET", "http://example.com/oauth2/tokeninfo?access_token=foo", nil)
 	h.ServeHTTP(w, r)
 }

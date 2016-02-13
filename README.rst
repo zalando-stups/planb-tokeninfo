@@ -37,6 +37,7 @@ Running
 .. code-block:: bash
 
     $ export OPENID_PROVIDER_CONFIGURATION_URL=https://planb-provider.example.org/.well-known/openid-configuration
+    $ export UPSTREAM_TOKENINFO_URL=https://auth.example.org/oauth2/tokeninfo
     $ $GOPATH/bin/planb-tokeninfo  # start server on port 9021
 
 Now we can test our token info endpoint with a valid JWT access token:
