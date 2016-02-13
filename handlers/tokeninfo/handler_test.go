@@ -45,6 +45,9 @@ func TestHandler(t *testing.T) {
 	url, _ := url.Parse("http://example.com/oauth2/tokeninfo?access_token=" + testJwtToken)
 	req.URL = url
 	h.ServeHTTP(rw, req)
+	// TODO: find a reliable way of testing the success case
+	// (test token expires expires)
+	// assert.Equal(t, 200, rw.Code)
 }
 
 func BenchmarkHandler(b *testing.B) {
