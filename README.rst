@@ -43,6 +43,9 @@ Now we can test our token info endpoint with a valid JWT access token:
 
 .. code-block:: bash
 
+    $ # using the Authorization header is the preferred method
+    $ curl -H 'Authorization: Bearer MjoxLjUuMS0wdW..' localhost:9021/oauth2/tokeninfo
+    $ # simple GET query parameter works too (not recommended!)
     $ curl localhost:9021/oauth2/tokeninfo?access_token=MjoxLjUuMS0wdW..
 
 .. _Plan B OpenID Connect Provider: https://github.com/zalando/planb-provider
