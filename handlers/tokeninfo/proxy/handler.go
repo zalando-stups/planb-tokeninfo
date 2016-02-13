@@ -19,7 +19,7 @@ func hostModifier(original func(req *http.Request)) func(req *http.Request) {
 }
 
 func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	token := req.URL.Query().Get("access_token")
+	token := tokeninfo.AccessTokenFromRequest(req)
 	if token == "" {
 		tokeninfo.Error(w, tokeninfo.ErrInvalidRequest)
 		return

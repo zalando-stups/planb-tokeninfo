@@ -18,8 +18,6 @@ type jwtHandler struct {
 func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ti, err := h.validateToken(r)
 	if err != nil {
-		// TODO: consider a debug mode or log
-		// as we are no longer returning error details to the user
 		switch err {
 		case jwt.ErrNoTokenInRequest:
 			tokeninfo.Error(w, tokeninfo.ErrInvalidRequest)
@@ -27,6 +25,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Debug(err)
 			tokeninfo.Error(w, tokeninfo.ErrInvalidToken)
 		}
+		log.Debug(err)
 		return
 	}
 
@@ -36,7 +35,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *jwtHandler) Match(r *http.Request) bool {
-	token := r.URL.Query().Get("access_token")
+	token := tokeninfo.AccessTokenFromRequest(r)
 	if token == "" {
 		return false
 	}

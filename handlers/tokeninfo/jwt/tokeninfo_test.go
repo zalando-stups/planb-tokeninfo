@@ -40,20 +40,6 @@ func TestTokenInfo(t *testing.T) {
 				"scope": []interface{}{"uid"},
 				"sub":   "foo",
 				"realm": "/test",
-				"exp":   "43"}},
-			&TokenInfo{
-				GrantType: "password",
-				TokenType: "Bearer",
-				Scope:     []string{"uid"},
-				Uid:       "foo",
-				Realm:     "/test",
-				ExpiresIn: 1},
-			false},
-		{
-			jwt.Token{Claims: map[string]interface{}{
-				"scope": []interface{}{"uid"},
-				"sub":   "foo",
-				"realm": "/test",
 				"exp":   float64(43)}},
 			&TokenInfo{
 				GrantType: "password",

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/coreos/dex/pkg/log"
 	"github.com/dgrijalva/jwt-go"
-	"strconv"
 	"time"
 )
 
@@ -105,13 +104,6 @@ func claimAsInt64(t *jwt.Token, claim string) (int64, bool) {
 	switch c.(type) {
 	case float64:
 		return int64(c.(float64)), true
-	case string:
-		res, err := strconv.ParseInt(c.(string), 10, 64)
-		if err != nil {
-			log.Error(err)
-			break
-		}
-		return res, true
 	default:
 		log.Debugf("Invalid number format for claim %q = %v", claim, c)
 	}
