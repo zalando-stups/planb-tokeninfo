@@ -1,48 +1,51 @@
 package tokeninfo
 
 import (
-	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/zalando/planb-tokeninfo/keys"
 	"net/http"
+	"strings"
 )
 
-type tokenInfoHandler struct {
-	keyLoader keys.KeyLoader
+const ACCESS_TOKEN_PARAMETER = "access_token"
+
+type TokenInfoHandler interface {
+	http.Handler
+	Match(r *http.Request) bool
 }
 
-func (h *tokenInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ti, err := h.validateToken(r)
-	if err != nil {
-		// TODO: consider a debug mode or log
-		// as we are no longer returning error details to the user
-		writeError(w, "invalid_request", "Access Token not valid")
-		return
-	}
-
-	resp, err := json.Marshal(ti)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+type routingHandler struct {
+	defaultHandler http.Handler
+	routes         []TokenInfoHandler
 }
 
-func (h *tokenInfoHandler) validateToken(req *http.Request) (*TokenInfo, error) {
-	token, err := jwt.ParseFromRequest(req, jwtValidator(h.keyLoader))
-	if err == nil && token.Valid {
-		return buildTokenInfo(token)
+func Handler(def http.Handler, r ...TokenInfoHandler) http.Handler {
+	return &routingHandler{defaultHandler: def, routes: r}
+}
+
+func (rh *routingHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if h := rh.matchRequest(req); h != nil {
+		h.ServeHTTP(w, req)
 	} else {
-		return nil, err
+		rh.defaultHandler.ServeHTTP(w, req)
 	}
 }
 
-func DefaultTokenInfoHandler() http.Handler {
-	return NewTokenInfoHandler(keys.DefaultKeyLoader())
+func (rh *routingHandler) matchRequest(r *http.Request) http.Handler {
+	for _, h := range rh.routes {
+		if h.Match(r) {
+			return h
+		}
+	}
+	return nil
 }
 
-func NewTokenInfoHandler(kl keys.KeyLoader) http.Handler {
-	return &tokenInfoHandler{keyLoader: kl}
+// https://tools.ietf.org/html/rfc6749#section-5.1
+// https://tools.ietf.org/html/rfc6750#section-2.1
+func AccessTokenFromRequest(req *http.Request) string {
+	if h := req.Header.Get("Authorization"); h != "" {
+		if strings.HasPrefix(strings.ToLower(h), "bearer ") {
+			return h[7:]
+		}
+	}
+
+	return req.FormValue(ACCESS_TOKEN_PARAMETER)
 }

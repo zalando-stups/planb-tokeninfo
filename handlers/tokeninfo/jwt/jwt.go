@@ -1,4 +1,4 @@
-package tokeninfo
+package jwthandler
 
 import (
 	"errors"
@@ -14,19 +14,13 @@ var (
 
 func jwtValidator(kl keys.KeyLoader) jwt.Keyfunc {
 	return func(token *jwt.Token) (interface{}, error) {
-		var isrsa, isecdsa bool
-
-		_, isrsa = token.Method.(*jwt.SigningMethodRSA)
-		if !isrsa {
-			_, isecdsa = token.Method.(*jwt.SigningMethodECDSA)
-		}
-
-		if !(isrsa || isecdsa) {
+		switch token.Method.(type) {
+		case *jwt.SigningMethodRSA, *jwt.SigningMethodECDSA:
+			return loadKey(kl, token)
+		default:
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return loadKey(kl, token)
 	}
-
 }
 
 func loadKey(kl keys.KeyLoader, t *jwt.Token) (interface{}, error) {
