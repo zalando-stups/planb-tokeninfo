@@ -3,6 +3,7 @@ package tokeninfo
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +25,16 @@ func init() {
 
 func (kl *mockKeyLoader) LoadKey(id string) (interface{}, error) {
 	return testPubKey, nil
+}
+
+func TestHandlerMissingToken(t *testing.T) {
+	kl := new(mockKeyLoader)
+	h := NewTokenInfoHandler(kl)
+	rw := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "http://example.com/oauth2/tokeninfo", nil)
+	h.ServeHTTP(rw, req)
+	assert.Equal(t, 400, rw.Code)
+	assert.Equal(t, "{\"error\":\"invalid_request\",\"error_description\":\"Access Token not valid\"}", rw.Body.String())
 }
 
 func TestHandler(t *testing.T) {
