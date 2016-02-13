@@ -1,14 +1,10 @@
 package keys
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/coreos/dex/pkg/log"
 	"io/ioutil"
-	"math/big"
 	"net/http"
 	"os"
 	"time"
@@ -27,9 +23,6 @@ const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
 
 func newCachingOpenIdProviderLoader() KeyLoader {
 	u := os.Getenv(OPENID_PROVIDER_CONFIGURATION_URL)
-	if u == "" {
-		log.Fatal("Missing OPENID_PROVIDER_CONFIGURATION_URL environment variable")
-	}
 	kl := &cachingOpenIdProviderLoader{url: u, keyCache: NewCache()}
 	schedule(defaultRefreshInterval, kl.refreshKeys)
 	return kl
@@ -41,26 +34,6 @@ func (kl *cachingOpenIdProviderLoader) LoadKey(id string) (interface{}, error) {
 		return key, fmt.Errorf("Key '%s' not found", id)
 	}
 	return key, nil
-}
-
-func buildKey(k map[string]interface{}) (interface{}, error) {
-	if k["alg"].(string) != "ES256" {
-		return nil, fmt.Errorf("Unsupported algorithm '%s'", k["alg"].(string))
-	}
-
-	xbuf, err := base64.RawURLEncoding.DecodeString(k["x"].(string))
-	if err != nil {
-		return nil, fmt.Errorf("Invalid ECDSA coordinate X")
-	}
-	ybuf, err := base64.RawURLEncoding.DecodeString(k["y"].(string))
-	if err != nil {
-		return nil, fmt.Errorf("Invalid ECDSA coordinate Y")
-	}
-
-	x := new(big.Int).SetBytes(xbuf)
-	y := new(big.Int).SetBytes(ybuf)
-
-	return &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}, nil
 }
 
 // Example: https://www.googleapis.com/oauth2/v3/certs
@@ -87,17 +60,8 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 		return
 	}
 
-	for _, km := range jwks.Keys {
-		if kid, has := km["kid"]; has {
-			if id, ok := kid.(string); ok {
-				k, err := buildKey(km)
-				if err == nil {
-					kl.keyCache.Set(id, k)
-				} else {
-					log.Errorf("Failed to build key `%s`: %v", id, err)
-				}
-			}
-		}
+	for _, k := range jwks.Keys {
+		kl.keyCache.Set(k.KeyId, k.Key)
 	}
 }
 

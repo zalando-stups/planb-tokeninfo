@@ -3,7 +3,7 @@ package tokeninfo
 import (
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/zalando/planb-agent/keys"
+	"github.com/zalando/planb-tokeninfo/keys"
 	"net/http"
 )
 
@@ -14,7 +14,9 @@ type tokenInfoHandler struct {
 func (h *tokenInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ti, err := h.validateToken(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		// TODO: consider a debug mode or log
+		// as we are no longer returning error details to the user
+		writeError(w, "invalid_request", "Access Token not valid")
 		return
 	}
 

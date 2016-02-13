@@ -1,14 +1,14 @@
-=======================
-Plan B Token Info Agent
-=======================
+=========================
+Plan B Token Info Service
+=========================
 
-.. image:: https://travis-ci.org/zalando/planb-agent.svg?branch=master
-    :target: https://travis-ci.org/zalando/planb-agent
+.. image:: https://travis-ci.org/zalando/planb-tokeninfo.svg?branch=master
+    :target: https://travis-ci.org/zalando/planb-tokeninfo
 
-.. image:: https://codecov.io/github/zalando/planb-agent/coverage.svg?branch=master
-    :target: https://codecov.io/github/zalando/planb-agent?branch=master
+.. image:: https://codecov.io/github/zalando/planb-tokeninfo/coverage.svg?branch=master
+    :target: https://codecov.io/github/zalando/planb-tokeninfo?branch=master
 
-Lightweight agent providing an OAuth 2 token info HTTP endpoint to validate JWT tokens issued by the `Plan B OpenID Connect Provider`_.
+Lightweight service providing an OAuth 2 token info HTTP endpoint to validate JWT tokens issued by the `Plan B OpenID Connect Provider`_.
 
 (Planned) Features:
 
@@ -21,15 +21,15 @@ Lightweight agent providing an OAuth 2 token info HTTP endpoint to validate JWT 
 Building
 ========
 
-Requires Go 1.5.1.
+Requires Go 1.5.1 or higher.
 
 .. code-block:: bash
 
     $ sudo apt-get install golang  # how to install Go on Ubuntu 15.10
     $ export GOPATH=$(pwd)         # first set GOPATH if not done already
-    $ go get -t github.com/zalando/planb-agent
-    $ go test github.com/zalando/planb-agent
-    $ go install github.com/zalando/planb-agent
+    $ go get -t github.com/zalando/planb-tokeninfo
+    $ go test github.com/zalando/planb-tokeninfo/...
+    $ go install github.com/zalando/planb-tokeninfo
 
 Running
 =======
@@ -37,7 +37,7 @@ Running
 .. code-block:: bash
 
     $ export OPENID_PROVIDER_CONFIGURATION_URL=https://planb-provider.example.org/.well-known/openid-configuration
-    $ $GOPATH/bin/planb-agent  # start server on port 9021
+    $ $GOPATH/bin/planb-tokeninfo  # start server on port 9021
 
 Now we can test our token info endpoint with a valid JWT access token:
 

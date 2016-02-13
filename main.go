@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/coreos/dex/pkg/log"
 	gometrics "github.com/rcrowley/go-metrics"
-	"github.com/zalando/planb-agent/handlers/healthcheck"
-	"github.com/zalando/planb-agent/handlers/metrics"
-	"github.com/zalando/planb-agent/handlers/tokeninfo"
-	"log"
+	"github.com/zalando/planb-tokeninfo/handlers/healthcheck"
+	"github.com/zalando/planb-tokeninfo/handlers/metrics"
+	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"net/http"
 )
 
@@ -20,7 +20,7 @@ var (
 )
 
 func main() {
-	fmt.Printf("Started server at %v.\n", defaultListenAddr)
+	log.Infof("Started server at %v.\n", defaultListenAddr)
 	reg := gometrics.NewRegistry()
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthcheck.Handler(fmt.Sprintf("OK\n%s", Version)))
