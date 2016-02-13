@@ -11,6 +11,13 @@ type tokenInfoProxyHandler struct {
 	upstream *httputil.ReverseProxy
 }
 
+func hostModifier(original func(req *http.Request)) func(req *http.Request) {
+	return func(req *http.Request) {
+		original(req)
+		req.Host = req.URL.Host
+	}
+}
+
 func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	token := req.URL.Query().Get("access_token")
 	if token == "" {
@@ -21,5 +28,7 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 }
 
 func NewTokenInfoProxyHandler(url *url.URL) http.Handler {
-	return &tokenInfoProxyHandler{upstream: httputil.NewSingleHostReverseProxy(url)}
+	p := httputil.NewSingleHostReverseProxy(url)
+	p.Director = hostModifier(p.Director)
+	return &tokenInfoProxyHandler{upstream: p}
 }

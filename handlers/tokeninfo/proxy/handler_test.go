@@ -48,3 +48,26 @@ func TestProxy(t *testing.T) {
 		}
 	}
 }
+
+func TestHostHeader(t *testing.T) {
+	var upstream string
+
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		if req.Host == "PLEASE-FAIL" {
+			t.Fatal("Received thre wrong Host header")
+		}
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
+	url, _ := url.Parse(upstream)
+	h := NewTokenInfoProxyHandler(url)
+
+	w := httptest.NewRecorder()
+	r, _ := http.NewRequest("GET", "http://example.com?access_token=foo", nil)
+	r.Host = "PLEASE-FAIL"
+	h.ServeHTTP(w, r)
+
+}
