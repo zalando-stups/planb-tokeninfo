@@ -1,6 +1,6 @@
-=======================
-Plan B Token Info Agent
-=======================
+=========================
+Plan B Token Info Service
+=========================
 
 .. image:: https://travis-ci.org/zalando/planb-tokeninfo.svg?branch=master
     :target: https://travis-ci.org/zalando/planb-tokeninfo
@@ -8,7 +8,7 @@ Plan B Token Info Agent
 .. image:: https://codecov.io/github/zalando/planb-tokeninfo/coverage.svg?branch=master
     :target: https://codecov.io/github/zalando/planb-tokeninfo?branch=master
 
-Lightweight agent providing an OAuth 2 token info HTTP endpoint to validate JWT tokens issued by the `Plan B OpenID Connect Provider`_.
+Lightweight service providing an OAuth 2 token info HTTP endpoint to validate JWT tokens issued by the `Plan B OpenID Connect Provider`_.
 
 (Planned) Features:
 
