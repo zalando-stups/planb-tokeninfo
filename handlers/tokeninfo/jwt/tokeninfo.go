@@ -1,25 +1,25 @@
 package jwthandler
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"time"
-	"github.com/coreos/dex/pkg/log"
 	"errors"
+	"github.com/coreos/dex/pkg/log"
+	"github.com/dgrijalva/jwt-go"
 	"strconv"
+	"time"
 )
 
 const (
 	JWT_CLAIM_SCOPE = "scope"
-	JWT_CLAIM_SUB = "sub"
+	JWT_CLAIM_SUB   = "sub"
 	JWT_CLAIM_REALM = "realm"
-	JWT_CLAIM_EXP = "exp"
+	JWT_CLAIM_EXP   = "exp"
 )
 
 var (
 	ErrInvalidClaimScope = errors.New("Invalid claim: scope")
-	ErrInvalidClaimSub = errors.New("Invalid claim: sub")
+	ErrInvalidClaimSub   = errors.New("Invalid claim: sub")
 	ErrInvalidClaimRealm = errors.New("Invalid claim: realm")
-	ErrInvalidClaimExp = errors.New("Invalid claim: exp")
+	ErrInvalidClaimExp   = errors.New("Invalid claim: exp")
 )
 
 type TokenInfo struct {
@@ -34,7 +34,7 @@ type TokenInfo struct {
 	ExpiresIn    int      `json:"expires_in"`
 }
 
-func newTokenInfo(t *jwt.Token) (*TokenInfo, error) {
+func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
 	scopes, ok := claimAsStrings(t, JWT_CLAIM_SCOPE)
 	if !ok {
 		return nil, ErrInvalidClaimScope
@@ -55,7 +55,7 @@ func newTokenInfo(t *jwt.Token) (*TokenInfo, error) {
 		return nil, ErrInvalidClaimExp
 	}
 
-	expiresIn := int(time.Unix(exp, 0).Sub(time.Now()).Seconds())
+	expiresIn := int(time.Unix(exp, 0).Sub(timeBase).Seconds())
 
 	return &TokenInfo{
 		AccessToken: t.Raw,

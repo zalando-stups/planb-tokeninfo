@@ -2,12 +2,13 @@ package jwthandler
 
 import (
 	"encoding/json"
+	"github.com/coreos/dex/pkg/log"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
+	"github.com/zalando/planb-tokeninfo/keys"
 	"net/http"
 	"strings"
-	"github.com/zalando/planb-tokeninfo/keys"
-	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
-	"github.com/coreos/dex/pkg/log"
+	"time"
 )
 
 type jwtHandler struct {
@@ -48,7 +49,7 @@ func (h *jwtHandler) Match(r *http.Request) bool {
 func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	token, err := jwt.ParseFromRequest(req, jwtValidator(h.keyLoader))
 	if err == nil && token.Valid {
-		return newTokenInfo(token)
+		return newTokenInfo(token, time.Now())
 	} else {
 		return nil, err
 	}
