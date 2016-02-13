@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	gometrics "github.com/rcrowley/go-metrics"
-	"github.com/zalando/planb-agent/handlers/healthcheck"
-	"github.com/zalando/planb-agent/handlers/metrics"
-	"github.com/zalando/planb-agent/handlers/tokeninfo"
+	"github.com/zalando/planb-tokeninfo/handlers/healthcheck"
+	"github.com/zalando/planb-tokeninfo/handlers/metrics"
+	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"log"
 	"net/http"
 )

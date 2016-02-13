@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/zalando/planb-agent/keys"
+	"github.com/zalando/planb-tokeninfo/keys"
 )
 
 var (

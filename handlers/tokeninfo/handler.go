@@ -3,7 +3,7 @@ package tokeninfo
 import (
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/zalando/planb-agent/keys"
+	"github.com/zalando/planb-tokeninfo/keys"
 	"net/http"
 )
 
