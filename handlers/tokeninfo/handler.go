@@ -14,7 +14,15 @@ type tokenInfoHandler struct {
 func (h *tokenInfoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ti, err := h.validateToken(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		tie := TokenInfoError{Error: "invalid_request", ErrorDescription: "Access Token not valid"}
+		str, err := json.Marshal(tie)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(str)
 		return
 	}
 
