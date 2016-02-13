@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 	"net/url"
+	"testing"
 )
 
 const testTokenInfo = `{"access_token": "xxx","cn": "John Doe","expires_in": 42,"grant_type": "password","realm":"/services","scope":["uid","cn"],"token_type":"Bearer","uid":"jdoe"}` + "\n"
@@ -23,7 +23,7 @@ func TestProxy(t *testing.T) {
 	defer server.Close()
 
 	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
-	url,_ := url.Parse(upstream)
+	url, _ := url.Parse(upstream)
 	h := NewTokenInfoProxyHandler(url)
 	invalid := `{"error":"invalid_request","error_description":"Access Token not valid"}` + "\n"
 	for _, it := range []struct {
@@ -36,7 +36,7 @@ func TestProxy(t *testing.T) {
 		{"/oauth2/tokeninfo?access_token=foo", http.StatusOK, testTokenInfo},
 	} {
 		w := httptest.NewRecorder()
-		r, _ := http.NewRequest("GET", "http://example.com" + it.query, nil)
+		r, _ := http.NewRequest("GET", "http://example.com"+it.query, nil)
 		h.ServeHTTP(w, r)
 
 		if w.Code != it.wantCode {

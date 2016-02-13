@@ -8,12 +8,12 @@ import (
 type TokenInfoError struct {
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description"`
-	statusCode int
+	statusCode       int
 }
 
 var (
 	ErrInvalidRequest = TokenInfoError{"invalid_request", "Access Token not valid", http.StatusBadRequest}
-	ErrInvalidToken = TokenInfoError{"invalid_token", "Access Token not valid", http.StatusUnauthorized}
+	ErrInvalidToken   = TokenInfoError{"invalid_token", "Access Token not valid", http.StatusUnauthorized}
 )
 
 // error response format for the token info endpoint

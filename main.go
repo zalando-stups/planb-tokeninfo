@@ -10,8 +10,8 @@ import (
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/jwt"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/proxy"
 	"net/http"
-	"os"
 	"net/url"
+	"os"
 )
 
 const (

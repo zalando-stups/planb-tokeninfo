@@ -4,14 +4,14 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 	"reflect"
-"strings"
-	"encoding/json"
+	"strings"
+	"testing"
 )
 
 type mockKeyLoader int
@@ -58,7 +58,7 @@ func TestHandler(t *testing.T) {
 	h := NewJwtHandler(kl)
 
 	for _, test := range []struct {
-		token string
+		token    string
 		wantCode int
 		wantBody string
 	}{
@@ -68,7 +68,7 @@ func TestHandler(t *testing.T) {
 		{testECDSAToken, http.StatusOK, testECDSAToken},
 	} {
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "http://example.com/oauth2/tokeninfo?access_token=" + test.token, nil)
+		req, _ := http.NewRequest("GET", "http://example.com/oauth2/tokeninfo?access_token="+test.token, nil)
 		h.ServeHTTP(w, req)
 
 		if test.wantCode != w.Code {

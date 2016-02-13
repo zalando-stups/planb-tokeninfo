@@ -1,10 +1,10 @@
 package tokeninfoproxy
 
 import (
+	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 )
 
 type tokenInfoProxyHandler struct {
