@@ -1,8 +1,13 @@
 package tokeninfo
 
 import (
+	"errors"
 	"net/http"
 	"strings"
+)
+
+var (
+	ErrNoTokenInRequest = errors.New("no token present in request")
 )
 
 type tokenRouterHandler struct {
@@ -10,14 +15,36 @@ type tokenRouterHandler struct {
 	legacyHandler http.Handler
 }
 
-func (h *tokenRouterHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+// snippet stolen from https://github.com/dgrijalva/jwt-go/blob/master/token.go
+// Try to find the token in an http.Request.
+// This method will call ParseMultipartForm if there's no token in the header.
+// Currently, it looks in the Authorization header as well as
+// looking for an 'access_token' request parameter in req.Form.
+func parseFromRequest(req *http.Request) (token string, err error) {
 
-	// TODO: read query param and Authorization header
-	if err := req.ParseForm(); err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-
+	// Look for an Authorization header
+	if ah := req.Header.Get("Authorization"); ah != "" {
+		// Should be a bearer token
+		if len(ah) > 6 && strings.ToUpper(ah[0:7]) == "BEARER " {
+			return ah[7:], nil
+		}
 	}
-	token := req.Form.Get("access_token")
+
+	// Look for "access_token" parameter
+	req.ParseMultipartForm(10e6)
+	if tokStr := req.Form.Get("access_token"); tokStr != "" {
+		return tokStr, nil
+	}
+
+	return "", ErrNoTokenInRequest
+}
+
+func (h *tokenRouterHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	token, err := parseFromRequest(req)
+	if err != nil {
+		writeError(w, "invalid_request", err.Error())
+		return
+	}
 
 	validJWT := isJWTToken(token)
 
