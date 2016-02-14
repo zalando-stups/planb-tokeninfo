@@ -55,7 +55,7 @@ Configuration
 The following environment variables are supported:
 
 ``OPENID_PROVIDER_CONFIGURATION_URL``
-    URL of the `OpenID Connect configuration discovery document`_ containing the ``jwk_uri`` which points to a `set of JWKs`_.
+    URL of the `OpenID Connect configuration discovery document`_ containing the ``jwks_uri`` which points to a `set of JWKs`_.
 ``UPSTREAM_TOKENINFO_URL``
     URL of upstream OAuth 2 token info for non-JWT Bearer tokens.
 
