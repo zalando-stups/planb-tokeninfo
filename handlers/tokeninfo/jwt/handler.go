@@ -2,10 +2,10 @@ package jwthandler
 
 import (
 	"encoding/json"
-	"github.com/coreos/dex/pkg/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"github.com/zalando/planb-tokeninfo/keys"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -22,10 +22,10 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case jwt.ErrNoTokenInRequest:
 			tokeninfo.Error(w, tokeninfo.ErrInvalidRequest)
 		default:
-			log.Debug(err)
+			log.Println(err)
 			tokeninfo.Error(w, tokeninfo.ErrInvalidToken)
 		}
-		log.Debug(err)
+		log.Println(err)
 		return
 	}
 
@@ -50,13 +50,9 @@ func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	if err == nil && token.Valid {
 		return newTokenInfo(token, time.Now())
 	} else {
-		log.Infof("Failed to validate token: %s", err)
+		log.Println("Failed to validate token: ", err)
 		return nil, err
 	}
-}
-
-func DefaultJwtHandler() tokeninfo.TokenInfoHandler {
-	return NewJwtHandler(keys.DefaultKeyLoader())
 }
 
 func NewJwtHandler(kl keys.KeyLoader) tokeninfo.TokenInfoHandler {

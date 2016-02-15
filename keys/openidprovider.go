@@ -3,16 +3,18 @@ package keys
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/afex/hystrix-go/hystrix"
 	"github.com/coreos/dex/pkg/log"
+	"github.com/zalando/planb-tokeninfo/httpclient"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"reflect"
 	"time"
 )
 
 // http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
 // https://planb-provider.example.org/.well-known/openid-configuration
+// https://accounts.google.com/.well-known/openid-configuration
 type cachingOpenIdProviderLoader struct {
 	url      string
 	keyCache *Cache
@@ -20,10 +22,7 @@ type cachingOpenIdProviderLoader struct {
 
 const defaultRefreshInterval = 30 * time.Second
 
-const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
-
-func newCachingOpenIdProviderLoader() KeyLoader {
-	u := os.Getenv(OPENID_PROVIDER_CONFIGURATION_URL)
+func NewCachingOpenIdProviderLoader(u string) KeyLoader {
 	kl := &cachingOpenIdProviderLoader{url: u, keyCache: NewCache()}
 	schedule(defaultRefreshInterval, kl.refreshKeys)
 	return kl
@@ -73,10 +72,20 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 }
 
 func (kl *cachingOpenIdProviderLoader) loadConfiguration() (*configuration, error) {
-	resp, err := http.Get(kl.url)
+	var (
+		resp *http.Response
+		err  error
+	)
+
+	err = hystrix.Do("loadConfiguration", func() error {
+		resp, err = http.Get(kl.url)
+		return nil
+	}, nil)
+
 	if err != nil {
 		return nil, err
 	}
+
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	config := new(configuration)

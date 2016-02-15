@@ -19,7 +19,7 @@ func TestHandler(t *testing.T) {
 	h.ServeHTTP(rw, r)
 
 	if rw.Code != http.StatusOK {
-		t.Error("Metrics endpoint responded with wrong status code = %d", rw.Code)
+		t.Errorf("Metrics endpoint responded with wrong status code = %d", rw.Code)
 	}
 
 	if rw.Body.String() != testJsonMetrics {
