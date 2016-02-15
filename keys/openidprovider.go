@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"reflect"
 	"time"
 )
 
@@ -17,7 +18,7 @@ type cachingOpenIdProviderLoader struct {
 	keyCache *Cache
 }
 
-const defaultRefreshInterval = 60 * time.Second
+const defaultRefreshInterval = 30 * time.Second
 
 const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
 
@@ -38,7 +39,7 @@ func (kl *cachingOpenIdProviderLoader) LoadKey(id string) (interface{}, error) {
 
 // Example: https://www.googleapis.com/oauth2/v3/certs
 func (kl *cachingOpenIdProviderLoader) refreshKeys() {
-	log.Info("Refreshing keys ...")
+	log.Info("Refreshing keys..")
 
 	c, err := kl.loadConfiguration()
 	if err != nil {
@@ -61,7 +62,13 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 	}
 
 	for _, k := range jwks.Keys {
+		var old = kl.keyCache.Get(k.KeyId)
 		kl.keyCache.Set(k.KeyId, k.Key)
+		if old == nil {
+			log.Infof("Received new public key '%s'", k.KeyId)
+		} else if !reflect.DeepEqual(old, k.Key) {
+			log.Warningf("Received new public key for existing key '%s'", k.KeyId)
+		}
 	}
 }
 
