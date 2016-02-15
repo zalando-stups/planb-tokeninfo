@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/coreos/dex/pkg/log"
-	"github.com/zalando/planb-tokeninfo/httpclient"
 	"io/ioutil"
 	"net/http"
 	"reflect"
