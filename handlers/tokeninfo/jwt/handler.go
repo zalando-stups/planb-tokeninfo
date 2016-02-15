@@ -50,6 +50,7 @@ func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	if err == nil && token.Valid {
 		return newTokenInfo(token, time.Now())
 	} else {
+		log.Infof("Failed to validate token: %s", err)
 		return nil, err
 	}
 }
