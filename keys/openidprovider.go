@@ -53,7 +53,12 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 		return
 	}
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("Failed to read JWKS response body from %q: %v", c.JwksUri, err)
+		return
+	}
 
 	jwks := new(jsonWebKeySet)
 	if err = json.Unmarshal(body, jwks); err != nil {

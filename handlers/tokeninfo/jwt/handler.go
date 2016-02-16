@@ -22,7 +22,6 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case jwt.ErrNoTokenInRequest:
 			tokeninfo.Error(w, tokeninfo.ErrInvalidRequest)
 		default:
-			log.Debug(err)
 			tokeninfo.Error(w, tokeninfo.ErrInvalidToken)
 		}
 		log.Debug(err)
