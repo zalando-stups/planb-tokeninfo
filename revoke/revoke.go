@@ -7,22 +7,11 @@ import (
 	"time"
 )
 
-// TODO: do we want to keep a history of 'Global' revocations?
 type Revocation struct {
-	Claims map[string]map[string]int // claim name mapped to a hash mapped to issued before
-	Tokens map[string]int            // token hash mapped to revoked at
-	Global int                       // issued before
-}
-
-// TODO: would it be better to store like this for the cache?
-/*
-type Revoke struct {
 	Type      string // token, claim, global
-	Name	  string // claim
-	Hash      string // token, claim
-	Timestamp int    // token claim global
+	Data      map[string]interface{}
+	Timestamp int
 }
-*/
 
 type jsonRevoke struct {
 	Meta struct {
@@ -41,20 +30,21 @@ type jsonRevoke struct {
 	} `json:"revocations"`
 }
 
-func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
+func (r *jsonRevoke) UnmarshallJSON(data []byte, forcedRefresh bool) (err error) {
 	var buf jsonRevoke
 	if err = json.Unmarshall(data, &buf); err != nil {
 		log.Errorf("Error unmarshalling revocation json. " + err.Error())
 		return err
 	}
 
-	// TODO: if we force refresh to a previous time, we'll probably get the
-	// force refresh json again and end up in an infinite loop of refreshing.
-	if buf.ForceRefresh != "" {
+	// Note: if we already foreced a refresh, we don't want to do it again
+	// otherwise we'll get stuck in an infinite loop
+	if buf.ForceRefresh != "" && !forcedRefresh {
 		i, err := strconv.Atoi(buf.ForceRefresh)
 		if err != nil {
 			log.Errorf("Error converting ForceRefresh to int." + err.Error())
 		} else {
+			// TODO: not sure how to get the current Cache from here. . .
 			refreshCacheFromTime(i)
 		}
 	}
@@ -62,51 +52,59 @@ func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
 	return
 }
 
-func (r *Revocation) getRevocationFromJson(json *jsonRevoke.Revocation) {
+func (r []*Revocation) getRevocationFromJson(json *jsonRevoke.Revocation) {
 
+	t := int32(time.Now().Unix())
 	for j := range json {
 
 		switch j.Type {
 		case "TOKEN":
-			valid, i := isHashTimestampValid(j.Data.TokenHash, j.Data.RevokedAt)
+			valid := isHashTimestampValid(j.Data.TokenHash, j.Data.RevokedAt)
 			if !valid {
 				log.Errorf("Invalid revocation data. TokenHash: %s, RevokedAt: %s", j.Data.TokenHash, j.Data.RevokedAt)
 				continue
 			}
-			r.Tokens[j.Data.TokenHash] = i
+			r.Data["token_hash"] = j.Data.TokenHash
+			r.Data["revoked_at"] = j.Data.RevokedAt
 		case "CLAIM":
-			valid, i := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore)
+			valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore)
 			if !valid {
 				log.Errorf("Invalid revocation data. ValueHash: %s, IssuedBefore: %s", j.Data.ValueHash, j.Data.IssuedBefore)
 				continue
 			}
 			r.Claims[j.Data.Name][j.Data.ValueHash] = i
+			r.Data["value_hash"] = j.Data.ValueHash
+			r.Data["issued_before"] = j.Data.IssuedBefore
+			r.Data["name"] = j.Data.Name
 		case "GLOBAL":
-			i, err := strconv.Atoi(j.Data.IssuedBefore)
+			_, err := strconv.Atoi(j.Data.IssuedBefore)
 			if err != nil {
 				log.Errorf("Erorr converting IssuedBefore to int. " + err.Error())
 				continue
 			}
-			r.Gobal = i
+			r.Data["issued_before"] = j.Data.IssuedBefore
 		default:
 			log.Errorf("Unsupported revocation type: %s", j.Type)
+			continue
 		}
 
+		r.Type = j.Type
+		r.Timestamp = t
 	}
 	return
 }
 
-func isHashTimestampValid(hash, timestamp string) (bool, int) {
+func isHashTimestampValid(hash, timestamp string) bool {
 	if hash == "" || timestamp == "" {
-		return false, -1
+		return false
 	}
 
-	i, err := strconv.Atoi(timestamp)
+	_i, err := strconv.Atoi(timestamp)
 	if err != nil {
 		log.Errorf("Erorr converting timestamp to int. " + err.Error())
-		return false, -1
+		return false
 	}
 
-	return true, i
+	return true
 
 }
