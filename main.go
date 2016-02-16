@@ -10,10 +10,10 @@ import (
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/jwt"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/proxy"
 	"github.com/zalando/planb-tokeninfo/keys"
+	"github.com/zalando/planb-tokeninfo/options"
 	"log"
 	"net/http"
-	"net/url"
-	"os"
+	"time"
 )
 
 const (
@@ -29,28 +29,24 @@ func init() {
 	flag.Parse()
 }
 
+func setupMetrics() {
+	gometrics.RegisterRuntimeMemStats(gometrics.DefaultRegistry)
+	go gometrics.CaptureRuntimeMemStats(gometrics.DefaultRegistry, 60*time.Second)
+	http.Handle("/metrics", metrics.Default)
+	go http.ListenAndServe(defaultMetricsListenAddr, nil)
+}
+
 func main() {
-	log.Println("Started server at %v.\n", defaultListenAddr)
-	reg := gometrics.NewRegistry()
-	mux := http.NewServeMux()
-	mux.Handle("/health", healthcheck.Handler(fmt.Sprintf("OK\n%s", Version)))
-	mux.Handle("/metrics", metrics.Handler(reg))
+	log.Printf("Started server at %v, /metrics endpoint at %v\n", defaultListenAddr, defaultMetricsListenAddr)
 
-	upstream := os.Getenv("UPSTREAM_TOKENINFO_URL")
-	url, err := url.Parse(upstream)
-	if err != nil {
-		log.Fatal(err)
-	}
+	setupMetrics()
 
-	ph := tokeninfoproxy.NewTokenInfoProxyHandler(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	u := os.Getenv("OPENID_PROVIDER_CONFIGURATION_URL")
-	kl := keys.NewCachingOpenIdProviderLoader(u)
+	ph := tokeninfoproxy.NewTokenInfoProxyHandler(options.UpstreamTokeninfoUrl)
+	kl := keys.NewCachingOpenIdProviderLoader(options.OpenIdProviderConfigurationUrl)
 	jh := jwthandler.NewJwtHandler(kl)
 
+	mux := http.NewServeMux()
+	mux.Handle("/health", healthcheck.Handler(fmt.Sprintf("OK\n%s", Version)))
 	mux.Handle("/oauth2/tokeninfo", tokeninfo.Handler(ph, jh))
 	log.Fatal(http.ListenAndServe(defaultListenAddr, mux))
 }

@@ -3,10 +3,10 @@ package keys
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/afex/hystrix-go/hystrix"
 	"github.com/coreos/dex/pkg/log"
+	"github.com/zalando/planb-tokeninfo/breaker"
 	"io/ioutil"
-	"net/http"
+	"net/url"
 	"reflect"
 	"time"
 )
@@ -15,13 +15,13 @@ import (
 // https://planb-provider.example.org/.well-known/openid-configuration
 // https://accounts.google.com/.well-known/openid-configuration
 type cachingOpenIdProviderLoader struct {
-	url      string
+	url      *url.URL
 	keyCache *Cache
 }
 
 const defaultRefreshInterval = 30 * time.Second
 
-func NewCachingOpenIdProviderLoader(u string) KeyLoader {
+func NewCachingOpenIdProviderLoader(u *url.URL) KeyLoader {
 	kl := &cachingOpenIdProviderLoader{url: u, keyCache: NewCache()}
 	schedule(defaultRefreshInterval, kl.refreshKeys)
 	return kl
@@ -41,11 +41,11 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 
 	c, err := kl.loadConfiguration()
 	if err != nil {
-		log.Errorf("Failed to get configuration from %q: %v", kl.url, err)
+		log.Errorf("Failed to get configuration from %q. %s", kl.url, err)
 		return
 	}
 
-	resp, err := http.Get(c.JwksUri)
+	resp, err := breaker.Do("loadKeys", c.JwksUri)
 	if err != nil {
 		log.Error("Failed to get JWKS from ", c.JwksUri)
 		return
@@ -71,16 +71,7 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 }
 
 func (kl *cachingOpenIdProviderLoader) loadConfiguration() (*configuration, error) {
-	var (
-		resp *http.Response
-		err  error
-	)
-
-	err = hystrix.Do("loadConfiguration", func() error {
-		resp, err = http.Get(kl.url)
-		return nil
-	}, nil)
-
+	resp, err := breaker.Do("loadConfiguration", kl.url.String())
 	if err != nil {
 		return nil, err
 	}
