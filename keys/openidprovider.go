@@ -43,7 +43,7 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 
 	c, err := kl.loadConfiguration()
 	if err != nil {
-		log.Error("Failed to get configuration from ", kl.url)
+		log.Errorf("Failed to get configuration from %q: %v", kl.url, err)
 		return
 	}
 
