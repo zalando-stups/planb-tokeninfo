@@ -78,11 +78,13 @@ func (kl *cachingOpenIdProviderLoader) loadConfiguration() (*configuration, erro
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
-	config := new(configuration)
-	if err = json.Unmarshal(body, config); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	return config, nil
+	config := new(configuration)
+	err = json.Unmarshal(body, config)
+	return config, err
 }
