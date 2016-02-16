@@ -41,7 +41,7 @@ func main() {
 
 	setupMetrics()
 
-	ph := tokeninfoproxy.NewTokenInfoProxyHandler(options.UpstreamTokeninfoUrl)
+	ph := tokeninfoproxy.NewTokenInfoProxyHandler(options.UpstreamTokenInfoUrl)
 	kl := keys.NewCachingOpenIdProviderLoader(options.OpenIdProviderConfigurationUrl)
 	jh := jwthandler.NewJwtHandler(kl)
 

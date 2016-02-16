@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 )
 
@@ -37,8 +36,7 @@ func TestLoadKeys(t *testing.T) {
 	defer server.Close()
 
 	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
-	u, _ := url.Parse(listener + "/.well-known/openid-configuration")
-	kl := &cachingOpenIdProviderLoader{url: u, keyCache: NewCache()}
+	kl := &cachingOpenIdProviderLoader{url: listener + "/.well-known/openid-configuration", keyCache: NewCache()}
 	kl.refreshKeys()
 	testkey := kl.keyCache.Get("testkey")
 

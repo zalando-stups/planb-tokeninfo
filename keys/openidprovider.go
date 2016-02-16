@@ -5,25 +5,23 @@ import (
 	"fmt"
 	"github.com/coreos/dex/pkg/log"
 	"github.com/zalando/planb-tokeninfo/breaker"
+	"github.com/zalando/planb-tokeninfo/options"
 	"io/ioutil"
 	"net/url"
 	"reflect"
-	"time"
 )
 
 // http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
 // https://planb-provider.example.org/.well-known/openid-configuration
 // https://accounts.google.com/.well-known/openid-configuration
 type cachingOpenIdProviderLoader struct {
-	url      *url.URL
+	url      string
 	keyCache *Cache
 }
 
-const defaultRefreshInterval = 30 * time.Second
-
 func NewCachingOpenIdProviderLoader(u *url.URL) KeyLoader {
-	kl := &cachingOpenIdProviderLoader{url: u, keyCache: NewCache()}
-	schedule(defaultRefreshInterval, kl.refreshKeys)
+	kl := &cachingOpenIdProviderLoader{url: u.String(), keyCache: NewCache()}
+	schedule(options.OpenIdProviderRefreshInterval, kl.refreshKeys)
 	return kl
 }
 
@@ -71,7 +69,7 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 }
 
 func (kl *cachingOpenIdProviderLoader) loadConfiguration() (*configuration, error) {
-	resp, err := breaker.Do("loadConfiguration", kl.url.String())
+	resp, err := breaker.Do("loadConfiguration", kl.url)
 	if err != nil {
 		return nil, err
 	}
