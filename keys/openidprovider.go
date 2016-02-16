@@ -41,7 +41,7 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 
 	c, err := kl.loadConfiguration()
 	if err != nil {
-		log.Error("Failed to get configuration from ", kl.url)
+		log.Errorf("Failed to get configuration from %q: %v", kl.url, err)
 		return
 	}
 
@@ -86,11 +86,13 @@ func (kl *cachingOpenIdProviderLoader) loadConfiguration() (*configuration, erro
 	}
 
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
-	config := new(configuration)
-	if err = json.Unmarshal(body, config); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	return config, nil
+	config := new(configuration)
+	err = json.Unmarshal(body, config)
+	return config, err
 }
