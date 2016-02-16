@@ -10,13 +10,14 @@ type Cache struct {
 }
 
 type request struct {
-	key      string
-	value    *Revocation // switch to interface?
-	response chan interface{}
+	key      map[string]string // not sure if this makes sense; thinking mapping type and hash
+	value    *Revocation
+	response chan *Revocation
 }
 
 func NewCache() *Cache {
-	req = make(chan *request)
+
+	req := make(chan *request)
 
 	go func() {
 		m := make(map[string]interface{})
