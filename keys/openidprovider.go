@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/coreos/dex/pkg/log"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"reflect"
@@ -21,6 +22,12 @@ type cachingOpenIdProviderLoader struct {
 const defaultRefreshInterval = 30 * time.Second
 
 const OPENID_PROVIDER_CONFIGURATION_URL = "OPENID_PROVIDER_CONFIGURATION_URL"
+
+var client = &http.Client{
+	Transport: &http.Transport{
+		Proxy:               http.ProxyFromEnvironment,
+		Dial:                (&net.Dialer{Timeout: 9 * time.Second, KeepAlive: 9 * time.Second}).Dial,
+		TLSHandshakeTimeout: 9 * time.Second}}
 
 func newCachingOpenIdProviderLoader() KeyLoader {
 	u := os.Getenv(OPENID_PROVIDER_CONFIGURATION_URL)
@@ -41,20 +48,26 @@ func (kl *cachingOpenIdProviderLoader) LoadKey(id string) (interface{}, error) {
 func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 	log.Info("Refreshing keys..")
 
+	log.Info("Loading configuration..")
 	c, err := kl.loadConfiguration()
 	if err != nil {
 		log.Errorf("Failed to get configuration from %q: %v", kl.url, err)
 		return
 	}
 
-	resp, err := http.Get(c.JwksUri)
+	log.Info("Configuration loaded successfully, loading JWKS..")
+	resp, err := client.Get(c.JwksUri)
 	if err != nil {
 		log.Error("Failed to get JWKS from ", c.JwksUri)
 		return
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("Failed to read JWKS response from %q: %v", c.JwksUri, err)
+	}
 
+	log.Info("JWKS loaded successfully, parsing JWKS..")
 	jwks := new(jsonWebKeySet)
 	if err = json.Unmarshal(body, jwks); err != nil {
 		log.Error("Failed to parse JWKS: ", err)
@@ -70,10 +83,12 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 			log.Warningf("Received new public key for existing key '%s'", k.KeyId)
 		}
 	}
+
+	log.Info("Refresh done..")
 }
 
 func (kl *cachingOpenIdProviderLoader) loadConfiguration() (*configuration, error) {
-	resp, err := http.Get(kl.url)
+	resp, err := client.Get(kl.url)
 	if err != nil {
 		return nil, err
 	}
