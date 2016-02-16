@@ -17,19 +17,29 @@ type Cache struct {
 }
 
 type request struct {
+<<<<<<< HEAD
 	key string
 	val interface{}
 	res chan interface{}
+=======
+	key      map[string]string // not sure if this makes sense; thinking mapping type and hash
+	value    *Revocation
+	response chan *Revocation
+>>>>>>> Refacterer some code; added a revoke provider; work in progress. . .
 }
 
 func NewCache() *Cache {
 
+<<<<<<< HEAD
 	get := make(chan *request)
 	set := make(chan *request)
 	del := make(chan *request)
 	expire := make(chan bool)
 	ts := make(chan *request)
 	cName := make(chan *request)
+=======
+	req := make(chan *request)
+>>>>>>> Refacterer some code; added a revoke provider; work in progress. . .
 
 	go func() {
 		c := make(map[string]interface{})
