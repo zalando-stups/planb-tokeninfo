@@ -1,11 +1,11 @@
 package revoke
 
 import (
+	"github.com/zalando/planb-tokeninfo/options"
 	"io/ioutil"
+	"log"
 	"net/http"
-	"os"
-	"strconv"
-	"time"
+	"net/url"
 )
 
 type cachingRevokeProvider struct {
@@ -14,37 +14,27 @@ type cachingRevokeProvider struct {
 }
 
 func newCachingRevokeProvider(u url.URL) *cachingRevokeProvider {
-	crp := &cachingRevokeProvider{url: u.String(), revockeCache: NewCache()}
-	schedule(defaultRevokeProviderRefreshInterval, crp.refreshRevocations)
+	crp := &cachingRevokeProvider{url: u.String(), cache: NewCache()}
+	schedule(options.RevocationProviderRefreshInterval, crp.refreshRevocations)
 	return crp
 }
 
 // TODO: I don't like how I'm doing the force refresh here.
 // if refreshTs is not an empty string, use that as the refresh time
-func (crp *cachingRevokeProvider) refreshRevocations(refreshTs string) {
-	log.Info("Refreshing revocations. . .")
+func (crp *cachingRevokeProvider) refreshRevocations() {
 
 	ts := ""
 
-	var forceRefresh bool
-	// Note: we'll never get a force refresh on our first pull
-	if refreshTs != "" {
-		forceRefresh = true
-		ts = "?from=" + refreshTs
-		// TODO: do I need to remove all cache entries >= force refresh time?
-	}
-
-	// TODO refactor force refresh since what's below isn't going to work.
-	if !forceRefresh {
+	// TODO need to get timestamp of last pull
+	/*
 		if crp.cache.timestamp != nil {
 			c := <-crp.cache.timestamp
 			ts = "?from=" + strconv.Itoa(c)
 		}
-	}
-
+	*/
 	resp, err := http.Get(crp.url + ts)
 	if err != nil {
-		log.Errorf("Failed to get revocations. " + err.Error())
+		log.Println("Failed to get revocations. " + err.Error())
 		return
 	}
 
@@ -52,16 +42,15 @@ func (crp *cachingRevokeProvider) refreshRevocations(refreshTs string) {
 	body, err := ioutil.ReadAll(resp.Body)
 
 	jr := new(jsonRevoke)
-	if err := jr.UnmarshallJSON(body, forceRefresh); err != nil {
-		log.Errorf("Failed to unmarshall revocation data. " + err.Error())
+	if err := jr.UnmarshallJSON(body); err != nil {
+		log.Println("Failed to unmarshall revocation data. " + err.Error())
 		return
 	}
 
-	var r []Revocation
-	r.getRevocationFromJson(jr.Revocation)
-
-	for rev := range r {
-		rev.cache.Add(&rev)
+	for _, j := range jr.Revs {
+		var r = new(Revocation)
+		r.getRevocationFromJson(&j)
+		crp.cache.Add(r)
 	}
 
 }

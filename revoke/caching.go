@@ -26,7 +26,7 @@ func NewCache() *Cache {
 	get := make(chan *request)
 	set := make(chan *request)
 	del := make(chan *request)
-	expire := make(chan *requst)
+	expire := make(chan bool)
 
 	go func() {
 		c := make(map[string]*Revocation)
@@ -44,7 +44,7 @@ func NewCache() *Cache {
 					}
 				}
 			case r := <-get:
-				r.val <= c[r.key]
+				r.res <- c[r.key]
 			}
 		}
 	}()
@@ -66,28 +66,24 @@ func (c *Cache) Add(revoke *Revocation) {
 	var hash string
 	switch revoke.Type {
 	case "TOKEN":
-		hash = revoke.Data["token_hash"]
+		hash = revoke.Data["token_hash"].(string)
 	case "CLAIM":
-		hash = revoke.Data["value_hash"]
+		hash = revoke.Data["value_hash"].(string)
 	case "GLOBAL":
 	// TODO
 	default:
 		return
 	}
-	c.set <- &request{key: hash, value: revoke}
+	c.set <- &request{key: hash, val: revoke}
 }
 
 func (c *Cache) Delete(key string) {
 	c.del <- &request{key: key}
 }
 
-func isExpired(string ts) bool {
-	t, err := strconv.Atoi(ts)
-	if err != null {
-		log.Errorf("Error converting timestamp to int. " + err.Error())
-	}
+func isExpired(ts int) bool {
 
-	if t-EXPIRE_LENGTH < time.Now().Unix() {
+	if ts-EXPIRE_LENGTH < int(time.Now().Unix()) {
 		return true
 	}
 
