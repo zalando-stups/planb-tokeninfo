@@ -5,3 +5,4 @@ run.sh
 *.iml
 .idea/
 *.swp
+*~
