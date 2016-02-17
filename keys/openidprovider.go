@@ -73,9 +73,9 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 		var old = kl.keyCache.Get(k.KeyId)
 		kl.keyCache.Set(k.KeyId, k.Key)
 		if old == nil {
-			log.Println("Received new public key '%s'", k.KeyId)
+			log.Printf("Received new public key %q", k.KeyId)
 		} else if !reflect.DeepEqual(old, k.Key) {
-			log.Println("Received new public key for existing key '%s'", k.KeyId)
+			log.Printf("Received new public key for existing key %q", k.KeyId)
 		}
 	}
 
