@@ -3,10 +3,10 @@ package keys
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/coreos/dex/pkg/log"
 	"github.com/zalando/planb-tokeninfo/breaker"
 	"github.com/zalando/planb-tokeninfo/options"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"reflect"
 )
@@ -35,33 +35,33 @@ func (kl *cachingOpenIdProviderLoader) LoadKey(id string) (interface{}, error) {
 
 // Example: https://www.googleapis.com/oauth2/v3/certs
 func (kl *cachingOpenIdProviderLoader) refreshKeys() {
-	log.Info("Refreshing keys..")
+	log.Println("Refreshing keys..")
 
-	log.Info("Loading configuration..")
+	log.Println("Loading configuration..")
 	c, err := kl.loadConfiguration()
 	if err != nil {
-		log.Errorf("Failed to get configuration from %q. %s", kl.url, err)
+		log.Println("Failed to get configuration from %q. %s", kl.url, err)
 		return
 	}
 
-	log.Info("Configuration loaded successfully, loading JWKS..")
+	log.Println("Configuration loaded successfully, loading JWKS..")
 	resp, err := breaker.Do("loadKeys", c.JwksUri)
 	if err != nil {
-		log.Error("Failed to get JWKS from ", c.JwksUri)
+		log.Println("Failed to get JWKS from ", c.JwksUri)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error("Failed to read JWKS response body from %q: %v", c.JwksUri, err)
+		log.Println("Failed to read JWKS response body from %q: %v", c.JwksUri, err)
 		return
 	}
 
-	log.Info("JWKS loaded successfully, parsing JWKS..")
+	log.Println("JWKS loaded successfully, parsing JWKS..")
 	jwks := new(jsonWebKeySet)
 	if err = json.Unmarshal(body, jwks); err != nil {
-		log.Error("Failed to parse JWKS: ", err)
+		log.Println("Failed to parse JWKS: ", err)
 		return
 	}
 
@@ -69,13 +69,13 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 		var old = kl.keyCache.Get(k.KeyId)
 		kl.keyCache.Set(k.KeyId, k.Key)
 		if old == nil {
-			log.Infof("Received new public key '%s'", k.KeyId)
+			log.Println("Received new public key '%s'", k.KeyId)
 		} else if !reflect.DeepEqual(old, k.Key) {
-			log.Warningf("Received new public key for existing key '%s'", k.KeyId)
+			log.Println("Received new public key for existing key '%s'", k.KeyId)
 		}
 	}
 
-	log.Info("Refresh done..")
+	log.Println("Refresh done..")
 }
 
 func (kl *cachingOpenIdProviderLoader) loadConfiguration() (*configuration, error) {

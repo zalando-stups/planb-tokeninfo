@@ -4,7 +4,6 @@ GOOS ?= linux
 GOARCH ?= amd64
 
 SOURCES = $(shell find $(ROOT_DIR) -name "*.go")
-TARGET_NAME = z-skipper
 TARGET = build/planb-tokeninfo
 SCM = build/scm-source.json
 
