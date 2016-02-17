@@ -13,15 +13,9 @@ type cachingRevokeProvider struct {
 	cache *Cache
 }
 
-// TODO: move to config? Is one minute proper? Should it be longer?
-const defaultRefreshInterval = 60 * time.Second
-
-const REVOCATION_PROVIDER_URL = "REVOCATION_PROVIDER_URL"
-
-func newCachingRevokeProvider() *cachingRevokeProvider {
-	u := os.Getenv(REVOCATION_PROVIDER_URL)
-	crp := &cachingRevokeProvider{url: u, revockeCache: NewCache()}
-	schedule(defaultRefreshInterval, crp.refreshRevocations)
+func newCachingRevokeProvider(u url.URL) *cachingRevokeProvider {
+	crp := &cachingRevokeProvider{url: u.String(), revockeCache: NewCache()}
+	schedule(defaultRevokeProviderRefreshInterval, crp.refreshRevocations)
 	return crp
 }
 

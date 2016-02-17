@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// TODO;  move to config
 const EXPIRE_LENGTH = 8 * 60 * 60 // 8 hours
 
 // TODO: not sure how to handle GLOBAL, at the moment

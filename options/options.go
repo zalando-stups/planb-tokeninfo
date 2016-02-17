@@ -16,6 +16,7 @@ const (
 	defaultHttpClientTimeout             = 10 * time.Second
 	defaultHttpClientTlsTimeout          = 10 * time.Second
 	defaultHttpClientKeepAlive           = 30 * time.Second
+	defaultRevokeProviderRefreshInterval = 90 * time.Second
 )
 
 var (
@@ -23,6 +24,7 @@ var (
 	MetricsListenAddress           string
 	UpstreamTokenInfoUrl           *url.URL
 	OpenIdProviderConfigurationUrl *url.URL
+	RevocationProviderUrl          *url.URL
 	OpenIdProviderRefreshInterval  time.Duration
 	HttpClientTimeout              time.Duration
 	HttpClientTlsTimeout           time.Duration
@@ -47,6 +49,12 @@ func LoadFromEnvironment() {
 		log.Fatal("Missing OpenID provider configuration url")
 	}
 	OpenIdProviderConfigurationUrl = url
+
+	url, err = getUrl("REVOCATION_PROVIDER_URL")
+	if err != nil || url == nil {
+		log.Fatal("Invalid revocation provider URL")
+	}
+	RevocationProviderUrl = url
 
 	OpenIdProviderRefreshInterval = getDuration("OPENID_PROVIDER_REFRESH_INTERVAL", defaultOpenIdProviderRefreshInterval)
 	HttpClientTimeout = getDuration("HTTP_CLIENT_TIMEOUT", defaultHttpClientTimeout)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"gitbub.com/zalando/planb-tokeninfo/revoke"
 	gometrics "github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/healthcheck"
 	"github.com/zalando/planb-tokeninfo/handlers/metrics"
@@ -37,6 +38,7 @@ func main() {
 	ph := tokeninfoproxy.NewTokenInfoProxyHandler(options.UpstreamTokenInfoUrl)
 	kl := keys.NewCachingOpenIdProviderLoader(options.OpenIdProviderConfigurationUrl)
 	jh := jwthandler.NewJwtHandler(kl)
+	crp := revoke.newCachingRevokeProvider(options.RevocationProviderUrl)
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthcheck.Handler(fmt.Sprintf("OK\n%s", version)))
