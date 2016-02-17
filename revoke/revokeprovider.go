@@ -20,7 +20,7 @@ type cachingRevokeProvider struct {
 
 func NewCachingRevokeProvider(u *url.URL) *cachingRevokeProvider {
 	crp := &cachingRevokeProvider{url: u.String(), cache: NewCache()}
-	schedule(options.RevocationProviderRefreshInterval, crp.refreshRevocations)
+	schedule(options.AppSettings.RevocationProviderRefreshInterval, crp.refreshRevocations)
 	return crp
 }
 
@@ -30,7 +30,7 @@ func (crp *cachingRevokeProvider) refreshRevocations() {
 
 	ts := crp.cache.GetLastTS()
 	if ts == 0 {
-		ts = int(time.Now().UnixNano()/1e6) - int(options.RevokeExpireLength)
+		ts = int(time.Now().UnixNano()/1e6) - int(options.AppSettings.RevokeExpireLength)
 	}
 
 	resp, err := http.Get(crp.url + "?from=" + strconv.Itoa(ts))

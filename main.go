@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"gitbub.com/zalando/planb-tokeninfo/revoke"
 	gometrics "github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/healthcheck"
 	"github.com/zalando/planb-tokeninfo/handlers/jwks"
@@ -39,9 +40,10 @@ func main() {
 	ht.UserAgent = fmt.Sprintf("%v/%s", os.Args[0], version)
 	setupMetrics(settings)
 
-	ph := tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL, settings.UpstreamCacheMaxSize, settings.UpstreamCacheTTL)
-	kl := openid.NewCachingOpenIDProviderLoader(settings.OpenIDProviderConfigurationURL)
-	jh := jwthandler.New(kl)
+	ph := tokeninfoproxy.NewTokenInfoProxyHandler(options.UpstreamTokenInfoUrl)
+	kl := keys.NewCachingOpenIdProviderLoader(options.OpenIdProviderConfigurationUrl)
+	jh := jwthandler.NewJwtHandler(kl)
+	crp := revoke.newCachingRevokeProvider(options.RevocationProviderUrl)
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthcheck.NewHandler(kl, version))

@@ -123,7 +123,7 @@ func (c *Cache) Delete(key string) {
 
 func isExpired(ts int) bool {
 
-	if ts-int(options.RevokeExpireLength) < int(time.Now().UnixNano()/1e6) {
+	if ts-int(options.AppSettings.RevokeExpireLength) < int(time.Now().UnixNano()/1e6) {
 		return true
 	}
 
