@@ -9,6 +9,9 @@ import (
 )
 
 const (
+	defaultListenAddr        = ":9021"
+	defaultMetricsListenAddr = ":9020"
+
 	defaultOpenIdProviderRefreshInterval = 30 * time.Second
 	defaultHttpClientTimeout             = 10 * time.Second
 	defaultHttpClientTlsTimeout          = 10 * time.Second
@@ -16,6 +19,8 @@ const (
 )
 
 var (
+	ListenAddress                  string
+	MetricsListenAddress           string
 	UpstreamTokenInfoUrl           *url.URL
 	OpenIdProviderConfigurationUrl *url.URL
 	OpenIdProviderRefreshInterval  time.Duration
@@ -24,7 +29,10 @@ var (
 	HttpClientKeepAlive            time.Duration
 )
 
-func init() {
+func LoadFromEnvironment() {
+	ListenAddress = getString("LISTEN_ADDRESS", defaultListenAddr)
+	MetricsListenAddress = getString("METRICS_LISTEN_ADDRESS", defaultMetricsListenAddr)
+
 	url, err := getUrl("UPSTREAM_TOKENINFO_URL")
 	if err != nil {
 		log.Fatal("Error with the upstream url: ", err)
@@ -32,8 +40,11 @@ func init() {
 	UpstreamTokenInfoUrl = url
 
 	url, err = getUrl("OPENID_PROVIDER_CONFIGURATION_URL")
-	if err != nil {
-		log.Fatal("Error with the OpenID provider configuration url: ", err)
+	if err != nil || url == nil {
+		log.Fatal("Invalid OpenID provider configuration url: ", err)
+	}
+	if url.String() == "" {
+		log.Fatal("Missing OpenID provider configuration url")
 	}
 	OpenIdProviderConfigurationUrl = url
 
@@ -41,6 +52,13 @@ func init() {
 	HttpClientTimeout = getDuration("HTTP_CLIENT_TIMEOUT", defaultHttpClientTimeout)
 	HttpClientTlsTimeout = getDuration("HTTP_CLIENT_TLS_TIMEOUT", defaultHttpClientTlsTimeout)
 	HttpClientKeepAlive = getDuration("HTTP_CLIENT_KEEP_ALIVE", defaultHttpClientKeepAlive)
+}
+
+func getString(v string, def string) string {
+	if s := os.Getenv(v); s != "" {
+		return s
+	}
+	return def
 }
 
 func getUrl(v string) (*url.URL, error) {

@@ -5,5 +5,4 @@ import (
 )
 
 func TestConnectionPooling(t *testing.T) {
-
 }

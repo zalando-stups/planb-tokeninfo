@@ -2,6 +2,7 @@ package tokeninfo
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -20,5 +21,7 @@ var (
 func Error(w http.ResponseWriter, error TokenInfoError) {
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	w.WriteHeader(error.statusCode)
-	json.NewEncoder(w).Encode(error)
+	if err := json.NewEncoder(w).Encode(error); err != nil {
+		log.Println(err)
+	}
 }

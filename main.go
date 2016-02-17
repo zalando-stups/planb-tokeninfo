@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	gometrics "github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/healthcheck"
@@ -16,28 +15,22 @@ import (
 	"time"
 )
 
-const (
-	defaultListenAddr        = ":9021"
-	defaultMetricsListenAddr = ":9020"
-)
-
-var (
-	Version string = "0.0.1"
-)
+var version string = "0.0.1"
 
 func init() {
-	flag.Parse()
+	options.LoadFromEnvironment()
 }
 
 func setupMetrics() {
 	gometrics.RegisterRuntimeMemStats(gometrics.DefaultRegistry)
 	go gometrics.CaptureRuntimeMemStats(gometrics.DefaultRegistry, 60*time.Second)
 	http.Handle("/metrics", metrics.Default)
-	go http.ListenAndServe(defaultMetricsListenAddr, nil)
+	go http.ListenAndServe(options.MetricsListenAddress, nil)
 }
 
 func main() {
-	log.Printf("Started server at %v, /metrics endpoint at %v\n", defaultListenAddr, defaultMetricsListenAddr)
+	log.Printf("Started server at %v, /metrics endpoint at %v\n",
+		options.ListenAddress, options.MetricsListenAddress)
 
 	setupMetrics()
 
@@ -46,7 +39,7 @@ func main() {
 	jh := jwthandler.NewJwtHandler(kl)
 
 	mux := http.NewServeMux()
-	mux.Handle("/health", healthcheck.Handler(fmt.Sprintf("OK\n%s", Version)))
+	mux.Handle("/health", healthcheck.Handler(fmt.Sprintf("OK\n%s", version)))
 	mux.Handle("/oauth2/tokeninfo", tokeninfo.Handler(ph, jh))
-	log.Fatal(http.ListenAndServe(defaultListenAddr, mux))
+	log.Fatal(http.ListenAndServe(options.ListenAddress, mux))
 }
