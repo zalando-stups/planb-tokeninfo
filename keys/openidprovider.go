@@ -33,6 +33,10 @@ func (kl *cachingOpenIdProviderLoader) LoadKey(id string) (interface{}, error) {
 	return key, nil
 }
 
+func (kl *cachingOpenIdProviderLoader) Keys() map[string]interface{} {
+	return kl.keyCache.Snapshot()
+}
+
 // Example: https://www.googleapis.com/oauth2/v3/certs
 func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 	log.Println("Refreshing keys..")
@@ -40,7 +44,7 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 	log.Println("Loading configuration..")
 	c, err := kl.loadConfiguration()
 	if err != nil {
-		log.Println("Failed to get configuration from %q. %s", kl.url, err)
+		log.Printf("Failed to get configuration from %q. %s\n", kl.url, err)
 		return
 	}
 
@@ -54,12 +58,12 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Failed to read JWKS response body from %q: %v", c.JwksUri, err)
+		log.Printf("Failed to read JWKS response body from %q: %v\n", c.JwksUri, err)
 		return
 	}
 
 	log.Println("JWKS loaded successfully, parsing JWKS..")
-	jwks := new(jsonWebKeySet)
+	jwks := new(JsonWebKeySet)
 	if err = json.Unmarshal(body, jwks); err != nil {
 		log.Println("Failed to parse JWKS: ", err)
 		return
@@ -69,9 +73,9 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 		var old = kl.keyCache.Get(k.KeyId)
 		kl.keyCache.Set(k.KeyId, k.Key)
 		if old == nil {
-			log.Println("Received new public key '%s'", k.KeyId)
+			log.Printf("Received new public key %q", k.KeyId)
 		} else if !reflect.DeepEqual(old, k.Key) {
-			log.Println("Received new public key for existing key '%s'", k.KeyId)
+			log.Printf("Received new public key for existing key %q", k.KeyId)
 		}
 	}
 

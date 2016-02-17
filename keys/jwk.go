@@ -11,11 +11,11 @@ import (
 	"math/big"
 )
 
-type jsonWebKeySet struct {
-	Keys []jsonWebKey `json:"keys"`
+type JsonWebKeySet struct {
+	Keys []JsonWebKey `json:"keys"`
 }
 
-type jsonWebKey struct {
+type JsonWebKey struct {
 	Key       interface{}
 	KeyId     string
 	Algorithm string
@@ -106,7 +106,7 @@ func (key *jsonWebKeyHelper) toECDSA() (*ecdsa.PublicKey, error) {
 }
 
 // This assumes all keys are pub keys
-func (jwk *jsonWebKey) UnmarshalJSON(data []byte) (err error) {
+func (jwk *JsonWebKey) UnmarshalJSON(data []byte) (err error) {
 	var buf jsonWebKeyHelper
 	if err = json.Unmarshal(data, &buf); err != nil {
 		return err
@@ -123,7 +123,7 @@ func (jwk *jsonWebKey) UnmarshalJSON(data []byte) (err error) {
 	}
 
 	if err == nil {
-		*jwk = jsonWebKey{Key: key, KeyId: buf.Kid, Algorithm: buf.Alg, Use: buf.Use}
+		*jwk = JsonWebKey{Key: key, KeyId: buf.Kid, Algorithm: buf.Alg, Use: buf.Use}
 	}
 	return
 }
