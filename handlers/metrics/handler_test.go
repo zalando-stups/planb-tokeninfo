@@ -1,10 +1,11 @@
 package metrics
 
 import (
-	gometrics "github.com/rcrowley/go-metrics"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	gometrics "github.com/rcrowley/go-metrics"
 )
 
 const testJsonMetrics = `{"some.metric.key":{"15m.rate":0,"1m.rate":0,"5m.rate":0,"75%":0,"95%":0,"99%":0,"99.9%":0,"count":0,"max":0,"mean":0,"mean.rate":0,"median":0,"min":0,"stddev":0}}` + "\n"

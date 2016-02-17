@@ -3,12 +3,13 @@ package keys
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/zalando/planb-tokeninfo/breaker"
-	"github.com/zalando/planb-tokeninfo/options"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"reflect"
+
+	"github.com/zalando/planb-tokeninfo/breaker"
+	"github.com/zalando/planb-tokeninfo/options"
 )
 
 // http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig

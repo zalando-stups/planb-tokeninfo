@@ -1,10 +1,11 @@
 package jwthandler
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func TestTokenInfo(t *testing.T) {

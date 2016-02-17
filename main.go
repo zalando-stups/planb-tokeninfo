@@ -2,20 +2,23 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	gometrics "github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/healthcheck"
 	"github.com/zalando/planb-tokeninfo/handlers/metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/jwt"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/proxy"
+	"github.com/zalando/planb-tokeninfo/ht"
 	"github.com/zalando/planb-tokeninfo/keys"
 	"github.com/zalando/planb-tokeninfo/options"
-	"log"
-	"net/http"
-	"time"
 )
 
-var version string = "0.0.1"
+var version string
 
 func init() {
 	options.LoadFromEnvironment()
@@ -29,9 +32,9 @@ func setupMetrics() {
 }
 
 func main() {
-	log.Printf("Started server at %v, /metrics endpoint at %v\n",
-		options.ListenAddress, options.MetricsListenAddress)
-
+	log.Printf("Started server (%s) at %v, /metrics endpoint at %v\n",
+		version, options.ListenAddress, options.MetricsListenAddress)
+	ht.UserAgent = fmt.Sprintf("%v/%s", os.Args[0], version)
 	setupMetrics()
 
 	ph := tokeninfoproxy.NewTokenInfoProxyHandler(options.UpstreamTokenInfoUrl)
