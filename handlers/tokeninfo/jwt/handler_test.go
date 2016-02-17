@@ -22,17 +22,20 @@ var (
 
 	testECDSAPKey *ecdsa.PublicKey
 	testRSAPKey   *rsa.PublicKey
+
+	keyMap map[string]interface{}
 )
 
 func (kl *mockKeyLoader) LoadKey(id string) (interface{}, error) {
-	switch id {
-	case "RS256":
-		return testRSAPKey, nil
-	case "ES256":
-		return testECDSAPKey, nil
-	default:
+	key, has := keyMap[id]
+	if !has {
 		return nil, ErrInvalidKeyId
 	}
+	return key, nil
+}
+
+func (kl *mockKeyLoader) Keys() map[string]interface{} {
+	return keyMap
 }
 
 func init() {
@@ -51,6 +54,11 @@ func init() {
 
 	ecdsa, _ := ioutil.ReadFile("testdata/ecdsa.token")
 	testECDSAToken = string(ecdsa)
+
+	keyMap = map[string]interface{}{
+		"RS256": testRSAPKey,
+		"ES256": testECDSAPKey,
+	}
 }
 
 func TestHandler(t *testing.T) {

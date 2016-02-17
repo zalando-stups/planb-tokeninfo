@@ -13,13 +13,13 @@ import (
 func TestJwk(t *testing.T) {
 	for _, test := range []struct {
 		input      string
-		want       *jsonWebKeySet
+		want       *JsonWebKeySet
 		shouldFail bool
 	}{
 		{"", nil, true},
-		{"{}", &jsonWebKeySet{}, false},
-		{`{"foo":"bar"}`, &jsonWebKeySet{}, false},
-		{`{"keys":[]}`, &jsonWebKeySet{Keys: make([]jsonWebKey, 0)}, false},
+		{"{}", &JsonWebKeySet{}, false},
+		{`{"foo":"bar"}`, &JsonWebKeySet{}, false},
+		{`{"keys":[]}`, &JsonWebKeySet{Keys: make([]JsonWebKey, 0)}, false},
 		{`{"keys":[{"kty":"FOO"}]}`, nil, true},
 		{`{"keys":[{:}]}`, nil, true},
 		{`{"keys":[{"alg":"ESXXX","crv":"P-FOO","kid":"testkey","kty":"EC","use":"sign","x":"EA","y":"EA"}]}`, nil, true},
@@ -32,8 +32,8 @@ func TestJwk(t *testing.T) {
 		{`{"keys":[{"alg":"RS256","kid":"2011-04-29","kty":"RSA","use":"sign","n":"-"}]}`, nil, true},
 		{
 			`{"keys":[{"alg":"ES256","crv":"P-256","kid":"testkey","kty":"EC","use":"sign","x":"EA","y":"EA"}]}`,
-			&jsonWebKeySet{Keys: []jsonWebKey{
-				jsonWebKey{
+			&JsonWebKeySet{Keys: []JsonWebKey{
+				JsonWebKey{
 					Key: &ecdsa.PublicKey{
 						Curve: elliptic.P256(),
 						X:     big.NewInt(0x10),
@@ -46,8 +46,8 @@ func TestJwk(t *testing.T) {
 		},
 		{
 			`{"keys":[{"alg":"ES384","crv":"P-384","kid":"testkey","kty":"EC","use":"sign","x":"EA","y":"EA"}]}`,
-			&jsonWebKeySet{Keys: []jsonWebKey{
-				jsonWebKey{
+			&JsonWebKeySet{Keys: []JsonWebKey{
+				JsonWebKey{
 					Key: &ecdsa.PublicKey{
 						Curve: elliptic.P384(),
 						X:     big.NewInt(0x10),
@@ -60,8 +60,8 @@ func TestJwk(t *testing.T) {
 		},
 		{
 			`{"keys":[{"alg":"ES512","crv":"P-521","kid":"testkey","kty":"EC","use":"sign","x":"EA","y":"EA"}]}`,
-			&jsonWebKeySet{Keys: []jsonWebKey{
-				jsonWebKey{
+			&JsonWebKeySet{Keys: []JsonWebKey{
+				JsonWebKey{
 					Key: &ecdsa.PublicKey{
 						Curve: elliptic.P521(),
 						X:     big.NewInt(0x10),
@@ -74,8 +74,8 @@ func TestJwk(t *testing.T) {
 		},
 		{
 			`{"keys":[{"alg":"RS256","kid":"2011-04-29","kty":"RSA","use":"sign","e":"AQAB","n":"AQAB"}]}`,
-			&jsonWebKeySet{Keys: []jsonWebKey{
-				jsonWebKey{
+			&JsonWebKeySet{Keys: []JsonWebKey{
+				JsonWebKey{
 					Key: &rsa.PublicKey{
 						N: big.NewInt(65537),
 						E: 65537},
@@ -86,7 +86,7 @@ func TestJwk(t *testing.T) {
 			}}, false,
 		},
 	} {
-		jwks := new(jsonWebKeySet)
+		jwks := new(JsonWebKeySet)
 		if err := json.Unmarshal([]byte(test.input), jwks); err == nil {
 			if !reflect.DeepEqual(jwks, test.want) {
 				println()

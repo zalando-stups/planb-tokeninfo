@@ -20,24 +20,26 @@ type jwtHandler struct {
 func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	ti, err := h.validateToken(r)
-	if err != nil {
-		var tie tokeninfo.TokenInfoError
-		switch err {
-		case jwt.ErrNoTokenInRequest:
-			tie = tokeninfo.ErrInvalidRequest
-		default:
-			tie = tokeninfo.ErrInvalidToken
+	if err == nil && ti != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(ti); err != nil {
+			fmt.Println("Error serializing the token info: ", err)
+		} else {
+			measureRequest(start, fmt.Sprintf("planb.tokeinfo.jwt.%s.requests", ti.Realm))
 		}
-		registerError(tie)
-		tokeninfo.Error(w, tie)
-		log.Println(err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(ti)
-	measureRequest(start, fmt.Sprintf("planb.tokeinfo.jwt.%s.requests", ti.Realm))
+	var tie tokeninfo.TokenInfoError
+	switch err {
+	case jwt.ErrNoTokenInRequest:
+		tie = tokeninfo.ErrInvalidRequest
+	default:
+		tie = tokeninfo.ErrInvalidToken
+	}
+	registerError(tie)
+	tokeninfo.Error(w, tie)
 }
 
 func (h *jwtHandler) Match(r *http.Request) bool {
