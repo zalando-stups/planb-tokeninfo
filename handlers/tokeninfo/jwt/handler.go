@@ -26,7 +26,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(ti); err != nil {
 			fmt.Println("Error serializing the token info: ", err)
 		} else {
-			measureRequest(start, fmt.Sprintf("planb.tokeinfo.jwt.%s.requests", ti.Realm))
+			measureRequest(start, fmt.Sprintf("planb.tokeninfo.jwt.%s.requests", ti.Realm))
 		}
 		return
 	}
