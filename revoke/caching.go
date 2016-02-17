@@ -28,8 +28,11 @@ func NewCache() *Cache {
 	set := make(chan *request)
 	del := make(chan *request)
 	expire := make(chan bool)
+<<<<<<< HEAD
 	ts := make(chan *request)
 	cName := make(chan *request)
+=======
+>>>>>>> fixed build bugs. refactored json structs.
 
 	go func() {
 		c := make(map[string]interface{})
@@ -106,15 +109,25 @@ func (c *Cache) Add(rev *Revocation) {
 	var hash string
 	switch rev.Type {
 	case "TOKEN":
+<<<<<<< HEAD
 		hash = rev.Data["token_hash"].(string)
 	case "CLAIM":
 		hash = rev.Data["name"].(string) + rev.Data["value_hash"].(string)
+=======
+		hash = revoke.Data["token_hash"].(string)
+	case "CLAIM":
+		hash = revoke.Data["value_hash"].(string)
+>>>>>>> fixed build bugs. refactored json structs.
 	case "GLOBAL":
 		hash = "GLOBAL"
 	default:
 		return
 	}
+<<<<<<< HEAD
 	c.set <- &request{key: hash, val: rev}
+=======
+	c.set <- &request{key: hash, val: revoke}
+>>>>>>> fixed build bugs. refactored json structs.
 }
 
 func (c *Cache) Delete(key string) {
@@ -123,7 +136,11 @@ func (c *Cache) Delete(key string) {
 
 func isExpired(ts int) bool {
 
+<<<<<<< HEAD
 	if ts-int(options.AppSettings.RevokeExpireLength) < int(time.Now().UnixNano()/1e6) {
+=======
+	if ts-EXPIRE_LENGTH < int(time.Now().Unix()) {
+>>>>>>> fixed build bugs. refactored json structs.
 		return true
 	}
 
