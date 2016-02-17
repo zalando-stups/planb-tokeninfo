@@ -6,6 +6,7 @@ go:
   - 1.5.3
 
 before_install:
+  - go get ./...
   - go get github.com/modocache/gover
   - pip install --user codecov
 

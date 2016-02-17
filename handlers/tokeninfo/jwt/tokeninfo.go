@@ -2,8 +2,8 @@ package jwthandler
 
 import (
 	"errors"
-	"github.com/coreos/dex/pkg/log"
 	"github.com/dgrijalva/jwt-go"
+	"log"
 	"time"
 )
 
@@ -72,7 +72,7 @@ func claimAsStrings(t *jwt.Token, claim string) ([]string, bool) {
 	if c, ok := getClaim(t, claim); ok {
 		value, ok := c.([]interface{})
 		if !ok {
-			log.Debugf("Invalid string array value for claim %q = %v", claim, c)
+			log.Printf("Invalid string array value for claim %q = %v", claim, c)
 			return nil, false
 		}
 		strings := make([]string, len(value))
@@ -88,7 +88,7 @@ func claimAsString(t *jwt.Token, claim string) (string, bool) {
 	if c, ok := getClaim(t, claim); ok {
 		value, ok := c.(string)
 		if !ok {
-			log.Debugf("Invalid string value for claim %q = %v", claim, c)
+			log.Printf("Invalid string value for claim %q = %v", claim, c)
 			return "", false
 		}
 		return value, true
@@ -105,7 +105,7 @@ func claimAsInt64(t *jwt.Token, claim string) (int64, bool) {
 	case float64:
 		return int64(c.(float64)), true
 	default:
-		log.Debugf("Invalid number format for claim %q = %v", claim, c)
+		log.Printf("Invalid number format for claim %q = %v", claim, c)
 	}
 	return 0, false
 }
@@ -113,7 +113,7 @@ func claimAsInt64(t *jwt.Token, claim string) (int64, bool) {
 func getClaim(t *jwt.Token, claim string) (interface{}, bool) {
 	c, has := t.Claims[claim]
 	if !has {
-		log.Debugf("Missing claim %q for token %v", claim, t.Raw)
+		log.Printf("Missing claim %q for token %v", claim, t.Raw)
 		return "", false
 	}
 	return c, true

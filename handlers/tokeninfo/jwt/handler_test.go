@@ -108,20 +108,21 @@ func TestRoutingMatch(t *testing.T) {
 		req, _ := http.NewRequest("GET", test.url, nil)
 		match := h.Match(req)
 		if match != test.want {
-			t.Errorf("Matching fail for URL %q. Wanted %b, got %b", test.url, test.want, match)
+			t.Errorf("Matching fail for URL %q. Wanted %t, got %t", test.url, test.want, match)
 		}
 
 	}
 }
 
-func TestDefaultHandler(t *testing.T) {
-	h := DefaultJwtHandler()
+func TestHandlerCreation(t *testing.T) {
+	kl := new(mockKeyLoader)
+	h := NewJwtHandler(kl)
 	jh, ok := h.(*jwtHandler)
 	if !ok {
 		t.Fatalf("Wrong type for the handler = %v", reflect.TypeOf(h))
 	}
 
-	if jh.keyLoader == nil {
-		t.Error("Default handler doesn't have a key loader")
+	if jh.keyLoader != kl {
+		t.Error("Handler doesn't have the right key loader")
 	}
 }

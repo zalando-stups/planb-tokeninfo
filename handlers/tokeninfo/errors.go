@@ -2,7 +2,7 @@ package tokeninfo
 
 import (
 	"encoding/json"
-	"github.com/coreos/dex/pkg/log"
+	"log"
 	"net/http"
 )
 
@@ -21,8 +21,7 @@ var (
 func Error(w http.ResponseWriter, terr TokenInfoError) {
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	w.WriteHeader(terr.statusCode)
-	err := json.NewEncoder(w).Encode(terr)
-	if err != nil {
-		log.Infof("Failed to finish error response: %q", err)
+	if err := json.NewEncoder(w).Encode(terr); err != nil {
+		log.Println("Failed to finish error response: ", err)
 	}
 }

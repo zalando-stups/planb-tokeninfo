@@ -15,11 +15,10 @@ func TestHandler(t *testing.T) {
 
 	rw := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "http://example.com", nil)
-	h := Handler(gometrics.DefaultRegistry)
-	h.ServeHTTP(rw, r)
+	Default.ServeHTTP(rw, r)
 
 	if rw.Code != http.StatusOK {
-		t.Error("Metrics endpoint responded with wrong status code = %d", rw.Code)
+		t.Errorf("Metrics endpoint responded with wrong status code = %d", rw.Code)
 	}
 
 	if rw.Body.String() != testJsonMetrics {
