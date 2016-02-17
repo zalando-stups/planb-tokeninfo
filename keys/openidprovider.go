@@ -37,12 +37,14 @@ func (kl *cachingOpenIdProviderLoader) LoadKey(id string) (interface{}, error) {
 func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 	log.Info("Refreshing keys..")
 
+	log.Info("Loading configuration..")
 	c, err := kl.loadConfiguration()
 	if err != nil {
 		log.Errorf("Failed to get configuration from %q. %s", kl.url, err)
 		return
 	}
 
+	log.Info("Configuration loaded successfully, loading JWKS..")
 	resp, err := breaker.Do("loadKeys", c.JwksUri)
 	if err != nil {
 		log.Error("Failed to get JWKS from ", c.JwksUri)
@@ -50,7 +52,11 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("Failed to read JWKS response from %q: %v", c.JwksUri, err)
+	}
 
+	log.Info("JWKS loaded successfully, parsing JWKS..")
 	jwks := new(jsonWebKeySet)
 	if err = json.Unmarshal(body, jwks); err != nil {
 		log.Error("Failed to parse JWKS: ", err)
@@ -66,6 +72,8 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 			log.Warningf("Received new public key for existing key '%s'", k.KeyId)
 		}
 	}
+
+	log.Info("Refresh done..")
 }
 
 func (kl *cachingOpenIdProviderLoader) loadConfiguration() (*configuration, error) {
