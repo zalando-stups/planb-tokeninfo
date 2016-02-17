@@ -51,9 +51,11 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 		return
 	}
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Errorf("Failed to read JWKS response from %q: %v", c.JwksUri, err)
+		log.Error("Failed to read JWKS response body from %q: %v", c.JwksUri, err)
+		return
 	}
 
 	log.Info("JWKS loaded successfully, parsing JWKS..")

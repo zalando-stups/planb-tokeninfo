@@ -18,10 +18,10 @@ var (
 )
 
 // error response format for the token info endpoint
-func Error(w http.ResponseWriter, error TokenInfoError) {
+func Error(w http.ResponseWriter, terr TokenInfoError) {
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	w.WriteHeader(error.statusCode)
-	if err := json.NewEncoder(w).Encode(error); err != nil {
-		log.Println(err)
+	w.WriteHeader(terr.statusCode)
+	if err := json.NewEncoder(w).Encode(terr); err != nil {
+		log.Println("Failed to finish error response: ", err)
 	}
 }
