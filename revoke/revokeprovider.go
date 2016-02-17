@@ -1,8 +1,8 @@
 package revoke
 
 import (
-	"io.ioutil"
-	"net/nttp"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
