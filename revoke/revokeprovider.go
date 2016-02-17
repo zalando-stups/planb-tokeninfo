@@ -9,8 +9,8 @@ import (
 )
 
 type cachingRevokeProvider struct {
-	url         string
-	revokeCache *Cache
+	url   string
+	cache *Cache
 }
 
 // TODO: move to config? Is one minute proper? Should it be longer?
@@ -25,6 +25,7 @@ func newCachingRevokeProvider() *cachingRevokeProvider {
 	return crp
 }
 
+// TODO: I don't like how I'm doing the force refresh here.
 // if refreshTs is not an empty string, use that as the refresh time
 func (crp *cachingRevokeProvider) refreshRevocations(refreshTs string) {
 	log.Info("Refreshing revocations. . .")
@@ -39,9 +40,10 @@ func (crp *cachingRevokeProvider) refreshRevocations(refreshTs string) {
 		// TODO: do I need to remove all cache entries >= force refresh time?
 	}
 
+	// TODO refactor force refresh since what's below isn't going to work.
 	if !forceRefresh {
-		if crp.revokeCache.timestamp != nil {
-			c := <-crp.revokeCache.timestamp
+		if crp.cache.timestamp != nil {
+			c := <-crp.cache.timestamp
 			ts = "?from=" + strconv.Itoa(c)
 		}
 	}
@@ -64,5 +66,8 @@ func (crp *cachingRevokeProvider) refreshRevocations(refreshTs string) {
 	var r []Revocation
 	r.getRevocationFromJson(jr.Revocation)
 
-	// TODO: load the cache
+	for rev := range r {
+		rev.cache.Add(&rev)
+	}
+
 }

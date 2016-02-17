@@ -72,7 +72,6 @@ func (r []*Revocation) getRevocationFromJson(json *jsonRevoke.Revocation) {
 				log.Errorf("Invalid revocation data. ValueHash: %s, IssuedBefore: %s", j.Data.ValueHash, j.Data.IssuedBefore)
 				continue
 			}
-			r.Claims[j.Data.Name][j.Data.ValueHash] = i
 			r.Data["value_hash"] = j.Data.ValueHash
 			r.Data["issued_before"] = j.Data.IssuedBefore
 			r.Data["name"] = j.Data.Name
@@ -99,7 +98,7 @@ func isHashTimestampValid(hash, timestamp string) bool {
 		return false
 	}
 
-	_i, err := strconv.Atoi(timestamp)
+	_, err := strconv.Atoi(timestamp)
 	if err != nil {
 		log.Errorf("Erorr converting timestamp to int. " + err.Error())
 		return false
