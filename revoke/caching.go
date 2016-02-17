@@ -44,7 +44,7 @@ func NewCache() *Cache {
 					}
 				}
 			case r := <-get:
-				r.res <- c[r.key]
+				r.val <- c[r.key]
 			}
 		}
 	}()
