@@ -3,14 +3,15 @@ package jwthandler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/rcrowley/go-metrics"
-	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
-	"github.com/zalando/planb-tokeninfo/keys"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/rcrowley/go-metrics"
+	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
+	"github.com/zalando/planb-tokeninfo/keys"
 )
 
 type jwtHandler struct {

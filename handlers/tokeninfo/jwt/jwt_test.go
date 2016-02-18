@@ -1,8 +1,9 @@
 package jwthandler
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"testing"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func TestLoadKey(t *testing.T) {
