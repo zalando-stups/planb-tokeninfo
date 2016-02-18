@@ -60,12 +60,13 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 
 	t := int(time.Now().Unix())
 
+	r.Data = make(map[string]interface{})
 	switch j.Type {
 	case "TOKEN":
 		valid := isHashTimestampValid(j.Data.TokenHash, j.Data.RevokedAt)
 		if !valid {
 			log.Println("Invalid revocation data. TokenHash: %s, RevokedAt: %s", j.Data.TokenHash, j.Data.RevokedAt)
-			continue
+			return
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
 		r.Data["revoked_at"] = j.Data.RevokedAt
@@ -73,7 +74,7 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore)
 		if !valid {
 			log.Println("Invalid revocation data. ValueHash: %s, IssuedBefore: %s", j.Data.ValueHash, j.Data.IssuedBefore)
-			continue
+			return
 		}
 		r.Data["value_hash"] = j.Data.ValueHash
 		r.Data["issued_before"] = j.Data.IssuedBefore
@@ -82,12 +83,12 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 		_, err := strconv.Atoi(j.Data.IssuedBefore)
 		if err != nil {
 			log.Println("Erorr converting IssuedBefore to int. " + err.Error())
-			continue
+			return
 		}
 		r.Data["issued_before"] = j.Data.IssuedBefore
 	default:
 		log.Println("Unsupported revocation type: %s", j.Type)
-		continue
+		return
 	}
 
 	r.Type = j.Type

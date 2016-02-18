@@ -37,14 +37,14 @@ func NewCache() *Cache {
 				c[r.key] = r.val
 			case r := <-del:
 				delete(c, r.key)
-			case r := <-expire:
+			case <-expire:
 				for key, revocation := range c {
 					if isExpired(revocation.Timestamp) {
 						delete(c, key)
 					}
 				}
 			case r := <-get:
-				r.val <- c[r.key]
+				r.res <- c[r.key]
 			}
 		}
 	}()

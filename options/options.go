@@ -20,15 +20,16 @@ const (
 )
 
 var (
-	ListenAddress                  string
-	MetricsListenAddress           string
-	UpstreamTokenInfoUrl           *url.URL
-	OpenIdProviderConfigurationUrl *url.URL
-	RevocationProviderUrl          *url.URL
-	OpenIdProviderRefreshInterval  time.Duration
-	HttpClientTimeout              time.Duration
-	HttpClientTlsTimeout           time.Duration
-	HttpClientKeepAlive            time.Duration
+	ListenAddress                     string
+	MetricsListenAddress              string
+	UpstreamTokenInfoUrl              *url.URL
+	OpenIdProviderConfigurationUrl    *url.URL
+	RevocationProviderUrl             *url.URL
+	OpenIdProviderRefreshInterval     time.Duration
+	HttpClientTimeout                 time.Duration
+	HttpClientTlsTimeout              time.Duration
+	HttpClientKeepAlive               time.Duration
+	RevocationProviderRefreshInterval time.Duration
 )
 
 func LoadFromEnvironment() {
@@ -60,7 +61,7 @@ func LoadFromEnvironment() {
 	HttpClientTimeout = getDuration("HTTP_CLIENT_TIMEOUT", defaultHttpClientTimeout)
 	HttpClientTlsTimeout = getDuration("HTTP_CLIENT_TLS_TIMEOUT", defaultHttpClientTlsTimeout)
 	HttpClientKeepAlive = getDuration("HTTP_CLIENT_KEEP_ALIVE", defaultHttpClientKeepAlive)
-	RevocationProviderRefreshInterval = getDurations("REVOCATION_PROVIDER_REFRESH_INTERVAL", defaultRevokeProviderRefreshInterval)
+	RevocationProviderRefreshInterval = getDuration("REVOCATION_PROVIDER_REFRESH_INTERVAL", defaultRevokeProviderRefreshInterval)
 }
 
 func getString(v string, def string) string {
