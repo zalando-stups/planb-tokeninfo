@@ -5,7 +5,10 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/afex/hystrix-go/hystrix"
+	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
+	"time"
 )
 
 type tokenInfoProxyHandler struct {
@@ -15,8 +18,6 @@ type tokenInfoProxyHandler struct {
 func hostModifier(upstreamUrl *url.URL, original func(req *http.Request)) func(req *http.Request) {
 	return func(req *http.Request) {
 		original(req)
-		// request upstream tokeninfo with correct host and path
-		// (httputil.ReverseProxy would otherwise concatenate paths)
 		req.Host = upstreamUrl.Host
 		req.URL.Path = upstreamUrl.Path
 	}
@@ -28,7 +29,13 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		tokeninfo.Error(w, tokeninfo.ErrInvalidRequest)
 		return
 	}
-	h.upstream.ServeHTTP(w, req)
+	hystrix.Do("proxy", func() error {
+		start := time.Now()
+		h.upstream.ServeHTTP(w, req)
+		t := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy", metrics.NewTimer).(metrics.Timer)
+		t.UpdateSince(start)
+		return nil
+	}, nil)
 }
 
 func NewTokenInfoProxyHandler(url *url.URL) http.Handler {
