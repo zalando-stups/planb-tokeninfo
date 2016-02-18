@@ -49,6 +49,13 @@ Now we can test our token info endpoint with a valid JWT access token:
     $ # simple GET query parameter works too (not recommended!)
     $ curl localhost:9021/oauth2/tokeninfo?access_token=MjoxLjUuMS0wdW..
 
+Running with Docker:
+
+.. code-block:: bash
+
+    $ TAG=$(curl https://registry.opensource.zalan.do/teams/stups/artifacts/planb-tokeninfo/tags | jq -r .[].name | tail -n 1)
+    $ docker run -it -v /etc/ssl/certs:/etc/ssl/certs -p 9021:9021 -e OPENID_PROVIDER_CONFIGURATION_URL=https://planb-provider.example.org/.well-known/openid-configuration registry.opensource.zalan.do/stups/planb-tokeninfo:$TAG
+
 Configuration
 =============
 
