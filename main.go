@@ -42,7 +42,7 @@ func main() {
 	jh := jwthandler.NewJwtHandler(kl)
 
 	mux := http.NewServeMux()
-	mux.Handle("/health", healthcheck.Handler(fmt.Sprintf("OK\n%s", version)))
+	mux.Handle("/health", healthcheck.Handler(kl, version))
 	mux.Handle("/oauth2/tokeninfo", tokeninfo.Handler(ph, jh))
 	log.Fatal(http.ListenAndServe(options.ListenAddress, mux))
 }

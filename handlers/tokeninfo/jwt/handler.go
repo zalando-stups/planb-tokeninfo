@@ -18,6 +18,10 @@ type jwtHandler struct {
 	keyLoader keys.KeyLoader
 }
 
+func NewJwtHandler(kl keys.KeyLoader) tokeninfo.TokenInfoHandler {
+	return &jwtHandler{keyLoader: kl}
+}
+
 func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	ti, err := h.validateToken(r)
@@ -43,17 +47,6 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tokeninfo.Error(w, tie)
 }
 
-func (h *jwtHandler) Match(r *http.Request) bool {
-	token := tokeninfo.AccessTokenFromRequest(r)
-	if token == "" {
-		return false
-	}
-
-	parts := strings.Split(token, ".")
-
-	return len(parts) == 3
-}
-
 func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	start := time.Now()
 	token, err := jwt.ParseFromRequest(req, jwtValidator(h.keyLoader))
@@ -68,17 +61,26 @@ func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	}
 }
 
-func NewJwtHandler(kl keys.KeyLoader) tokeninfo.TokenInfoHandler {
-	return &jwtHandler{keyLoader: kl}
+func (h *jwtHandler) Match(r *http.Request) bool {
+	token := tokeninfo.AccessTokenFromRequest(r)
+	if token == "" {
+		return false
+	}
+
+	parts := strings.Split(token, ".")
+
+	return len(parts) == 3
 }
 
 func measureRequest(start time.Time, key string) {
-	t := metrics.DefaultRegistry.GetOrRegister(key, metrics.NewTimer).(metrics.Timer)
-	t.UpdateSince(start)
+	if t, ok := metrics.DefaultRegistry.GetOrRegister(key, metrics.NewTimer).(metrics.Timer); ok {
+		t.UpdateSince(start)
+	}
 }
 
 func registerError(err tokeninfo.TokenInfoError) {
 	key := fmt.Sprintf("planb.tokeninfo.jwt.errors.%s", err.Error)
-	c := metrics.DefaultRegistry.GetOrRegister(key, metrics.NewCounter).(metrics.Counter)
-	c.Inc(1)
+	if c, ok := metrics.DefaultRegistry.GetOrRegister(key, metrics.NewCounter).(metrics.Counter); ok {
+		c.Inc(1)
+	}
 }
