@@ -57,3 +57,74 @@ func TestLoadKeys(t *testing.T) {
 		t.Errorf("Wrong value in the Y coordinate of the key %q", k.Y.String())
 	}
 }
+
+func TestRevokeKeys(t *testing.T) {
+	var listener string
+
+	kc := NewCache()
+	kc.Set("oldkey", []byte(`stuff`))
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if req.URL.Path == "/.well-known/openid-configuration" {
+			w.Write([]byte(`{"issuer": "PlanB", "jwks_uri": "` + listener + `/oauth2/v3/certs"}`))
+		} else {
+			w.Write([]byte(`{
+			  "keys": [
+			    {
+		"alg": "ES256",
+		"crv": "P-256",
+		"kid": "testkey",
+		"kty": "EC",
+		"use": "sign",
+		"x":   "_5Z_cB5zhjVCt_GMfiC6sSBos0podt-YJicV6_GzDD0",
+		"y":   "02LHDzZYup0SlbuqjNPBhr2X_LGamSgRidzKXsA0TFs"
+			    }
+			  ]
+			}`))
+		}
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	kl := &cachingOpenIdProviderLoader{url: listener + "/.well-known/openid-configuration", keyCache: kc}
+	kl.refreshKeys()
+	testkey := kl.keyCache.Get("testkey")
+
+	if testkey == nil {
+		t.Error("Failed to load key `testkey`")
+	}
+
+	oldkey := kl.keyCache.Get("oldkey")
+	if oldkey != nil {
+		t.Error("Failed to revoke key `oldkey`")
+	}
+}
+
+func TestIgnoreEmptyKeys(t *testing.T) {
+	var listener string
+
+	kc := NewCache()
+	kc.Set("oldkey", []byte(`stuff`))
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if req.URL.Path == "/.well-known/openid-configuration" {
+			w.Write([]byte(`{"issuer": "PlanB", "jwks_uri": "` + listener + `/oauth2/v3/certs"}`))
+		} else {
+			w.Write([]byte(`{}`))
+		}
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	kl := &cachingOpenIdProviderLoader{url: listener + "/.well-known/openid-configuration", keyCache: kc}
+	kl.refreshKeys()
+
+	oldkey := kl.keyCache.Get("oldkey")
+	if oldkey == nil {
+		t.Error("`oldkey` should not have been revoked")
+	}
+}

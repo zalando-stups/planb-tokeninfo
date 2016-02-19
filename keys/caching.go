@@ -10,6 +10,7 @@ type operation int
 const (
 	get operation = iota
 	set
+	del
 	snapshot
 )
 
@@ -48,6 +49,9 @@ func doOp(m map[string]interface{}, r *request) interface{} {
 		return r.value
 	case get:
 		return m[r.key]
+	case del:
+		delete(m, r.key)
+		return r.key
 	case snapshot:
 		newMap := make(map[string]interface{})
 		for k, v := range m {
@@ -68,6 +72,12 @@ func (c *Cache) Get(key string) interface{} {
 func (c *Cache) Set(key string, value interface{}) interface{} {
 	response := make(chan interface{})
 	c.req <- &request{key: key, value: value, response: response, op: set}
+	return <-response
+}
+
+func (c *Cache) Delete(key string) interface{} {
+	response := make(chan interface{})
+	c.req <- &request{key: key, response: response, op: del}
 	return <-response
 }
 

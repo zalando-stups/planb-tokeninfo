@@ -70,13 +70,32 @@ func (kl *cachingOpenIdProviderLoader) refreshKeys() {
 		return
 	}
 
+	oldkeys := kl.keyCache.Snapshot()
+	newkeys := make(map[string]bool)
 	for _, k := range jwks.Keys {
+		// remember all new/current key IDs
+		newkeys[k.KeyId] = true
 		var old = kl.keyCache.Get(k.KeyId)
 		kl.keyCache.Set(k.KeyId, k.Key)
 		if old == nil {
 			log.Printf("Received new public key %q", k.KeyId)
 		} else if !reflect.DeepEqual(old, k.Key) {
+			// this is potentially dangerous: the key contents changed..
+			// (but maybe the key wasn't used for signing yet, so it might be ok)
 			log.Printf("Received new public key for existing key %q", k.KeyId)
+		}
+	}
+
+	// safety first: only remove public keys if our newly
+	// received list contains at least one public key!
+	// (we don't want our tokeninfo to run out of public keys
+	// just because somebody cleared the provider database)
+	if len(newkeys) > 0 {
+		for key, _ := range oldkeys {
+			if !newkeys[key] {
+				log.Printf("Removing revoked public key %q..", key)
+				kl.keyCache.Delete(key)
+			}
 		}
 	}
 
