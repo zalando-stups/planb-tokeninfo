@@ -106,3 +106,5 @@ func TestGetRevocationFromJSONInvalid(t *testing.T) {
 		t.Errorf("Revocation type shouldn't be valid.")
 	}
 }
+
+// vim: ts=4 sw=4 noexpandtab nolist syn=go

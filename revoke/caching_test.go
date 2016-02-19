@@ -1,6 +1,7 @@
 package revoke
 
 import (
+	"strconv"
 	"testing"
 	"time"
 )
@@ -31,16 +32,34 @@ func TestCaching(t *testing.T) {
 		t.Errorf("Failed to find value 'hash' in cache.")
 	}
 
-	cache.Delete("hash")
-	if len(cache.set) != 0 {
-		t.Errorf("Error deleting 'hash' from cache.")
+	revData2 := make(map[string]interface{})
+	revData2["token_hash"] = "hash2"
+	revData2["revoked_at"] = strconv.Itoa(int(time.Now().Unix()))
+	rev2 := &Revocation{Type: "TOKEN", Data: revData2, Timestamp: int(time.Now().Unix())}
+	cache.Add(rev2)
+
+	cache.Delete("hash2")
+	if cache.Get("hash2") != nil {
+		t.Errorf("Cache value 'hash2' should be deleted.")
 	}
 
-	cache.Add(rev)
 	cache.Expire()
-	time.Sleep(1 * time.Second)
-
-	if len(cache.set) != 0 {
-		t.Errorf("Error deleting 'hash' from cache.")
+	if cache.Get("hash") != nil {
+		t.Errorf("Cache value 'hash' should have expired.")
 	}
+
+	revData3 := make(map[string]interface{})
+	revData3["token_hash"] = "hash"
+	revData3["revoked_at"] = "20000000"
+
+	rev3 := &Revocation{Type: "TOKEN", Data: revData, Timestamp: 2000000}
+
+	cache.Add(rev3)
+
+	if cache.GetLastTS() != "2000000" {
+		t.Errorf("Error getting last pull timestamp. Expected: 2,000,000. Actual: %d", cache.GetLastTS())
+	}
+
 }
+
+// vim: ts=4 sw=4 noexpandtab nolist syn=go
