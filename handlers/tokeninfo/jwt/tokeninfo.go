@@ -24,7 +24,7 @@ var (
 
 type TokenInfo struct {
 	AccessToken  string   `json:"access_token"`
-	RefreshToken string   `json:"refresh_token"`
+	RefreshToken string   `json:"refresh_token,omitempty"`
 	Uid          string   `json:"uid"`
 	GrantType    string   `json:"grant_type"`
 	OpenId       string   `json:"open_id"`
