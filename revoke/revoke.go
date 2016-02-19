@@ -110,3 +110,5 @@ func isHashTimestampValid(hash, timestamp string) bool {
 	return true
 
 }
+
+// vim: ts=4 sw=4 noexpandtab nolist syn=go

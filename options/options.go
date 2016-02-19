@@ -17,11 +17,15 @@ const (
 	defaultHttpClientTlsTimeout          = 10 * time.Second
 	defaultHttpClientKeepAlive           = 30 * time.Second
 	defaultRevokeProviderRefreshInterval = 90 * time.Second
+	defaultRevokeExpireLength            = 8 * 60 * time.Second
+
+	defaultHashingSalt = "seasaltisthebest"
 )
 
 var (
 	ListenAddress                     string
 	MetricsListenAddress              string
+	HashingSalt                       string
 	UpstreamTokenInfoUrl              *url.URL
 	OpenIdProviderConfigurationUrl    *url.URL
 	RevocationProviderUrl             *url.URL
@@ -30,6 +34,7 @@ var (
 	HttpClientTlsTimeout              time.Duration
 	HttpClientKeepAlive               time.Duration
 	RevocationProviderRefreshInterval time.Duration
+	RevokeExpireLength                time.Duration
 )
 
 func LoadFromEnvironment() {
@@ -62,6 +67,8 @@ func LoadFromEnvironment() {
 	HttpClientTlsTimeout = getDuration("HTTP_CLIENT_TLS_TIMEOUT", defaultHttpClientTlsTimeout)
 	HttpClientKeepAlive = getDuration("HTTP_CLIENT_KEEP_ALIVE", defaultHttpClientKeepAlive)
 	RevocationProviderRefreshInterval = getDuration("REVOCATION_PROVIDER_REFRESH_INTERVAL", defaultRevokeProviderRefreshInterval)
+	RevokeExpireLength = getDuration("REVOCATION_EXPIRE_LENGTH", defaultRevokeExpireLength)
+	HashingSalt = getString("HASHING_SALT", defaultHashingSalt)
 }
 
 func getString(v string, def string) string {

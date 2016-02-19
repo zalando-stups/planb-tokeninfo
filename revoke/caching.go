@@ -1,11 +1,10 @@
 package revoke
 
 import (
+	"github.com/zalando/planb-tokeninfo/options"
+	"strconv"
 	"time"
 )
-
-// TODO;  move to config
-const EXPIRE_LENGTH = 8 * 60 * 60 // 8 hours
 
 // TODO: not sure how to handle GLOBAL, at the moment
 type Cache struct {
@@ -13,6 +12,7 @@ type Cache struct {
 	set    chan *request
 	del    chan *request
 	expire chan bool
+	ts     chan *request
 }
 
 type request struct {
@@ -27,6 +27,7 @@ func NewCache() *Cache {
 	set := make(chan *request)
 	del := make(chan *request)
 	expire := make(chan bool)
+	ts := make(chan *request)
 
 	go func() {
 		c := make(map[string]*Revocation)
@@ -43,13 +44,23 @@ func NewCache() *Cache {
 						delete(c, key)
 					}
 				}
+			case r := <-ts:
+				t := 0
+				key := ""
+				for k, rev := range c {
+					if rev.Timestamp > t {
+						t = rev.Timestamp
+						key = k
+					}
+				}
+				r.res <- c[key]
 			case r := <-get:
 				r.res <- c[r.key]
 			}
 		}
 	}()
 
-	return &Cache{get: get, set: set, del: del, expire: expire}
+	return &Cache{get: get, set: set, del: del, expire: expire, ts: ts}
 }
 
 func (c *Cache) Get(key string) *Revocation {
@@ -58,23 +69,33 @@ func (c *Cache) Get(key string) *Revocation {
 	return <-res
 }
 
+func (c *Cache) GetLastTS() string {
+	res := make(chan *Revocation)
+	c.ts <- &request{res: res}
+	r := <-res
+	if r.Timestamp == 0 {
+		return ""
+	}
+	return strconv.Itoa(r.Timestamp)
+}
+
 func (c *Cache) Expire() {
 	c.expire <- true
 }
 
-func (c *Cache) Add(revoke *Revocation) {
+func (c *Cache) Add(rev *Revocation) {
 	var hash string
-	switch revoke.Type {
+	switch rev.Type {
 	case "TOKEN":
-		hash = revoke.Data["token_hash"].(string)
+		hash = rev.Data["token_hash"].(string)
 	case "CLAIM":
-		hash = revoke.Data["value_hash"].(string)
+		hash = rev.Data["value_hash"].(string)
 	case "GLOBAL":
-	// TODO
+		hash = "GLOBAL"
 	default:
 		return
 	}
-	c.set <- &request{key: hash, val: revoke}
+	c.set <- &request{key: hash, val: rev}
 }
 
 func (c *Cache) Delete(key string) {
@@ -83,9 +104,11 @@ func (c *Cache) Delete(key string) {
 
 func isExpired(ts int) bool {
 
-	if ts-EXPIRE_LENGTH < int(time.Now().Unix()) {
+	if ts-int(options.RevokeExpireLength) < int(time.Now().Unix()) {
 		return true
 	}
 
 	return false
 }
+
+// vim: ts=4 sw=4 noexpandtab nolist syn=go

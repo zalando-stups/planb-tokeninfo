@@ -27,9 +27,12 @@ func NewCachingRevokeProvider(u *url.URL) *cachingRevokeProvider {
 // TODO: force refresh
 func (crp *cachingRevokeProvider) refreshRevocations() {
 
-	ts := getLastPullTimestamp(crp.cache.set)
+	ts := crp.cache.GetLastTS()
+	if ts == "" {
+		ts = strconv.Itoa(int(time.Now().Unix()) - int(options.RevokeExpireLength))
+	}
 
-	resp, err := http.Get(crp.url + ts)
+	resp, err := http.Get(crp.url + "?from=" + ts)
 	if err != nil {
 		log.Println("Failed to get revocations. " + err.Error())
 		return
@@ -55,18 +58,22 @@ func (crp *cachingRevokeProvider) refreshRevocations() {
 }
 
 // TODO not sure how we are storing the claims in a token; check.
-// TODO not sure how to get a hash for the token
+// TODO not sure how to get a hash for the token. kid?
 func (crp *cachingRevokeProvider) isJWTRevoked(j *jwt.Token) bool {
 
-	// TODO check if global revoke
 	// TODO swtich time.Now() with the time the token was issued.
-	claim := j.Claims["name"].(string)
-	ch := hashTokenClaim(claim)
+	if r := crp.cache.Get("GLOBAL"); r != nil && r.Timestamp < int(time.Now().Unix()) {
+		return true
+	}
+
+	sub := j.Claims["sub"].(string)
+	scope := j.Claims["scope"].(string)
+	ch := hashTokenClaim(sub + scope)
 	if r := crp.cache.Get(ch); r != nil && r.Timestamp > int(time.Now().Unix()) {
 		return true
 	}
 
-	token := j.Header["TODO"].(string)
+	token := j.Claims["access_token"].(string)
 	th := hashTokenClaim(token)
 	if r := crp.cache.Get(th); r != nil && r.Timestamp < int(time.Now().Unix()) {
 		return true
@@ -75,26 +82,14 @@ func (crp *cachingRevokeProvider) isJWTRevoked(j *jwt.Token) bool {
 	return false
 }
 
-// TODO check with revocation devs to see what kind of hash is going to be used and salt
 func hashTokenClaim(h string) string {
 
-	buf := []byte(h)
+	salt := options.HashingSalt
+	buf := []byte(salt + h)
 	hasher := sha3.New256()
 	hasher.Write(buf)
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 
 }
 
-func getLastPullTimestamp(c chan *request) string {
-	var ts int
-
-	for req := range c {
-		if req.val.Timestamp < ts {
-			req.val.Timestamp = ts
-		}
-	}
-
-	lastreq := strconv.Itoa(ts)
-
-	return lastreq
-}
+// vim: ts=4 sw=4 noexpandtab nolist syn=go
