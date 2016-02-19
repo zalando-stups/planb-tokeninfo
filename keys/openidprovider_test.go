@@ -8,6 +8,49 @@ import (
 	"testing"
 )
 
+func TestLoadConfigurationFailure(t *testing.T) {
+	var listener string
+
+	kc := NewCache()
+	kc.Set("oldkey", []byte(`stuff`))
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	kl := &cachingOpenIdProviderLoader{url: listener + "/.well-known/openid-configuration", keyCache: kc}
+	kl.refreshKeys()
+
+	if kc.Get("oldkey") == nil {
+		t.Error("`oldkey` should still be in cache")
+	}
+}
+
+func TestLoadJwksUriFailure(t *testing.T) {
+	var listener string
+
+	kc := NewCache()
+	kc.Set("oldkey", []byte(`stuff`))
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"issuer": "PlanB", "jwks_uri": "` + listener + `/oauth2/v3/certs"}`))
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	kl := &cachingOpenIdProviderLoader{url: listener + "/.well-known/openid-configuration", keyCache: kc}
+	kl.refreshKeys()
+
+	if kc.Get("oldkey") == nil {
+		t.Error("`oldkey` should still be in cache")
+	}
+}
+
 func TestLoadKeys(t *testing.T) {
 	var listener string
 
