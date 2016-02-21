@@ -15,18 +15,20 @@ type tokenInfoProxyHandler struct {
 	upstream *httputil.ReverseProxy
 }
 
-func hostModifier(upstreamUrl *url.URL, original func(req *http.Request)) func(req *http.Request) {
-	return func(req *http.Request) {
-		original(req)
-		req.Host = upstreamUrl.Host
-		req.URL.Path = upstreamUrl.Path
-	}
+// NewTokenInfoProxyHandler returns an http.Handler that proxies every Request to the server
+// at the upstreamURL
+func NewTokenInfoProxyHandler(upstreamURL *url.URL) http.Handler {
+	p := httputil.NewSingleHostReverseProxy(upstreamURL)
+	p.Director = hostModifier(upstreamURL, p.Director)
+	return &tokenInfoProxyHandler{upstream: p}
 }
 
+// ServeHTTP proxies the Request with an Access Token to the upstream and sends back the response
+// from the upstream
 func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	token := tokeninfo.AccessTokenFromRequest(req)
 	if token == "" {
-		tokeninfo.Error(w, tokeninfo.ErrInvalidRequest)
+		tokeninfo.WriteError(w, tokeninfo.ErrInvalidRequest)
 		return
 	}
 	hystrix.Do("proxy", func() error {
@@ -38,8 +40,10 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 	}, nil)
 }
 
-func NewTokenInfoProxyHandler(url *url.URL) http.Handler {
-	p := httputil.NewSingleHostReverseProxy(url)
-	p.Director = hostModifier(url, p.Director)
-	return &tokenInfoProxyHandler{upstream: p}
+func hostModifier(upstreamURL *url.URL, original func(req *http.Request)) func(req *http.Request) {
+	return func(req *http.Request) {
+		original(req)
+		req.Host = upstreamURL.Host
+		req.URL.Path = upstreamURL.Path
+	}
 }

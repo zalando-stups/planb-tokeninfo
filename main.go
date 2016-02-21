@@ -14,35 +14,36 @@ import (
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/jwt"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/proxy"
 	"github.com/zalando/planb-tokeninfo/ht"
-	"github.com/zalando/planb-tokeninfo/keys"
+	"github.com/zalando/planb-tokeninfo/keyloader/openid"
 	"github.com/zalando/planb-tokeninfo/options"
 )
 
 var version string
 
-func init() {
-	options.LoadFromEnvironment()
-}
-
-func setupMetrics() {
+func setupMetrics(s *options.Settings) {
 	gometrics.RegisterRuntimeMemStats(gometrics.DefaultRegistry)
 	go gometrics.CaptureRuntimeMemStats(gometrics.DefaultRegistry, 60*time.Second)
 	http.Handle("/metrics", metrics.Default)
-	go http.ListenAndServe(options.MetricsListenAddress, nil)
+	go http.ListenAndServe(s.MetricsListenAddress, nil)
 }
 
 func main() {
-	log.Printf("Started server (%s) at %v, /metrics endpoint at %v\n",
-		version, options.ListenAddress, options.MetricsListenAddress)
-	ht.UserAgent = fmt.Sprintf("%v/%s", os.Args[0], version)
-	setupMetrics()
+	if err := options.LoadFromEnvironment(); err != nil {
+		log.Fatal(err)
+	}
+	settings := options.AppSettings
 
-	ph := tokeninfoproxy.NewTokenInfoProxyHandler(options.UpstreamTokenInfoUrl)
-	kl := keys.NewCachingOpenIdProviderLoader(options.OpenIdProviderConfigurationUrl)
-	jh := jwthandler.NewJwtHandler(kl)
+	log.Printf("Started server (%s) at %v, /metrics endpoint at %v\n",
+		version, settings.ListenAddress, settings.MetricsListenAddress)
+	ht.UserAgent = fmt.Sprintf("%v/%s", os.Args[0], version)
+	setupMetrics(settings)
+
+	ph := tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL)
+	kl := openid.NewCachingOpenIDProviderLoader(settings.OpenIDProviderConfigurationURL)
+	jh := jwthandler.New(kl)
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthcheck.Handler(kl, version))
-	mux.Handle("/oauth2/tokeninfo", tokeninfo.Handler(ph, jh))
-	log.Fatal(http.ListenAndServe(options.ListenAddress, mux))
+	mux.Handle("/oauth2/tokeninfo", tokeninfo.NewHandler(ph, jh))
+	log.Fatal(http.ListenAndServe(settings.ListenAddress, mux))
 }

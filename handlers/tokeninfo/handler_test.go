@@ -28,7 +28,7 @@ func TestRouting(t *testing.T) {
 	h2 := &testHandler{name: "x-header", value: "2"}
 	h3 := &testHandler{name: "x-test", value: "test"}
 
-	h := Handler(def, h1, h2, h3)
+	h := NewHandler(def, h1, h2, h3)
 
 	for _, test := range []struct {
 		headerName  string

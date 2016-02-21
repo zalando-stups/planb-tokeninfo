@@ -10,6 +10,7 @@ type metricsHandler struct {
 	registry metrics.Registry
 }
 
+// Default is a global instance of the metrics handler using the metrics default registry
 var Default = Handler(metrics.DefaultRegistry)
 
 // ServeHTTP returns status 200 and writes metrics from the registry as JSON

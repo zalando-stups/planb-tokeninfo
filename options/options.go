@@ -1,72 +1,114 @@
 package options
 
 import (
-	"log"
+	"fmt"
 	"net/url"
 	"os"
 	"strconv"
 	"time"
 )
 
-const (
-	defaultListenAddr        = ":9021"
-	defaultMetricsListenAddr = ":9020"
+// The Settings type contains the application configurable options
+type Settings struct {
+	ListenAddress                  string
+	MetricsListenAddress           string
+	UpstreamTokenInfoURL           *url.URL
+	OpenIDProviderConfigurationURL *url.URL
+	OpenIDProviderRefreshInterval  time.Duration
+	HTTPClientTimeout              time.Duration
+	HTTPClientTLSTimeout           time.Duration
+}
 
-	defaultOpenIdProviderRefreshInterval = 30 * time.Second
-	defaultHttpClientTimeout             = 10 * time.Second
-	defaultHttpClientTlsTimeout          = 10 * time.Second
-	defaultHttpClientKeepAlive           = 30 * time.Second
+const (
+	defaultListenAddress         = ":9021"
+	defaultMetricsListenAddress  = ":9020"
+	defaultOpenIDRefreshInterval = 30 * time.Second
+	defaultHTTPClientTimeout     = 10 * time.Second
+	defaultHTTPClientTLSTimeout  = 10 * time.Second
 )
 
 var (
-	ListenAddress                  string
-	MetricsListenAddress           string
-	UpstreamTokenInfoUrl           *url.URL
-	OpenIdProviderConfigurationUrl *url.URL
-	OpenIdProviderRefreshInterval  time.Duration
-	HttpClientTimeout              time.Duration
-	HttpClientTlsTimeout           time.Duration
-	HttpClientKeepAlive            time.Duration
+	// AppSettings is a global variable that holds the application settings
+	AppSettings = defaultSettings()
 )
 
-func LoadFromEnvironment() {
-	ListenAddress = getString("LISTEN_ADDRESS", defaultListenAddr)
-	MetricsListenAddress = getString("METRICS_LISTEN_ADDRESS", defaultMetricsListenAddr)
+func defaultSettings() *Settings {
+	return &Settings{
+		ListenAddress:                 defaultListenAddress,
+		MetricsListenAddress:          defaultMetricsListenAddress,
+		OpenIDProviderRefreshInterval: defaultOpenIDRefreshInterval,
+		HTTPClientTimeout:             defaultHTTPClientTimeout,
+		HTTPClientTLSTimeout:          defaultHTTPClientTLSTimeout,
+	}
+}
 
-	url, err := getUrl("UPSTREAM_TOKENINFO_URL")
+// LoadFromEnvironment will try to load all the options from environment variables.
+// It will return an error if the required options are not available. The required environment
+// variables are:
+//
+//      UPSTREAM_TOKENINFO_URL
+//      OPENID_PROVIDER_CONFIGURATION_URL
+//
+// The remaining options have sane defaults and are not mandatory
+func LoadFromEnvironment() error {
+	settings := defaultSettings()
+	url, err := getURL("UPSTREAM_TOKENINFO_URL")
 	if err != nil {
-		log.Fatal("Error with the upstream url: ", err)
+		return fmt.Errorf("Error with UPSTREAM_TOKENINFO_URL: %v\n", err)
 	}
-	UpstreamTokenInfoUrl = url
+	settings.UpstreamTokenInfoURL = url
 
-	url, err = getUrl("OPENID_PROVIDER_CONFIGURATION_URL")
+	url, err = getURL("OPENID_PROVIDER_CONFIGURATION_URL")
 	if err != nil || url == nil {
-		log.Fatal("Invalid OpenID provider configuration url: ", err)
+		return fmt.Errorf("Invalid OPENID_PROVIDER_CONFIGURATION_URL: %v\n", err)
 	}
-	if url.String() == "" {
-		log.Fatal("Missing OpenID provider configuration url")
-	}
-	OpenIdProviderConfigurationUrl = url
+	settings.OpenIDProviderConfigurationURL = url
 
-	OpenIdProviderRefreshInterval = getDuration("OPENID_PROVIDER_REFRESH_INTERVAL", defaultOpenIdProviderRefreshInterval)
-	HttpClientTimeout = getDuration("HTTP_CLIENT_TIMEOUT", defaultHttpClientTimeout)
-	HttpClientTlsTimeout = getDuration("HTTP_CLIENT_TLS_TIMEOUT", defaultHttpClientTlsTimeout)
-	HttpClientKeepAlive = getDuration("HTTP_CLIENT_KEEP_ALIVE", defaultHttpClientKeepAlive)
+	if s := getString("LISTEN_ADDRESS", ""); s != "" {
+		settings.ListenAddress = s
+	}
+
+	if s := getString("METRICS_LISTEN_ADDRESS", ""); s != "" {
+		settings.MetricsListenAddress = s
+	}
+
+	if d := getDuration("OPENID_PROVIDER_REFRESH_INTERVAL", 0); d > 0 {
+		settings.OpenIDProviderRefreshInterval = d
+	}
+
+	if d := getDuration("HTTP_CLIENT_TIMEOUT", 0); d > 0 {
+		settings.HTTPClientTimeout = d
+	}
+
+	if d := getDuration("HTTP_CLIENT_TLS_TIMEOUT", 0); d > 0 {
+		settings.HTTPClientTLSTimeout = d
+	}
+	AppSettings = settings
+	return nil
 }
 
 func getString(v string, def string) string {
-	if s := os.Getenv(v); s != "" {
-		return s
+	s, ok := os.LookupEnv(v)
+	if !ok {
+		return def
 	}
-	return def
+	return s
 }
 
-func getUrl(v string) (*url.URL, error) {
-	return url.Parse(os.Getenv(v))
+func getURL(v string) (*url.URL, error) {
+	u, ok := os.LookupEnv(v)
+	if !ok || u == "" {
+		return nil, fmt.Errorf("Missing URL setting: %q", v)
+	}
+	return url.Parse(u)
 }
 
 func getInt(v string, def int) int {
-	i, err := strconv.Atoi(os.Getenv(v))
+	s, ok := os.LookupEnv(v)
+	if !ok {
+		return def
+	}
+	i, err := strconv.Atoi(s)
 	if err != nil {
 		return def
 	}
@@ -74,9 +116,18 @@ func getInt(v string, def int) int {
 }
 
 func getDuration(v string, def time.Duration) time.Duration {
-	d, err := time.ParseDuration(os.Getenv(v))
-	if err != nil {
+	s, ok := os.LookupEnv(v)
+	if !ok || s == "" {
 		return def
 	}
-	return d
+
+	if d, err := time.ParseDuration(s); err == nil {
+		return d
+	}
+
+	if seconds, err := strconv.Atoi(s); err == nil {
+		return time.Duration(seconds) * time.Second
+	}
+
+	return def
 }

@@ -1,23 +1,24 @@
-package keys
+package jwk
 
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rsa"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
+	"log"
 )
 
-type JsonWebKeySet struct {
-	Keys []JsonWebKey `json:"keys"`
+// The JSONWebKeySet is an helper type to unmarshal te JSON response from an OpenID JWKS endpoint
+type JSONWebKeySet struct {
+	Keys []JSONWebKey `json:"keys"`
 }
 
-type JsonWebKey struct {
+// The JSONWebKey is a type that holds keys obtained from a JWKS endpoint
+type JSONWebKey struct {
 	Key       interface{}
-	KeyId     string
+	KeyID     string
 	Algorithm string
 	Use       string
 }
@@ -36,38 +37,25 @@ type jsonWebKeyHelper struct {
 }
 
 var (
-	ErrInvalidRSAPublicKey   = errors.New("Invalid RSA Public key")
+	// ErrInvalidRSAPublicKey should be used whenever the key thumbprint is an invalid RSA key
+	ErrInvalidRSAPublicKey = errors.New("Invalid RSA Public key")
+	// ErrInvalidECDSAPublicKey should be used whenever the key thumbprint is an invalid ECDSA key
 	ErrInvalidECDSAPublicKey = errors.New("Invalid ECDSA Public key")
 )
 
-type base64Bytes []byte
-
-func (b *base64Bytes) UnmarshalJSON(data []byte) error {
-	var out string
-	if err := json.Unmarshal(data, &out); err != nil {
-		return err
+// ToMap returns the JSON Web Keys Set as a simple map with the Key IDs as keys of the map and the
+// JSON Web Keys as their respective values. The map rejects any duplicates from the JSON Web Keys Set
+// http://tools.ietf.org/html/draft-ietf-jose-json-web-key-05#section-5
+func (jwks *JSONWebKeySet) ToMap() map[string]interface{} {
+	m := make(map[string]interface{})
+	for _, k := range jwks.Keys {
+		if _, has := m[k.KeyID]; has {
+			log.Printf("Duplicate key %q. Rejecting\n", k.KeyID)
+			continue
+		}
+		m[k.KeyID] = k
 	}
-
-	if out == "" {
-		return nil
-	}
-
-	decoded, err := base64.RawURLEncoding.DecodeString(out)
-	if err != nil {
-		return err
-	}
-
-	*b = base64Bytes(decoded)
-
-	return nil
-}
-
-func (b *base64Bytes) toBigInt() *big.Int {
-	return new(big.Int).SetBytes([]byte(*b))
-}
-
-func (b *base64Bytes) toInt() int {
-	return int(b.toBigInt().Int64())
+	return m
 }
 
 func (key *jsonWebKeyHelper) toRSA() (*rsa.PublicKey, error) {
@@ -105,13 +93,13 @@ func (key *jsonWebKeyHelper) toECDSA() (*ecdsa.PublicKey, error) {
 	}, nil
 }
 
-// This assumes all keys are pub keys
-func (jwk *JsonWebKey) UnmarshalJSON(data []byte) (err error) {
+// UnmarshalJSON is used to unmarshak a JWK entry from the JSON Web Keys Set
+// It assumes all keys from that endpoint are public keys. Only RSA and ECDSA keys are supported
+func (jwk *JSONWebKey) UnmarshalJSON(data []byte) (err error) {
 	var buf jsonWebKeyHelper
 	if err = json.Unmarshal(data, &buf); err != nil {
 		return err
 	}
-
 	var key interface{}
 	switch buf.Kty {
 	case "EC":
@@ -123,7 +111,7 @@ func (jwk *JsonWebKey) UnmarshalJSON(data []byte) (err error) {
 	}
 
 	if err == nil {
-		*jwk = JsonWebKey{Key: key, KeyId: buf.Kid, Algorithm: buf.Alg, Use: buf.Use}
+		*jwk = JSONWebKey{Key: key, KeyID: buf.Kid, Algorithm: buf.Alg, Use: buf.Use}
 	}
 	return
 }

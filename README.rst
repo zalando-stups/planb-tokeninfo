@@ -21,7 +21,7 @@ Lightweight service providing an OAuth 2 token info HTTP endpoint to validate JW
 Building
 ========
 
-Requires Go 1.5.1 or higher.
+Requires Go 1.5 or higher.
 
 .. code-block:: bash
 
@@ -63,9 +63,25 @@ The following environment variables are supported:
 
 ``OPENID_PROVIDER_CONFIGURATION_URL``
     URL of the `OpenID Connect configuration discovery document`_ containing the ``jwks_uri`` which points to a `set of JWKs`_.
+``OPENID_PROVIDER_REFRESH_INTERVAL``
+    The OpenID Connect configuration refresh interval. See `Time based settings`_
 ``UPSTREAM_TOKENINFO_URL``
     URL of upstream OAuth 2 token info for non-JWT Bearer tokens.
+``LISTEN_ADDRESS``
+    The address for the application listener. It defaults to ':9021'
+``METRICS_LISTEN_ADDRESS``
+    The address for the metrics listener. Should be different from the application listener. It defaults to ':9020'
+``HTTP_CLIENT_TIMEOUT``
+    The timeout for the default HTTP client. See `Time based settings`_
+``HTTP_CLIENT_TLS_TIMEOUT``
+    The timeout for the default HTTP client when using TLS. See `Time based settings`_
 
+Time based settings
+-------------------
+
+Some of the above settings accept time based definitions. Those definitions can be specified as a string that can be understood by time.ParseDuration().
+For ex., '10s' for 10 seconds, '1h10m' for 1 hour and 10 minutes, '100ms' for 100 milliseconds.
+A simple numeric value is interpreted as Seconds. For ex., '30' is interpreted as 30 seconds.
 
 .. _Plan B OpenID Connect Provider: https://github.com/zalando/planb-provider
 .. _Plan B Revocation Service: https://github.com/zalando/planb-revocation

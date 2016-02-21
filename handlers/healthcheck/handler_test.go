@@ -8,15 +8,15 @@ import (
 
 type mockLoaderWithKeys int
 
-func (_ *mockLoaderWithKeys) LoadKey(_ string) (interface{}, error) { return "dummy", nil }
-func (_ *mockLoaderWithKeys) Keys() map[string]interface{} {
+func (m *mockLoaderWithKeys) LoadKey(_ string) (interface{}, error) { return "dummy", nil }
+func (m *mockLoaderWithKeys) Keys() map[string]interface{} {
 	return map[string]interface{}{"dummy": "things"}
 }
 
 type mockLoaderWithoutKeys int
 
-func (_ *mockLoaderWithoutKeys) LoadKey(_ string) (interface{}, error) { return "dummy", nil }
-func (_ *mockLoaderWithoutKeys) Keys() map[string]interface{}          { return map[string]interface{}{} }
+func (m *mockLoaderWithoutKeys) LoadKey(_ string) (interface{}, error) { return "dummy", nil }
+func (m *mockLoaderWithoutKeys) Keys() map[string]interface{}          { return map[string]interface{}{} }
 
 func TestHandler(t *testing.T) {
 	for _, test := range []struct {

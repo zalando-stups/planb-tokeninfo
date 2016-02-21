@@ -8,7 +8,7 @@ import (
 
 func TestErrorEncoding(t *testing.T) {
 	w := httptest.NewRecorder()
-	Error(w, TokenInfoError{Error: "foo", ErrorDescription: "bar", statusCode: http.StatusBadRequest})
+	WriteError(w, Error{Error: "foo", ErrorDescription: "bar", statusCode: http.StatusBadRequest})
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("Wrong status code. Wanted %d, got %d", http.StatusBadRequest, w.Code)
