@@ -20,8 +20,8 @@ var (
 	ErrInvalidToken = Error{"invalid_token", "Access Token not valid", http.StatusUnauthorized}
 )
 
-// WriteError will write the Error e to the response writer, marshaled as JSON, and with the respective Status Code
-func WriteError(w http.ResponseWriter, e Error) {
+// Write will write the Error e to the response writer, marshaled as JSON, and with the respective Status Code
+func (e *Error) Write(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 	w.WriteHeader(e.statusCode)
 	if err := json.NewEncoder(w).Encode(e); err != nil {

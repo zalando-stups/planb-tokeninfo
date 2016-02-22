@@ -47,7 +47,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tie = tokeninfo.ErrInvalidToken
 	}
 	registerError(tie)
-	tokeninfo.WriteError(w, tie)
+	tie.Write(w)
 }
 
 func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {

@@ -28,7 +28,7 @@ func NewTokenInfoProxyHandler(upstreamURL *url.URL) http.Handler {
 func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	token := tokeninfo.AccessTokenFromRequest(req)
 	if token == "" {
-		tokeninfo.WriteError(w, tokeninfo.ErrInvalidRequest)
+		tokeninfo.ErrInvalidRequest.Write(w)
 		return
 	}
 	hystrix.Do("proxy", func() error {
