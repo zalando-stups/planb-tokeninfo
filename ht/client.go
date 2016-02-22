@@ -9,26 +9,29 @@ import (
 )
 
 var (
-	Default   = DefaultHttpClient()
+	// Default global instance of a custom http.Client using the defaults from the options package
+	Default = DefaultHTTPClient()
+	// UserAgent can be used to specify the User-Agent header sent on every request that used this package's
+	// http.Client
 	UserAgent = "planb-tokeninfo"
 )
 
-// DefaultHttpClient returns a new http.Client with KeepAlive disabled. That means no connection pooling.
+// DefaultHTTPClient returns a new http.Client with KeepAlive disabled. That means no connection pooling.
 // Use it only for one time requests where performance is not a concern
 // It use some settings from the options package: options.HttpClientTimeout and options.HttpClientTlsTimeout
-func DefaultHttpClient() *http.Client {
-	return NewHttpClient(options.HttpClientTimeout, options.HttpClientTlsTimeout)
+func DefaultHTTPClient() *http.Client {
+	return NewHTTPClient(options.AppSettings.HTTPClientTimeout, options.AppSettings.HTTPClientTLSTimeout)
 }
 
-// NewHttpClient returns a new http.Client with specific timeouts from its arguments. KeepAlive is disabled.
+// NewHTTPClient returns a new http.Client with specific timeouts from its arguments. KeepAlive is disabled.
 // That means no connection pooling. Use it only for one time requests where performance is not a concern
-func NewHttpClient(timeout time.Duration, tlsTimeout time.Duration) *http.Client {
+func NewHTTPClient(timeout time.Duration, tlsTimeout time.Duration) *http.Client {
 	return &http.Client{
 		Timeout: timeout,
 		Transport: &http.Transport{
 			Proxy:               http.ProxyFromEnvironment,
 			DisableKeepAlives:   true,
-			Dial:                (&net.Dialer{Timeout: options.HttpClientTimeout}).Dial,
+			Dial:                (&net.Dialer{Timeout: options.AppSettings.HTTPClientTimeout}).Dial,
 			TLSHandshakeTimeout: tlsTimeout}}
 }
 

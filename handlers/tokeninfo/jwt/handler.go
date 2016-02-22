@@ -11,17 +11,20 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
-	"github.com/zalando/planb-tokeninfo/keys"
+	"github.com/zalando/planb-tokeninfo/keyloader"
 )
 
 type jwtHandler struct {
-	keyLoader keys.KeyLoader
+	keyLoader keyloader.KeyLoader
 }
 
-func NewJwtHandler(kl keys.KeyLoader) tokeninfo.TokenInfoHandler {
+// New returns an http.Handler that is able to validate JWT tokens
+func New(kl keyloader.KeyLoader) tokeninfo.Handler {
 	return &jwtHandler{keyLoader: kl}
 }
 
+// ServeHTTP will validate the JWT token in the Request and send back the TokenInfo in case
+// of success or the appropriate error messages otherwise. Both are sent in JSON.
 func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	ti, err := h.validateToken(r)
@@ -36,7 +39,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tie tokeninfo.TokenInfoError
+	var tie tokeninfo.Error
 	switch err {
 	case jwt.ErrNoTokenInRequest:
 		tie = tokeninfo.ErrInvalidRequest
@@ -44,7 +47,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tie = tokeninfo.ErrInvalidToken
 	}
 	registerError(tie)
-	tokeninfo.Error(w, tie)
+	tie.Write(w)
 }
 
 func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
@@ -55,12 +58,12 @@ func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	}
 	if err == nil && token.Valid {
 		return newTokenInfo(token, time.Now())
-	} else {
-		log.Println("Failed to validate token: ", err)
-		return nil, err
 	}
+	log.Println("Failed to validate token: ", err)
+	return nil, err
 }
 
+// Checks if the Request contains a JWT that can be handled by this Handler
 func (h *jwtHandler) Match(r *http.Request) bool {
 	token := tokeninfo.AccessTokenFromRequest(r)
 	if token == "" {
@@ -78,7 +81,7 @@ func measureRequest(start time.Time, key string) {
 	}
 }
 
-func registerError(err tokeninfo.TokenInfoError) {
+func registerError(err tokeninfo.Error) {
 	key := fmt.Sprintf("planb.tokeninfo.jwt.errors.%s", err.Error)
 	if c, ok := metrics.DefaultRegistry.GetOrRegister(key, metrics.NewCounter).(metrics.Counter); ok {
 		c.Inc(1)

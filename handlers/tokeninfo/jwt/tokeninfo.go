@@ -9,25 +9,30 @@ import (
 )
 
 const (
-	JWT_CLAIM_SCOPE = "scope"
-	JWT_CLAIM_SUB   = "sub"
-	JWT_CLAIM_REALM = "realm"
-	JWT_CLAIM_EXP   = "exp"
+	jwtClaimScope = "scope"
+	jwtClaimSub   = "sub"
+	jwtClaimRealm = "realm"
+	jwtClaimExp   = "exp"
 )
 
 var (
+	// ErrInvalidClaimScope should be used whenever the scope claim is invalid or missing in the JWT
 	ErrInvalidClaimScope = errors.New("Invalid claim: scope")
-	ErrInvalidClaimSub   = errors.New("Invalid claim: sub")
+	// ErrInvalidClaimSub should be used whenever the scope sub is invalid or missing in the JWT
+	ErrInvalidClaimSub = errors.New("Invalid claim: sub")
+	// ErrInvalidClaimRealm should be used whenever the scope realm is invalid or missing in the JWT
 	ErrInvalidClaimRealm = errors.New("Invalid claim: realm")
-	ErrInvalidClaimExp   = errors.New("Invalid claim: exp")
+	// ErrInvalidClaimExp should be used whenever the scope exp is invalid or missing in the JWT
+	ErrInvalidClaimExp = errors.New("Invalid claim: exp")
 )
 
+// TokenInfo type is used to serialize a JWT validation result in a standard Token Info JSON format
 type TokenInfo struct {
 	AccessToken  string   `json:"access_token"`
 	RefreshToken string   `json:"refresh_token,omitempty"`
-	Uid          string   `json:"uid"`
+	UID          string   `json:"uid"`
 	GrantType    string   `json:"grant_type"`
-	OpenId       string   `json:"open_id"`
+	OpenID       string   `json:"open_id"`
 	Scope        []string `json:"scope"`
 	Realm        string   `json:"realm"`
 	TokenType    string   `json:"token_type"`
@@ -35,22 +40,22 @@ type TokenInfo struct {
 }
 
 func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
-	scopes, ok := claimAsStrings(t, JWT_CLAIM_SCOPE)
+	scopes, ok := claimAsStrings(t, jwtClaimScope)
 	if !ok {
 		return nil, ErrInvalidClaimScope
 	}
 
-	sub, ok := claimAsString(t, JWT_CLAIM_SUB)
+	sub, ok := claimAsString(t, jwtClaimSub)
 	if !ok {
 		return nil, ErrInvalidClaimSub
 	}
 
-	realm, ok := claimAsString(t, JWT_CLAIM_REALM)
+	realm, ok := claimAsString(t, jwtClaimRealm)
 	if !ok {
 		return nil, ErrInvalidClaimRealm
 	}
 
-	exp, ok := claimAsInt64(t, JWT_CLAIM_EXP)
+	exp, ok := claimAsInt64(t, jwtClaimExp)
 	if !ok {
 		return nil, ErrInvalidClaimExp
 	}
@@ -59,9 +64,9 @@ func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
 
 	return &TokenInfo{
 		AccessToken: t.Raw,
-		Uid:         sub,
+		UID:         sub,
 		GrantType:   "password",
-		OpenId:      t.Raw,
+		OpenID:      t.Raw,
 		Scope:       scopes,
 		Realm:       realm,
 		TokenType:   "Bearer",

@@ -13,8 +13,8 @@ func TestLoadKey(t *testing.T) {
 		want      interface{}
 		wantError error
 	}{
-		{map[string]interface{}{}, nil, ErrMissingKeyId},
-		{map[string]interface{}{"kid": 42}, nil, ErrInvalidKeyId},
+		{map[string]interface{}{}, nil, ErrMissingKeyID},
+		{map[string]interface{}{"kid": 42}, nil, ErrInvalidKeyID},
 		{map[string]interface{}{"kid": "RS256"}, testRSAPKey, nil},
 		{map[string]interface{}{"kid": "ES256"}, testECDSAPKey, nil},
 	} {

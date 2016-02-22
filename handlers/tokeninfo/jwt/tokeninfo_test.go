@@ -46,7 +46,7 @@ func TestTokenInfo(t *testing.T) {
 				GrantType: "password",
 				TokenType: "Bearer",
 				Scope:     []string{"uid"},
-				Uid:       "foo",
+				UID:       "foo",
 				Realm:     "/test",
 				ExpiresIn: 1},
 			false},

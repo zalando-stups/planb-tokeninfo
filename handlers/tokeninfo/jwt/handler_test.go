@@ -29,7 +29,7 @@ var (
 func (kl *mockKeyLoader) LoadKey(id string) (interface{}, error) {
 	key, has := keyMap[id]
 	if !has {
-		return nil, ErrInvalidKeyId
+		return nil, ErrInvalidKeyID
 	}
 	return key, nil
 }
@@ -63,7 +63,7 @@ func init() {
 
 func TestHandler(t *testing.T) {
 	kl := new(mockKeyLoader)
-	h := NewJwtHandler(kl)
+	h := New(kl)
 
 	for _, test := range []struct {
 		token    string
@@ -102,7 +102,7 @@ func TestHandler(t *testing.T) {
 
 func TestRoutingMatch(t *testing.T) {
 	kl := new(mockKeyLoader)
-	h := NewJwtHandler(kl)
+	h := New(kl)
 	for _, test := range []struct {
 		url  string
 		want bool
@@ -124,7 +124,7 @@ func TestRoutingMatch(t *testing.T) {
 
 func TestHandlerCreation(t *testing.T) {
 	kl := new(mockKeyLoader)
-	h := NewJwtHandler(kl)
+	h := New(kl)
 	jh, ok := h.(*jwtHandler)
 	if !ok {
 		t.Fatalf("Wrong type for the handler = %v", reflect.TypeOf(h))

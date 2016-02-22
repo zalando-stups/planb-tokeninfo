@@ -2,18 +2,18 @@ package healthcheck
 
 import (
 	"fmt"
-	"github.com/zalando/planb-tokeninfo/keys"
+	"github.com/zalando/planb-tokeninfo/keyloader"
 	"net/http"
 )
 
 type handler struct {
 	ver    string
-	loader keys.KeyLoader
+	loader keyloader.KeyLoader
 }
 
 // Handler creates an Health check http.Handler that returns 200 when there is at least 1 key
 // Response also reports version
-func Handler(kl keys.KeyLoader, version string) http.Handler {
+func Handler(kl keyloader.KeyLoader, version string) http.Handler {
 	return &handler{loader: kl, ver: version}
 }
 
