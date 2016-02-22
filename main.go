@@ -9,6 +9,7 @@ import (
 
 	gometrics "github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/healthcheck"
+	"github.com/zalando/planb-tokeninfo/handlers/jwks"
 	"github.com/zalando/planb-tokeninfo/handlers/metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/jwt"
@@ -43,7 +44,8 @@ func main() {
 	jh := jwthandler.New(kl)
 
 	mux := http.NewServeMux()
-	mux.Handle("/health", healthcheck.Handler(kl, version))
+	mux.Handle("/health", healthcheck.NewHandler(kl, version))
 	mux.Handle("/oauth2/tokeninfo", tokeninfo.NewHandler(ph, jh))
+	mux.Handle("/oauth2/connect/keys", jwks.NewHandler(kl))
 	log.Fatal(http.ListenAndServe(settings.ListenAddress, mux))
 }

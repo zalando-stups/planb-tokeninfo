@@ -93,7 +93,7 @@ func (key *jsonWebKeyHelper) toECDSA() (*ecdsa.PublicKey, error) {
 	}, nil
 }
 
-// UnmarshalJSON is used to unmarshak a JWK entry from the JSON Web Keys Set
+// UnmarshalJSON is used to unmarshal a JWK entry from the JSON Web Keys Set
 // It assumes all keys from that endpoint are public keys. Only RSA and ECDSA keys are supported
 func (jwk *JSONWebKey) UnmarshalJSON(data []byte) (err error) {
 	var buf jsonWebKeyHelper
