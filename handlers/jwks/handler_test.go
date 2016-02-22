@@ -98,8 +98,7 @@ func TestFailure(t *testing.T) {
 
 	h.ServeHTTP(w, r)
 
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Wrong status code. Wanted %q, got %q", http.StatusText(http.StatusInternalServerError),
-			http.StatusText(w.Code))
+	if w.Body.String() != "" {
+		t.Errorf("Wrong response body. Wanted an empty body, got %q", w.Body.String())
 	}
 }

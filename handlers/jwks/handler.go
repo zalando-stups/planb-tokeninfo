@@ -21,9 +21,6 @@ func (h *jwksHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wrapper := &jwksWrapper{keys: h.loader.Keys()}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(wrapper); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		log.Println("Failed to finish JWKS response: ", err)
-	} else {
-		w.WriteHeader(http.StatusOK)
 	}
 }

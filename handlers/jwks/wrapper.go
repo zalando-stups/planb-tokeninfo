@@ -16,8 +16,6 @@ type jwksWrapper struct {
 }
 
 func (j *jwksWrapper) MarshalJSON() ([]byte, error) {
-	m := make(map[string][]map[string]string)
-
 	keys := make([]map[string]string, len(j.keys))
 	i := 0
 	for k, v := range j.keys {
@@ -34,10 +32,7 @@ func (j *jwksWrapper) MarshalJSON() ([]byte, error) {
 		keys[i] = m
 		i++
 	}
-
-	m["keys"] = keys
-
-	return json.Marshal(m)
+	return json.Marshal(map[string][]map[string]string{"keys": keys})
 }
 
 func fromJwk(k jwk.JSONWebKey) (map[string]string, error) {
