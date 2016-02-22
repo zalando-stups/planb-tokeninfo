@@ -24,9 +24,9 @@ func TestHandler(t *testing.T) {
 		wantCode int
 		wantResp string
 	}{
-		{Handler(new(mockLoaderWithKeys), "v1"), http.StatusOK, "OK\nv1"},
-		{Handler(new(mockLoaderWithKeys), "v2"), http.StatusOK, "OK\nv2"},
-		{Handler(new(mockLoaderWithoutKeys), "x"), http.StatusServiceUnavailable, "No keys available\nx"},
+		{NewHandler(new(mockLoaderWithKeys), "v1"), http.StatusOK, "OK\nv1"},
+		{NewHandler(new(mockLoaderWithKeys), "v2"), http.StatusOK, "OK\nv2"},
+		{NewHandler(new(mockLoaderWithoutKeys), "x"), http.StatusServiceUnavailable, "No keys available\nx"},
 	} {
 		rw := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "http://example.com", nil)

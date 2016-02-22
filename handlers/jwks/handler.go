@@ -11,8 +11,8 @@ type jwksHandler struct {
 	loader keyloader.KeyLoader
 }
 
-// Handler creates an http.Handler that provides JWKS responses from the KeyLoader kl
-func Handler(kl keyloader.KeyLoader) http.Handler {
+// NewHandler creates an http.Handler that provides JWKS responses from the KeyLoader kl
+func NewHandler(kl keyloader.KeyLoader) http.Handler {
 	return &jwksHandler{loader: kl}
 }
 

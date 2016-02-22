@@ -67,7 +67,7 @@ func mustDecode(s string) []byte {
 func TestHandler(t *testing.T) {
 	mockKeys := mockValidKeys()
 	kl := &mockKeyLoader{theKeys: mockKeys}
-	h := Handler(kl)
+	h := NewHandler(kl)
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "http://example.com/oauth2/v3/keys", nil)
@@ -91,7 +91,7 @@ func TestHandler(t *testing.T) {
 
 func TestFailure(t *testing.T) {
 	kl := &mockKeyLoader{theKeys: map[string]interface{}{"foo": "bar"}}
-	h := Handler(kl)
+	h := NewHandler(kl)
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "http://example.com/oauth2/v3/keys", nil)

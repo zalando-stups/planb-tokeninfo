@@ -44,8 +44,8 @@ func main() {
 	jh := jwthandler.New(kl)
 
 	mux := http.NewServeMux()
-	mux.Handle("/health", healthcheck.Handler(kl, version))
+	mux.Handle("/health", healthcheck.NewHandler(kl, version))
 	mux.Handle("/oauth2/tokeninfo", tokeninfo.NewHandler(ph, jh))
-	mux.Handle("/oauth2/connect/keys", jwks.Handler(kl))
+	mux.Handle("/oauth2/connect/keys", jwks.NewHandler(kl))
 	log.Fatal(http.ListenAndServe(settings.ListenAddress, mux))
 }

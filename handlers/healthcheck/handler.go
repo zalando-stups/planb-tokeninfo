@@ -11,9 +11,9 @@ type handler struct {
 	loader keyloader.KeyLoader
 }
 
-// Handler creates an Health check http.Handler that returns 200 when there is at least 1 key
+// NewHandler creates an Health check http.Handler that returns 200 when there is at least 1 key
 // Response also reports version
-func Handler(kl keyloader.KeyLoader, version string) http.Handler {
+func NewHandler(kl keyloader.KeyLoader, version string) http.Handler {
 	return &handler{loader: kl, ver: version}
 }
 
