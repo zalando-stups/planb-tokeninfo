@@ -33,7 +33,7 @@ func TestJwk(t *testing.T) {
 		{
 			`{"keys":[{"alg":"ES256","crv":"P-256","kid":"testkey","kty":"EC","use":"sign","x":"EA","y":"EA"}]}`,
 			&JSONWebKeySet{Keys: []JSONWebKey{
-				JSONWebKey{
+				{
 					Key: &ecdsa.PublicKey{
 						Curve: elliptic.P256(),
 						X:     big.NewInt(0x10),
@@ -47,7 +47,7 @@ func TestJwk(t *testing.T) {
 		{
 			`{"keys":[{"alg":"ES384","crv":"P-384","kid":"testkey","kty":"EC","use":"sign","x":"EA","y":"EA"}]}`,
 			&JSONWebKeySet{Keys: []JSONWebKey{
-				JSONWebKey{
+				{
 					Key: &ecdsa.PublicKey{
 						Curve: elliptic.P384(),
 						X:     big.NewInt(0x10),
@@ -61,7 +61,7 @@ func TestJwk(t *testing.T) {
 		{
 			`{"keys":[{"alg":"ES512","crv":"P-521","kid":"testkey","kty":"EC","use":"sign","x":"EA","y":"EA"}]}`,
 			&JSONWebKeySet{Keys: []JSONWebKey{
-				JSONWebKey{
+				{
 					Key: &ecdsa.PublicKey{
 						Curve: elliptic.P521(),
 						X:     big.NewInt(0x10),
@@ -75,7 +75,7 @@ func TestJwk(t *testing.T) {
 		{
 			`{"keys":[{"alg":"RS256","kid":"2011-04-29","kty":"RSA","use":"sign","e":"AQAB","n":"AQAB"}]}`,
 			&JSONWebKeySet{Keys: []JSONWebKey{
-				JSONWebKey{
+				{
 					Key: &rsa.PublicKey{
 						N: big.NewInt(65537),
 						E: 65537},
@@ -103,7 +103,7 @@ func TestToMap(t *testing.T) {
 
 	jwks := JSONWebKeySet{
 		Keys: []JSONWebKey{
-			JSONWebKey{
+			{
 				Key: &rsa.PublicKey{
 					N: tenBigInt,
 					E: 0x20},
@@ -111,7 +111,7 @@ func TestToMap(t *testing.T) {
 				Algorithm: "RS256",
 				Use:       "sign",
 			},
-			JSONWebKey{
+			{
 				Key: &ecdsa.PublicKey{
 					Curve: elliptic.P256(),
 					X:     tenBigInt,
@@ -120,7 +120,7 @@ func TestToMap(t *testing.T) {
 				Algorithm: "ES256",
 				Use:       "sign",
 			},
-			JSONWebKey{
+			{
 				Key: &rsa.PublicKey{
 					N: tenBigInt,
 					E: 0x20},
@@ -167,7 +167,7 @@ func TestToMap(t *testing.T) {
 
 	ecdsaPkey, ok := key2.Key.(*ecdsa.PublicKey)
 	if !ok {
-		t.Error("Wrong type of pubkey for 'key2'. Expected ECDSA, got %T", key2)
+		t.Errorf("Wrong type of pubkey for 'key2'. Expected ECDSA, got %T", key2)
 	}
 
 	if ecdsaPkey.X != tenBigInt || ecdsaPkey.Y != tenBigInt {

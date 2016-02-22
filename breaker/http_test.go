@@ -34,7 +34,7 @@ func TestCircuitBreaker(t *testing.T) {
 	}
 
 	if string(buf) != "bar" {
-		t.Error("Received wrong response body. Wanted `bar`, got %q", string(buf))
+		t.Errorf("Received wrong response body. Wanted `bar`, got %q", string(buf))
 	}
 
 	metric := metrics.Get("planb.breaker.foo")

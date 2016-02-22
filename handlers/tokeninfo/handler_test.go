@@ -64,7 +64,7 @@ func TestAccessTokenFromRequest(t *testing.T) {
 		{http.Request{Header: http.Header{"Authorization": []string{"Bearer t2"}}}, "t2"},
 		{http.Request{Header: http.Header{"Authorization": []string{"BeArEr t3"}}}, "t3"},
 		{http.Request{Header: http.Header{"Authorization": []string{"BEARER t4"}}}, "t4"},
-		{http.Request{Header: make(http.Header), Form: map[string][]string{"access_token": []string{"bar"}}}, "bar"},
+		{http.Request{Header: make(http.Header), Form: map[string][]string{"access_token": {"bar"}}}, "bar"},
 	} {
 		at := AccessTokenFromRequest(&test.r)
 		if test.want != at {

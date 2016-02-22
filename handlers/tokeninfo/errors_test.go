@@ -32,7 +32,7 @@ func TestErrorEncoding(t *testing.T) {
 		test.given.Write(w)
 
 		if w.Code != test.wantCode {
-			t.Errorf("Wrong status code. Wanted %d, got %d", http.StatusText(test.wantCode), http.StatusText(w.Code))
+			t.Errorf("Wrong status code. Wanted %q, got %q", http.StatusText(test.wantCode), http.StatusText(w.Code))
 		}
 
 		if w.Body.String() != test.want {
