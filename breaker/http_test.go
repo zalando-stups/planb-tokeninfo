@@ -68,13 +68,13 @@ func TestCircuitBreakerFailures(t *testing.T) {
 
 	// hystrix.DefaultVolumeThreshold == 20
 	i := 0
-	for i < 20 {
+	for i < 21 {
 		Get("fail", "invalid-url")
 		i++
 	}
 
 	_, err = Get("fail", "invalid-url")
 	if err != hystrix.ErrCircuitOpen {
-		t.Error("Error is not circuit open")
+		t.Error("Error is not circuit open: ", err)
 	}
 }
