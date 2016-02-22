@@ -8,6 +8,9 @@ Plan B Token Info Service
 .. image:: https://codecov.io/github/zalando/planb-tokeninfo/coverage.svg?branch=master
     :target: https://codecov.io/github/zalando/planb-tokeninfo?branch=master
 
+.. image:: https://goreportcard.com/badge/github.com/zalando/planb-tokeninfo
+    :target: https://goreportcard.com/report/github.com/zalando/planb-tokeninfo
+
 Lightweight service providing an OAuth 2 token info HTTP endpoint to validate JWT tokens issued by the `Plan B OpenID Connect Provider`_.
 
 (Planned) Features:
