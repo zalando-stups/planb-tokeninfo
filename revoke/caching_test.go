@@ -13,7 +13,7 @@ func TestIsExpiredExpectTrue(t *testing.T) {
 }
 
 func TestIsExpiredExpectFalse(t *testing.T) {
-	if isExpired(2000000000) {
+	if isExpired(20000000000000) {
 		t.Errorf("This is a long time from now; it should not be expired.")
 	}
 }
@@ -34,8 +34,8 @@ func TestCaching(t *testing.T) {
 
 	revData2 := make(map[string]interface{})
 	revData2["token_hash"] = "hash2"
-	revData2["revoked_at"] = strconv.Itoa(int(time.Now().Unix()))
-	rev2 := &Revocation{Type: "TOKEN", Data: revData2, Timestamp: int(time.Now().Unix())}
+	revData2["revoked_at"] = strconv.Itoa(int(time.Now().UnixNano() / 1e6))
+	rev2 := &Revocation{Type: "TOKEN", Data: revData2, Timestamp: int(time.Now().UnixNano() / 1e6)}
 	cache.Add(rev2)
 
 	cache.Delete("hash2")
