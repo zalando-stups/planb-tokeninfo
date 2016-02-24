@@ -13,10 +13,13 @@ Plan B Token Info Service
 
 Lightweight service providing an OAuth 2 token info HTTP endpoint to validate JWT tokens issued by the `Plan B OpenID Connect Provider`_.
 
-(Planned) Features:
+Current features:
 
 * Download public keys (`set of JWKs`_) from OpenID provider
 * Verify signed JWT tokens using the right public key (identified by "kid" `JOSE header`_)
+
+Planned features:
+
 * Download revocation lists from `Plan B Revocation Service`_
 * Deny JWT tokens matching any revocation list
 
