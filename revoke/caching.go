@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// TODO: not sure how to handle GLOBAL, at the moment
 type Cache struct {
 	get    chan *request
 	set    chan *request
@@ -104,7 +103,7 @@ func (c *Cache) Delete(key string) {
 
 func isExpired(ts int) bool {
 
-	if ts-int(options.RevokeExpireLength) < int(time.Now().Unix()) {
+	if ts-int(options.RevokeExpireLength) < int(time.Now().UnixNano()/1e6) {
 		return true
 	}
 

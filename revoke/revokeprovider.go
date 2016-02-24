@@ -29,7 +29,7 @@ func (crp *cachingRevokeProvider) refreshRevocations() {
 
 	ts := crp.cache.GetLastTS()
 	if ts == "" {
-		ts = strconv.Itoa(int(time.Now().Unix()) - int(options.RevokeExpireLength))
+		ts = strconv.Itoa(int(time.Now().UnixNano()/1e6) - int(options.RevokeExpireLength))
 	}
 
 	resp, err := http.Get(crp.url + "?from=" + ts)
@@ -57,25 +57,29 @@ func (crp *cachingRevokeProvider) refreshRevocations() {
 
 }
 
-// TODO not sure how we are storing the claims in a token; check.
-// TODO not sure how to get a hash for the token. kid?
 func (crp *cachingRevokeProvider) isJWTRevoked(j *jwt.Token) bool {
 
-	// TODO swtich time.Now() with the time the token was issued.
-	if r := crp.cache.Get("GLOBAL"); r != nil && r.Timestamp < int(time.Now().Unix()) {
+	iat, err := strconv.Atoi(j.Claims["iat"].(string))
+	if err != nil {
+		log.Println("Error converting iat to int. " + err.Error())
+		return false
+	}
+
+	if r := crp.cache.Get("GLOBAL"); r != nil && r.Timestamp > iat {
 		return true
 	}
 
+	th := hashTokenClaim(j.Raw)
+	if r := crp.cache.Get(th); r != nil && r.Timestamp < iat {
+		return true
+	}
+
+	// TODO: this isn't how this is going to work. . .
+	// I think we're going to use uid for now.
 	sub := j.Claims["sub"].(string)
 	scope := j.Claims["scope"].(string)
 	ch := hashTokenClaim(sub + scope)
-	if r := crp.cache.Get(ch); r != nil && r.Timestamp > int(time.Now().Unix()) {
-		return true
-	}
-
-	token := j.Claims["access_token"].(string)
-	th := hashTokenClaim(token)
-	if r := crp.cache.Get(th); r != nil && r.Timestamp < int(time.Now().Unix()) {
+	if r := crp.cache.Get(ch); r != nil && r.Timestamp > iat {
 		return true
 	}
 

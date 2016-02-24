@@ -3,7 +3,6 @@ package revoke
 import (
 	"encoding/json"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -22,19 +21,18 @@ type jsonRevoke struct {
 
 type jsonRevocation struct {
 	Type      string `json:"type"` // TOKEN, CLAIM, GLOBAL
-	RevokedAt string `json:"revoked_at"`
+	RevokedAt int    `json:"revoked_at"`
 	Data      struct {
-		Name         string `json:"name,omitempty"`          // CLAIM
-		ValueHash    string `json:"value_hash,omitempty"`    // CLAIM
-		IssuedBefore string `json:"issued_before,omitempty"` // CLAIM, GLOBAL
-		TokenHash    string `json:"token_hash,omitempty"`    // TOKEN
-		RevokedAt    string `json:"revoked_at,omitempty"`    // TOKEN
+		Name          string `json:"name,omitempty"`           // CLAIM
+		ValueHash     string `json:"value_hash,omitempty"`     // CLAIM
+		IssuedBefore  int    `json:"issued_before,omitempty"`  // CLAIM, GLOBAL
+		TokenHash     string `json:"token_hash,omitempty"`     // TOKEN
+		HashAlgorithm string `json:"hash_algorithm,omitempty"` // CLAIM, TOKEN
 	} `json:"data"`
 }
 
 func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
-	var buf jsonRevoke
-	if err = json.Unmarshal(data, &buf); err != nil {
+	if err = json.Unmarshal(data, &r); err != nil {
 		log.Println("Error unmarshalling revocation json. " + err.Error())
 		return err
 	}
@@ -58,31 +56,32 @@ func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
 
 func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 
-	t := int(time.Now().Unix())
+	// account for some network delay, say three seconds
+	t := int(time.Now().UnixNano()/1e6) - 3*1e6
 
 	r.Data = make(map[string]interface{})
 	switch j.Type {
 	case "TOKEN":
-		valid := isHashTimestampValid(j.Data.TokenHash, j.Data.RevokedAt)
+		valid := isHashTimestampValid(j.Data.TokenHash, j.RevokedAt)
 		if !valid {
-			log.Println("Invalid revocation data. TokenHash: %s, RevokedAt: %s", j.Data.TokenHash, j.Data.RevokedAt)
+			log.Println("Invalid revocation data. TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
 			return
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
-		r.Data["revoked_at"] = j.Data.RevokedAt
+		r.Data["revoked_at"] = j.RevokedAt
 	case "CLAIM":
 		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore)
 		if !valid {
-			log.Println("Invalid revocation data. ValueHash: %s, IssuedBefore: %s", j.Data.ValueHash, j.Data.IssuedBefore)
+			log.Println("Invalid revocation data. ValueHash: %s, IssuedBefore: %d", j.Data.ValueHash, j.Data.IssuedBefore)
 			return
 		}
 		r.Data["value_hash"] = j.Data.ValueHash
 		r.Data["issued_before"] = j.Data.IssuedBefore
 		r.Data["name"] = j.Data.Name
 	case "GLOBAL":
-		_, err := strconv.Atoi(j.Data.IssuedBefore)
-		if err != nil {
-			log.Println("Erorr converting IssuedBefore to int. " + err.Error())
+		valid := isHashTimestampValid("thisStringDoesntMatter", j.Data.IssuedBefore)
+		if !valid {
+			log.Println("Invalid revocation data. IssuedBefore: %d", j.Data.IssuedBefore)
 			return
 		}
 		r.Data["issued_before"] = j.Data.IssuedBefore
@@ -96,19 +95,8 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 	return
 }
 
-func isHashTimestampValid(hash, timestamp string) bool {
-	if hash == "" || timestamp == "" {
-		return false
-	}
-
-	_, err := strconv.Atoi(timestamp)
-	if err != nil {
-		log.Println("Erorr converting timestamp to int. " + err.Error())
-		return false
-	}
-
-	return true
-
+func isHashTimestampValid(hash string, timestamp int) bool {
+	return hash != "" && timestamp != 0
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go
