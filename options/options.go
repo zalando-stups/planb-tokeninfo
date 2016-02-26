@@ -38,11 +38,13 @@ var (
 
 func defaultSettings() *Settings {
 	return &Settings{
-		ListenAddress:                 defaultListenAddress,
-		MetricsListenAddress:          defaultMetricsListenAddress,
-		OpenIDProviderRefreshInterval: defaultOpenIDRefreshInterval,
-		HTTPClientTimeout:             defaultHTTPClientTimeout,
-		HTTPClientTLSTimeout:          defaultHTTPClientTLSTimeout,
+		ListenAddress:                     defaultListenAddress,
+		MetricsListenAddress:              defaultMetricsListenAddress,
+		OpenIDProviderRefreshInterval:     defaultOpenIDRefreshInterval,
+		HTTPClientTimeout:                 defaultHTTPClientTimeout,
+		HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
+		RevokeExpireLength:                defaultRevokeExpireLength,
+		RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 	}
 }
 
@@ -68,6 +70,12 @@ func LoadFromEnvironment() error {
 	}
 	settings.OpenIDProviderConfigurationURL = url
 
+	url, err = getUrl("REVOCATION_PROVIDER_URL")
+	if err != nil || url == nil {
+		return fmt.Errorf("Invalid REVOCATION_PROVIDER_URL: %v\n, err")
+	}
+	settings.RevocationProviderUrl = url
+
 	if s := getString("LISTEN_ADDRESS", ""); s != "" {
 		settings.ListenAddress = s
 	}
@@ -75,6 +83,12 @@ func LoadFromEnvironment() error {
 	if s := getString("METRICS_LISTEN_ADDRESS", ""); s != "" {
 		settings.MetricsListenAddress = s
 	}
+	/*
+		if s := getSTring("HASHING_SALT", ""); s != "" {
+			settings.HashingSalt = s
+		}
+	*/
+	HashingSalt = getString("HASHING_SALT", defaultHashingSalt)
 
 	if d := getDuration("OPENID_PROVIDER_REFRESH_INTERVAL", 0); d > 0 {
 		settings.OpenIDProviderRefreshInterval = d
