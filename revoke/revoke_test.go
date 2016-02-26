@@ -63,54 +63,51 @@ func TestUnmarshalJsonData(t *testing.T) {
 }
 
 func TestGetRevocationFromJSONToken(t *testing.T) {
-	var j = new(jsonRevocation)
-	j.Type = "TOKEN"
-	j.Data.TokenHash = "hash"
-	j.RevokedAt = 123
+
+	var rev = new(jsonRevoke)
+	rev.UnmarshallJSON(j)
 
 	var r = new(Revocation)
-	r.getRevocationFromJson(j)
+	r.getRevocationFromJson(&rev.Revs[2])
 
 	if r.Type != "TOKEN" ||
-		r.Data["token_hash"] != "hash" ||
-		r.Data["revoked_at"] != 123 {
-		t.Errorf("Error getting revocation from jsonRevocation.")
+		r.Data["token_hash"] != "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=" ||
+		r.Data["revoked_at"] != 1456302443000 {
+		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[2], r)
 	}
 }
 
 func TestGetRevocationFromJSONClaim(t *testing.T) {
-	var j = new(jsonRevocation)
-	j.Type = "CLAIM"
-	j.Data.Name = "name"
-	j.Data.ValueHash = "hash"
-	j.Data.IssuedBefore = 123
+
+	var rev = new(jsonRevoke)
+	rev.UnmarshallJSON(j)
 
 	var r = new(Revocation)
-	r.getRevocationFromJson(j)
+	r.getRevocationFromJson(&rev.Revs[0])
 
 	if r.Type != "CLAIM" ||
-		r.Data["value_hash"] != "hash" ||
-		r.Data["issued_before"] != 123 ||
-		r.Data["name"] != "name" {
-		t.Errorf("Error getting revocation from jsonRevocation.")
+		r.Data["value_hash"] != "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=" ||
+		r.Data["issued_before"] != 1456300677000 ||
+		r.Data["name"] != "uid" {
+		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[0], r)
 	}
 }
 
 func TestGetRevocationFromJSONGlobal(t *testing.T) {
-	var j = new(jsonRevocation)
-	j.Type = "GLOBAL"
-	j.Data.IssuedBefore = 123
+
+	var rev = new(jsonRevoke)
+	rev.UnmarshallJSON(j)
 
 	var r = new(Revocation)
-	r.getRevocationFromJson(j)
+	r.getRevocationFromJson(&rev.Revs[1])
 
 	if r.Type != "GLOBAL" ||
-		r.Data["issued_before"] != 123 {
-		t.Errorf("Error getting revocation from jsonRevocation.")
+		r.Data["issued_before"] != 1456296158000 {
+		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[1], r)
 	}
 }
 
-func TestGetRevocationFromJSONInvalid(t *testing.T) {
+func TestGetRevocationFromJSONInvalidType(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "INVALID"
 	j.Data.Name = "name"
@@ -120,7 +117,75 @@ func TestGetRevocationFromJSONInvalid(t *testing.T) {
 	var r = new(Revocation)
 	r.getRevocationFromJson(j)
 	if r.Type != "" {
-		t.Errorf("Revocation type shouldn't be valid.")
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+}
+
+func TestGetRevocationFromJSONInvalidClaimName(t *testing.T) {
+	var j = new(jsonRevocation)
+	j.Type = "CLAIM"
+	j.Data.Name = ""
+	j.Data.ValueHash = "hash"
+	j.Data.IssuedBefore = 123
+
+	var r = new(Revocation)
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+}
+
+func TestGetRevocationFromJSONInvalidClaimHash(t *testing.T) {
+	var j = new(jsonRevocation)
+	j.Type = "CLAIM"
+	j.Data.Name = "name"
+	j.Data.ValueHash = ""
+	j.Data.IssuedBefore = 123
+
+	var r = new(Revocation)
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+}
+
+func TestGetRevocationFromJSONInvalidClaimTS(t *testing.T) {
+	var j = new(jsonRevocation)
+	j.Type = "CLAIM"
+	j.Data.Name = "name"
+	j.Data.ValueHash = "abc"
+	j.Data.IssuedBefore = 0
+
+	var r = new(Revocation)
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+}
+
+func TestGetRevocationFromJSONInvalidTokenHash(t *testing.T) {
+	var j = new(jsonRevocation)
+	j.Type = "TOKEN"
+	j.Data.TokenHash = ""
+	j.Data.IssuedBefore = 123
+
+	var r = new(Revocation)
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+}
+
+func TestGetRevocationFromJSONInvalidTokenTS(t *testing.T) {
+	var j = new(jsonRevocation)
+	j.Type = "TOKEN"
+	j.Data.TokenHash = "abc"
+	j.Data.IssuedBefore = 0
+
+	var r = new(Revocation)
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
 	}
 }
 

@@ -56,10 +56,38 @@ func TestCaching(t *testing.T) {
 
 	cache.Add(rev3)
 
-	if cache.GetLastTS() != "2000000" {
+	if cache.GetLastTS() != 2000000 {
 		t.Errorf("Error getting last pull timestamp. Expected: 2,000,000. Actual: %d", cache.GetLastTS())
 	}
 
+	if len(cache.GetClaimNames()) != 0 {
+		t.Errorf("Shouldn't have any claim names as there aren't any in the cache. ClaimNames: %#v", cache.GetClaimNames())
+	}
+
+	revData4 := make(map[string]interface{})
+	revData4["value_hash"] = "hash4"
+	revData4["name"] = "claimName4"
+	revData4["revoked_at"] = strconv.Itoa(int(time.Now().UnixNano() / 1e6))
+	rev4 := &Revocation{Type: "CLAIM", Data: revData4, Timestamp: int(time.Now().UnixNano() / 1e6)}
+	cache.Add(rev4)
+
+	revData5 := make(map[string]interface{})
+	revData5["value_hash"] = "hash5"
+	revData5["name"] = "claimName5"
+	revData5["revoked_at"] = strconv.Itoa(int(time.Now().UnixNano() / 1e6))
+	rev5 := &Revocation{Type: "CLAIM", Data: revData5, Timestamp: int(time.Now().UnixNano() / 1e6)}
+	cache.Add(rev5)
+
+	revData6 := make(map[string]interface{})
+	revData6["value_hash"] = "hash6"
+	revData6["name"] = "claimName5"
+	revData6["revoked_at"] = strconv.Itoa(int(time.Now().UnixNano() / 1e6))
+	rev6 := &Revocation{Type: "CLAIM", Data: revData6, Timestamp: int(time.Now().UnixNano() / 1e6)}
+	cache.Add(rev6)
+
+	if len(cache.GetClaimNames()) != 2 {
+		t.Errorf("Should have two claim names. ClaimNames: %#v", cache.GetClaimNames())
+	}
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

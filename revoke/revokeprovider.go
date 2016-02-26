@@ -1,10 +1,10 @@
 package revoke
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/zalando/planb-tokeninfo/options"
-	"golang.org/x/crypto/sha3"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -26,13 +26,14 @@ func NewCachingRevokeProvider(u *url.URL) *cachingRevokeProvider {
 
 // TODO: force refresh
 func (crp *cachingRevokeProvider) refreshRevocations() {
+	log.Println("refreshing revocations")
 
 	ts := crp.cache.GetLastTS()
-	if ts == "" {
-		ts = strconv.Itoa(int(time.Now().UnixNano()/1e6) - int(options.RevokeExpireLength))
+	if ts == 0 {
+		ts = int(time.Now().UnixNano()/1e6) - int(options.RevokeExpireLength)
 	}
 
-	resp, err := http.Get(crp.url + "?from=" + ts)
+	resp, err := http.Get(crp.url + "?from=" + strconv.Itoa(ts))
 	if err != nil {
 		log.Println("Failed to get revocations. " + err.Error())
 		return
@@ -46,6 +47,8 @@ func (crp *cachingRevokeProvider) refreshRevocations() {
 		log.Println("Failed to unmarshall revocation data. " + err.Error())
 		return
 	}
+
+	log.Printf("Number of new revocations: %d", len(jr.Revs))
 
 	for _, j := range jr.Revs {
 		var r = new(Revocation)
@@ -65,22 +68,27 @@ func (crp *cachingRevokeProvider) isJWTRevoked(j *jwt.Token) bool {
 		return false
 	}
 
-	if r := crp.cache.Get("GLOBAL"); r != nil && r.Timestamp > iat {
+	// check global revocation
+	if r := crp.cache.Get("GLOBAL"); r != nil && r.(*Revocation).Timestamp > iat {
 		return true
 	}
 
+	// check token revocation
 	th := hashTokenClaim(j.Raw)
-	if r := crp.cache.Get(th); r != nil && r.Timestamp < iat {
+	if r := crp.cache.Get(th); r != nil && r.(*Revocation).Timestamp < iat {
 		return true
 	}
 
-	// TODO: this isn't how this is going to work. . .
-	// I think we're going to use uid for now.
-	sub := j.Claims["sub"].(string)
-	scope := j.Claims["scope"].(string)
-	ch := hashTokenClaim(sub + scope)
-	if r := crp.cache.Get(ch); r != nil && r.Timestamp > iat {
-		return true
+	// check claim revocation
+	cn := crp.cache.GetClaimNames()
+	if len(cn) == 0 {
+		return false
+	}
+	for _, n := range cn {
+		ch := n + hashTokenClaim(j.Claims[n].(string))
+		if r := crp.cache.Get(ch); r != nil && r.(*Revocation).Timestamp > iat {
+			return true
+		}
 	}
 
 	return false
@@ -88,11 +96,12 @@ func (crp *cachingRevokeProvider) isJWTRevoked(j *jwt.Token) bool {
 
 func hashTokenClaim(h string) string {
 
-	salt := options.HashingSalt
+	//	salt := options.HashingSalt
+	salt := "seasaltisthebest"
 	buf := []byte(salt + h)
-	hasher := sha3.New256()
-	hasher.Write(buf)
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	hash := sha256.New()
+	hash.Write(buf)
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 
 }
 

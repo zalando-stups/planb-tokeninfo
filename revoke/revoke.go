@@ -64,7 +64,7 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 	case "TOKEN":
 		valid := isHashTimestampValid(j.Data.TokenHash, j.RevokedAt)
 		if !valid {
-			log.Println("Invalid revocation data. TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
+			log.Println("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
 			return
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
@@ -72,7 +72,11 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 	case "CLAIM":
 		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore)
 		if !valid {
-			log.Println("Invalid revocation data. ValueHash: %s, IssuedBefore: %d", j.Data.ValueHash, j.Data.IssuedBefore)
+			log.Println("Invalid revocation data (CLAIM). ValueHash: %s, IssuedBefore: %d", j.Data.ValueHash, j.Data.IssuedBefore)
+			return
+		}
+		if j.Data.Name == "" {
+			log.Println("Invalid revocation data (missing claim name).")
 			return
 		}
 		r.Data["value_hash"] = j.Data.ValueHash
@@ -81,7 +85,7 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 	case "GLOBAL":
 		valid := isHashTimestampValid("thisStringDoesntMatter", j.Data.IssuedBefore)
 		if !valid {
-			log.Println("Invalid revocation data. IssuedBefore: %d", j.Data.IssuedBefore)
+			log.Println("Invalid revocation data (GLOBAL). IssuedBefore: %d", j.Data.IssuedBefore)
 			return
 		}
 		r.Data["issued_before"] = j.Data.IssuedBefore
