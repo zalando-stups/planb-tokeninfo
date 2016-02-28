@@ -73,6 +73,10 @@ The following environment variables are supported:
     The OpenID Connect configuration refresh interval. See `Time based settings`_
 ``UPSTREAM_TOKENINFO_URL``
     URL of upstream OAuth 2 token info for non-JWT Bearer tokens.
+``UPSTREAM_CACHE_MAX_SIZE``
+    Maximum number of entries for upstream token cache. It defaults to 10000.
+``UPSTREAM_CACHE_TTL``
+    The TTL for upstream token cache entries. It defaults to 60 seconds. See `Time based settings`_
 ``LISTEN_ADDRESS``
     The address for the application listener. It defaults to ':9021'
 ``METRICS_LISTEN_ADDRESS``

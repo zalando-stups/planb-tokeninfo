@@ -282,6 +282,27 @@ func TestLoading(t *testing.T) {
 			},
 			false,
 		},
+		{
+			map[string]string{
+				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
+				"UPSTREAM_CACHE_MAX_SIZE":           "0",
+				"UPSTREAM_CACHE_TTL":                "0",
+				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
+				"HTTP_CLIENT_TLS_TIMEOUT":           "10ms",
+			},
+			&Settings{
+				UpstreamTokenInfoURL:           exampleCom,
+				OpenIDProviderConfigurationURL: exampleCom,
+				UpstreamCacheMaxSize:           0,
+				UpstreamCacheTTL:               0,
+				HTTPClientTimeout:              defaultHTTPClientTimeout,
+				HTTPClientTLSTimeout:           10 * time.Millisecond,
+				OpenIDProviderRefreshInterval:  defaultOpenIDRefreshInterval,
+				ListenAddress:                  defaultListenAddress,
+				MetricsListenAddress:           defaultMetricsListenAddress,
+			},
+			false,
+		},
 	} {
 		os.Clearenv()
 		for k, v := range test.env {

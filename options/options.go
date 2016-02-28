@@ -78,11 +78,11 @@ func LoadFromEnvironment() error {
 		settings.MetricsListenAddress = s
 	}
 
-	if i := getInt("UPSTREAM_CACHE_MAX_SIZE", 0); i > 0 {
+	if i := getInt("UPSTREAM_CACHE_MAX_SIZE", -1); i > -1 {
 		settings.UpstreamCacheMaxSize = int64(i)
 	}
 
-	if d := getDuration("UPSTREAM_CACHE_TTL", 0); d > 0 {
+	if d := getDuration("UPSTREAM_CACHE_TTL", -1); d > -1 {
 		settings.UpstreamCacheTTL = d
 	}
 
