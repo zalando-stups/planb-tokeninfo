@@ -17,6 +17,7 @@ Current features:
 
 * Download public keys (`set of JWKs`_) from OpenID provider
 * Verify signed JWT tokens using the right public key (identified by "kid" `JOSE header`_)
+* Proxy to upstream tokeninfo for non-JWT tokens and cache the response
 
 Planned features:
 
