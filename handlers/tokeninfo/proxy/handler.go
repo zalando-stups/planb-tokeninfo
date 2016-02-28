@@ -2,6 +2,7 @@ package tokeninfoproxy
 
 import (
 	"bytes"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -22,6 +23,7 @@ type tokenInfoProxyHandler struct {
 // NewTokenInfoProxyHandler returns an http.Handler that proxies every Request to the server
 // at the upstreamURL
 func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) http.Handler {
+	log.Printf("Upstream tokeninfo is %s with %v cache (%d max size)", upstreamURL, cacheTTL, cacheMaxSize)
 	p := httputil.NewSingleHostReverseProxy(upstreamURL)
 	p.Director = hostModifier(upstreamURL, p.Director)
 	cache := ccache.New(ccache.Configure().MaxSize(cacheMaxSize))
@@ -74,7 +76,7 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		rw.Header().Set("X-Cache", "MISS")
 		h.upstream.ServeHTTP(rw, req)
 		if rw.StatusCode == 200 {
-			h.cache.Set(token, rw.Buffer.Bytes(), time.Second*15)
+			h.cache.Set(token, rw.Buffer.Bytes(), h.cacheTTL)
 		}
 		t := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy", metrics.NewTimer).(metrics.Timer)
 		t.UpdateSince(start)
