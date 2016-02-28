@@ -76,7 +76,7 @@ The following environment variables are supported:
 ``UPSTREAM_CACHE_MAX_SIZE``
     Maximum number of entries for upstream token cache. It defaults to 10000.
 ``UPSTREAM_CACHE_TTL``
-    The TTL for upstream token cache entries. It defaults to 60 seconds. See `Time based settings`_
+    The TTL for upstream token cache entries. It defaults to 60 seconds. Zero will disable the cache. See also `Time based settings`_
 ``LISTEN_ADDRESS``
     The address for the application listener. It defaults to ':9021'
 ``METRICS_LISTEN_ADDRESS``

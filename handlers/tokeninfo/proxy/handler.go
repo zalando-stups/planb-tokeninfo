@@ -75,7 +75,7 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		rw := newResponseBuffer(w)
 		rw.Header().Set("X-Cache", "MISS")
 		h.upstream.ServeHTTP(rw, req)
-		if rw.StatusCode == 200 {
+		if rw.StatusCode == 200 && h.cacheTTL > 0 {
 			h.cache.Set(token, rw.Buffer.Bytes(), h.cacheTTL)
 		}
 		t := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy", metrics.NewTimer).(metrics.Timer)
