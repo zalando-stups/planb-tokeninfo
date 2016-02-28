@@ -15,8 +15,8 @@ var Default = Handler(metrics.DefaultRegistry)
 
 // ServeHTTP returns status 200 and writes metrics from the registry as JSON
 func (h *metricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	metrics.WriteJSONOnce(h.registry, w)
 }
 
