@@ -53,6 +53,12 @@ func (rw *responseBuffer) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
+func incCounter(key string) {
+	if c, ok := metrics.DefaultRegistry.GetOrRegister(key, metrics.NewCounter).(metrics.Counter); ok {
+		c.Inc(1)
+	}
+}
+
 // ServeHTTP proxies the Request with an Access Token to the upstream and sends back the response
 // from the upstream
 func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -65,24 +71,22 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 	item := h.cache.Get(token)
 	if item != nil {
 		if !item.Expired() {
-			if c, ok := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy.cache.hits", metrics.NewCounter).(metrics.Counter); ok {
-				c.Inc(1)
-			}
+			incCounter("planb.tokeninfo.proxy.cache.hits")
 			w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 			w.Header().Set("X-Cache", "HIT")
 			w.Write(item.Value().([]byte))
 			return
+		} else {
+			incCounter("planb.tokeninfo.proxy.cache.expirations")
 		}
 	}
-	if c, ok := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy.cache.misses", metrics.NewCounter).(metrics.Counter); ok {
-		c.Inc(1)
-	}
+	incCounter("planb.tokeninfo.proxy.cache.misses")
 	hystrix.Do("proxy", func() error {
 		upstreamStart := time.Now()
 		rw := newResponseBuffer(w)
 		rw.Header().Set("X-Cache", "MISS")
 		h.upstream.ServeHTTP(rw, req)
-		if rw.StatusCode == 200 && h.cacheTTL > 0 {
+		if rw.StatusCode == http.StatusOK && h.cacheTTL > 0 {
 			h.cache.Set(token, rw.Buffer.Bytes(), h.cacheTTL)
 		}
 		upstreamTimer := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy.upstream", metrics.NewTimer).(metrics.Timer)
