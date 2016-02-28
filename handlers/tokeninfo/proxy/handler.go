@@ -64,11 +64,17 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 	item := h.cache.Get(token)
 	if item != nil {
 		if !item.Expired() {
+			if c, ok := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy.cache.hits", metrics.NewCounter).(metrics.Counter); ok {
+				c.Inc(1)
+			}
 			w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 			w.Header().Set("X-Cache", "HIT")
 			w.Write(item.Value().([]byte))
 			return
 		}
+	}
+	if c, ok := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy.cache.misses", metrics.NewCounter).(metrics.Counter); ok {
+		c.Inc(1)
 	}
 	hystrix.Do("proxy", func() error {
 		start := time.Now()
