@@ -16,15 +16,16 @@ import (
 type tokenInfoProxyHandler struct {
 	upstream *httputil.ReverseProxy
 	cache    *ccache.Cache
+	cacheTTL time.Duration
 }
 
 // NewTokenInfoProxyHandler returns an http.Handler that proxies every Request to the server
 // at the upstreamURL
-func NewTokenInfoProxyHandler(upstreamURL *url.URL) http.Handler {
+func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) http.Handler {
 	p := httputil.NewSingleHostReverseProxy(upstreamURL)
 	p.Director = hostModifier(upstreamURL, p.Director)
-	cache := ccache.New(ccache.Configure().MaxSize(10000))
-	return &tokenInfoProxyHandler{upstream: p, cache: cache}
+	cache := ccache.New(ccache.Configure().MaxSize(cacheMaxSize))
+	return &tokenInfoProxyHandler{upstream: p, cache: cache, cacheTTL: cacheTTL}
 }
 
 func newResponseBuffer(w http.ResponseWriter) *responseBuffer {
@@ -58,9 +59,19 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		tokeninfo.ErrInvalidRequest.Write(w)
 		return
 	}
+	item := h.cache.Get(token)
+	if item != nil {
+		if !item.Expired() {
+			w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+			w.Header().Set("X-Cache", "HIT")
+			w.Write(item.Value().([]byte))
+			return
+		}
+	}
 	hystrix.Do("proxy", func() error {
 		start := time.Now()
 		rw := newResponseBuffer(w)
+		rw.Header().Set("X-Cache", "MISS")
 		h.upstream.ServeHTTP(rw, req)
 		if rw.StatusCode == 200 {
 			h.cache.Set(token, rw.Buffer.Bytes(), time.Second*15)
