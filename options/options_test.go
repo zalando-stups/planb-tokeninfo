@@ -175,6 +175,8 @@ func TestLoading(t *testing.T) {
 			&Settings{
 				UpstreamTokenInfoURL:           exampleCom,
 				OpenIDProviderConfigurationURL: exampleCom,
+				UpstreamCacheMaxSize:           defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:               defaultUpstreamCacheTTL,
 				HTTPClientTimeout:              defaultHTTPClientTimeout,
 				HTTPClientTLSTimeout:           defaultHTTPClientTLSTimeout,
 				OpenIDProviderRefreshInterval:  defaultOpenIDRefreshInterval,
@@ -192,6 +194,8 @@ func TestLoading(t *testing.T) {
 			&Settings{
 				UpstreamTokenInfoURL:           exampleCom,
 				OpenIDProviderConfigurationURL: exampleCom,
+				UpstreamCacheMaxSize:           defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:               defaultUpstreamCacheTTL,
 				HTTPClientTimeout:              defaultHTTPClientTimeout,
 				HTTPClientTLSTimeout:           defaultHTTPClientTLSTimeout,
 				OpenIDProviderRefreshInterval:  defaultOpenIDRefreshInterval,
@@ -209,6 +213,8 @@ func TestLoading(t *testing.T) {
 			&Settings{
 				UpstreamTokenInfoURL:           exampleCom,
 				OpenIDProviderConfigurationURL: exampleCom,
+				UpstreamCacheMaxSize:           defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:               defaultUpstreamCacheTTL,
 				HTTPClientTimeout:              defaultHTTPClientTimeout,
 				HTTPClientTLSTimeout:           defaultHTTPClientTLSTimeout,
 				OpenIDProviderRefreshInterval:  defaultOpenIDRefreshInterval,
@@ -226,6 +232,8 @@ func TestLoading(t *testing.T) {
 			&Settings{
 				UpstreamTokenInfoURL:           exampleCom,
 				OpenIDProviderConfigurationURL: exampleCom,
+				UpstreamCacheMaxSize:           defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:               defaultUpstreamCacheTTL,
 				HTTPClientTimeout:              defaultHTTPClientTimeout,
 				HTTPClientTLSTimeout:           defaultHTTPClientTLSTimeout,
 				OpenIDProviderRefreshInterval:  time.Minute,
@@ -243,6 +251,8 @@ func TestLoading(t *testing.T) {
 			&Settings{
 				UpstreamTokenInfoURL:           exampleCom,
 				OpenIDProviderConfigurationURL: exampleCom,
+				UpstreamCacheMaxSize:           defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:               defaultUpstreamCacheTTL,
 				HTTPClientTimeout:              time.Millisecond,
 				HTTPClientTLSTimeout:           defaultHTTPClientTLSTimeout,
 				OpenIDProviderRefreshInterval:  defaultOpenIDRefreshInterval,
@@ -254,12 +264,16 @@ func TestLoading(t *testing.T) {
 		{
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
+				"UPSTREAM_CACHE_MAX_SIZE":           "123456789",
+				"UPSTREAM_CACHE_TTL":                "17s",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
 				"HTTP_CLIENT_TLS_TIMEOUT":           "10ms",
 			},
 			&Settings{
 				UpstreamTokenInfoURL:           exampleCom,
 				OpenIDProviderConfigurationURL: exampleCom,
+				UpstreamCacheMaxSize:           123456789,
+				UpstreamCacheTTL:               17 * time.Second,
 				HTTPClientTimeout:              defaultHTTPClientTimeout,
 				HTTPClientTLSTimeout:           10 * time.Millisecond,
 				OpenIDProviderRefreshInterval:  defaultOpenIDRefreshInterval,

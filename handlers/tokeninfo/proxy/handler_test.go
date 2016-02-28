@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 )
 
 const testTokenInfo = `{"access_token": "xxx","cn": "John Doe","expires_in": 42,"grant_type": "password","realm":"/services","scope":["uid","cn"],"token_type":"Bearer","uid":"jdoe"}` + "\n"
@@ -24,7 +25,7 @@ func TestProxy(t *testing.T) {
 
 	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url)
+	h := NewTokenInfoProxyHandler(url, 0, time.Second*0)
 	invalid := `{"error":"invalid_request","error_description":"Access Token not valid"}` + "\n"
 	for _, it := range []struct {
 		query    string
@@ -69,7 +70,7 @@ func TestHostHeader(t *testing.T) {
 
 	upstream = fmt.Sprintf("http://%s/upstream-tokeninfo", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url)
+	h := NewTokenInfoProxyHandler(url, 0, time.Second*0)
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "http://example.com/oauth2/tokeninfo?access_token=foo", nil)
@@ -92,15 +93,16 @@ func TestCache(t *testing.T) {
 
 	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url)
+	h := NewTokenInfoProxyHandler(url, 10, time.Millisecond)
 	for _, it := range []struct {
-		query    string
-		wantCode int
-		wantBody string
+		query     string
+		wantCode  int
+		wantBody  string
+		wantCache string
 	}{
-		{"/oauth2/tokeninfo?access_token=foo", http.StatusOK, testTokenInfo},
-		{"/oauth2/tokeninfo?access_token=bar", http.StatusOK, testTokenInfo},
-		{"/oauth2/tokeninfo?access_token=foo", http.StatusOK, testTokenInfo},
+		{"/oauth2/tokeninfo?access_token=foo", http.StatusOK, testTokenInfo, "MISS"},
+		{"/oauth2/tokeninfo?access_token=bar", http.StatusOK, testTokenInfo, "MISS"},
+		{"/oauth2/tokeninfo?access_token=foo", http.StatusOK, testTokenInfo, "HIT"},
 	} {
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "http://example.com"+it.query, nil)
@@ -112,6 +114,10 @@ func TestCache(t *testing.T) {
 
 		if w.Body.String() != it.wantBody {
 			t.Errorf("Wrong response body. Wanted %q, got %s", it.wantBody, w.Body.String())
+		}
+
+		if w.Header().Get("X-Cache") != it.wantCache {
+			t.Errorf("Wrong cache header. Wanted %q, got %s", it.wantCache, w.Header().Get("X-Cache"))
 		}
 	}
 	if counter > 2 {

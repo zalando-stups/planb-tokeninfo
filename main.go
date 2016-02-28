@@ -39,7 +39,7 @@ func main() {
 	ht.UserAgent = fmt.Sprintf("%v/%s", os.Args[0], version)
 	setupMetrics(settings)
 
-	ph := tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL)
+	ph := tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL, settings.UpstreamCacheMaxSize, settings.UpstreamCacheTTL)
 	kl := openid.NewCachingOpenIDProviderLoader(settings.OpenIDProviderConfigurationURL)
 	jh := jwthandler.New(kl)
 
