@@ -107,6 +107,8 @@ Metrics are exposed by default on port 9020 "/metrics". They include:
     Number of upstream cache hits.
 ``planb.tokeninfo.proxy.cache.misses``
     Number of upstream cache misses.
+``planb.tokeninfo.proxy.cache.expirations``
+    Number of upstream cache misses because of expiration.
 ``planb.tokeninfo.proxy.upstream``
     Timer for calls to the upstream tokeninfo. Cached responses are not measured here.
 
