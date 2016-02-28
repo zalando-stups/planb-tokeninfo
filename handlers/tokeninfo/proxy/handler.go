@@ -61,6 +61,7 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		tokeninfo.ErrInvalidRequest.Write(w)
 		return
 	}
+	start := time.Now()
 	item := h.cache.Get(token)
 	if item != nil {
 		if !item.Expired() {
@@ -77,17 +78,19 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		c.Inc(1)
 	}
 	hystrix.Do("proxy", func() error {
-		start := time.Now()
+		upstreamStart := time.Now()
 		rw := newResponseBuffer(w)
 		rw.Header().Set("X-Cache", "MISS")
 		h.upstream.ServeHTTP(rw, req)
 		if rw.StatusCode == 200 && h.cacheTTL > 0 {
 			h.cache.Set(token, rw.Buffer.Bytes(), h.cacheTTL)
 		}
-		t := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy", metrics.NewTimer).(metrics.Timer)
-		t.UpdateSince(start)
+		upstreamTimer := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy.upstream", metrics.NewTimer).(metrics.Timer)
+		upstreamTimer.UpdateSince(upstreamStart)
 		return nil
 	}, nil)
+	t := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy", metrics.NewTimer).(metrics.Timer)
+	t.UpdateSince(start)
 }
 
 func hostModifier(upstreamURL *url.URL, original func(req *http.Request)) func(req *http.Request) {
