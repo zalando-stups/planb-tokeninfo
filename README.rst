@@ -93,6 +93,22 @@ Some of the above settings accept time based definitions. Those definitions can 
 For ex., '10s' for 10 seconds, '1h10m' for 1 hour and 10 minutes, '100ms' for 100 milliseconds.
 A simple numeric value is interpreted as Seconds. For ex., '30' is interpreted as 30 seconds.
 
+Metrics
+=======
+
+Metrics are exposed by default on port 9020 "/metrics". They include:
+
+``planb.openidprovider.numkeys``
+    Number of public keys in memory.
+``planb.tokeninfo.proxy``
+    Timer for the proxy handler (includes cached results and upstream calls).
+``planb.tokeninfo.proxy.cache.hits``
+    Number of upstream cache hits.
+``planb.tokeninfo.proxy.cache.misses``
+    Number of upstream cache misses.
+``planb.tokeninfo.proxy.upstream``
+    Timer for calls to the upstream tokeninfo. Cached responses are not measured here.
+
 .. _Plan B OpenID Connect Provider: https://github.com/zalando/planb-provider
 .. _Plan B Revocation Service: https://github.com/zalando/planb-revocation
 .. _JOSE header: https://tools.ietf.org/html/rfc7515#section-4
