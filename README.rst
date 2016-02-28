@@ -17,6 +17,7 @@ Current features:
 
 * Download public keys (`set of JWKs`_) from OpenID provider
 * Verify signed JWT tokens using the right public key (identified by "kid" `JOSE header`_)
+* Proxy to upstream tokeninfo for non-JWT tokens and cache the response
 
 Planned features:
 
@@ -73,6 +74,10 @@ The following environment variables are supported:
     The OpenID Connect configuration refresh interval. See `Time based settings`_
 ``UPSTREAM_TOKENINFO_URL``
     URL of upstream OAuth 2 token info for non-JWT Bearer tokens.
+``UPSTREAM_CACHE_MAX_SIZE``
+    Maximum number of entries for upstream token cache. It defaults to 10000.
+``UPSTREAM_CACHE_TTL``
+    The TTL for upstream token cache entries. It defaults to 60 seconds. Zero will disable the cache. See also `Time based settings`_
 ``LISTEN_ADDRESS``
     The address for the application listener. It defaults to ':9021'
 ``METRICS_LISTEN_ADDRESS``
@@ -88,6 +93,24 @@ Time based settings
 Some of the above settings accept time based definitions. Those definitions can be specified as a string that can be understood by time.ParseDuration().
 For ex., '10s' for 10 seconds, '1h10m' for 1 hour and 10 minutes, '100ms' for 100 milliseconds.
 A simple numeric value is interpreted as Seconds. For ex., '30' is interpreted as 30 seconds.
+
+Metrics
+=======
+
+Metrics are exposed by default on port 9020 "/metrics". They include:
+
+``planb.openidprovider.numkeys``
+    Number of public keys in memory.
+``planb.tokeninfo.proxy``
+    Timer for the proxy handler (includes cached results and upstream calls).
+``planb.tokeninfo.proxy.cache.hits``
+    Number of upstream cache hits.
+``planb.tokeninfo.proxy.cache.misses``
+    Number of upstream cache misses.
+``planb.tokeninfo.proxy.cache.expirations``
+    Number of upstream cache misses because of expiration.
+``planb.tokeninfo.proxy.upstream``
+    Timer for calls to the upstream tokeninfo. Cached responses are not measured here.
 
 .. _Plan B OpenID Connect Provider: https://github.com/zalando/planb-provider
 .. _Plan B Revocation Service: https://github.com/zalando/planb-revocation
