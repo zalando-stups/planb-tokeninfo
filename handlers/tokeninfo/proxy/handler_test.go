@@ -79,13 +79,13 @@ func TestHostHeader(t *testing.T) {
 
 func TestCache(t *testing.T) {
 	var upstream string
-	var counter int
+	var upstreamCalls int
 
 	handler := func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(testTokenInfo))
-		counter++
+		upstreamCalls++
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(handler))
@@ -93,8 +93,8 @@ func TestCache(t *testing.T) {
 
 	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url, 10, 200*time.Millisecond)
-	for _, it := range []struct {
+	h := NewTokenInfoProxyHandler(url, 10, 1*time.Second)
+	for i, it := range []struct {
 		query     string
 		wantCode  int
 		wantBody  string
@@ -103,6 +103,7 @@ func TestCache(t *testing.T) {
 		{"/oauth2/tokeninfo?access_token=foo", http.StatusOK, testTokenInfo, "MISS"},
 		{"/oauth2/tokeninfo?access_token=bar", http.StatusOK, testTokenInfo, "MISS"},
 		{"/oauth2/tokeninfo?access_token=foo", http.StatusOK, testTokenInfo, "HIT"},
+		{"/oauth2/tokeninfo?access_token=foo", http.StatusOK, testTokenInfo, "MISS"},
 	} {
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "http://example.com"+it.query, nil)
@@ -117,11 +118,14 @@ func TestCache(t *testing.T) {
 		}
 
 		if w.Header().Get("X-Cache") != it.wantCache {
-			t.Errorf("Wrong cache header. Wanted %q, got %s", it.wantCache, w.Header().Get("X-Cache"))
+			t.Errorf("Wrong cache header in call %d. Wanted %q, got %s", i, it.wantCache, w.Header().Get("X-Cache"))
+		}
+		if i == 2 {
+			time.Sleep(2 * time.Second)
 		}
 	}
-	if counter > 2 {
-		t.Errorf("Second request for 'foo' token should have been cached, but we got %d calls to upstream", counter)
+	if upstreamCalls > 3 {
+		t.Errorf("Second request for 'foo' token should have been cached, but we got %d calls to upstream", upstreamCalls)
 	}
 }
 
