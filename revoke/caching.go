@@ -83,6 +83,9 @@ func (c *Cache) GetLastTS() int {
 	res := make(chan interface{})
 	c.ts <- &request{res: res}
 	r := <-res
+	if r == nil {
+		return 0
+	}
 	return r.(*Revocation).Timestamp
 }
 
