@@ -1,7 +1,6 @@
 package jwthandler
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -31,7 +30,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err == nil && ti != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(ti); err != nil {
+		if err := ti.Marshal(w); err != nil {
 			fmt.Println("Error serializing the token info: ", err)
 		} else {
 			measureRequest(start, fmt.Sprintf("planb.tokeninfo.jwt.%s.requests", ti.Realm))
