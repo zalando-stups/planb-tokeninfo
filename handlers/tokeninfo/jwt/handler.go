@@ -12,15 +12,17 @@ import (
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"github.com/zalando/planb-tokeninfo/keyloader"
+	"github.com/zalando/planb-tokeninfo/revoke"
 )
 
 type jwtHandler struct {
 	keyLoader keyloader.KeyLoader
+	crp       *revoke.CachingRevokeProvider
 }
 
 // New returns an http.Handler that is able to validate JWT tokens
-func New(kl keyloader.KeyLoader) tokeninfo.Handler {
-	return &jwtHandler{keyLoader: kl}
+func New(kl keyloader.KeyLoader, crp *revoke.CachingRevokeProvider) tokeninfo.Handler {
+	return &jwtHandler{keyLoader: kl, crp: crp}
 }
 
 // ServeHTTP will validate the JWT token in the Request and send back the TokenInfo in case
@@ -56,7 +58,7 @@ func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	if err == nil {
 		measureRequest(start, fmt.Sprintf("planb.tokeninfo.jwt.validation.%s", token.Method.Alg()))
 	}
-	if err == nil && token.Valid {
+	if err == nil && token.Valid && !h.crp.IsJWTRevoked(token) {
 		return newTokenInfo(token, time.Now())
 	}
 	log.Println("Failed to validate token: ", err)

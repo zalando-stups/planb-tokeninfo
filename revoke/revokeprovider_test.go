@@ -25,7 +25,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	sub := "sub"
 	subVal := "jeff@zalando"
 
-	crp := &cachingRevokeProvider{url: "localhost", cache: NewCache()}
+	crp := &CachingRevokeProvider{url: "localhost", cache: NewCache()}
 
 	// token
 	revData := make(map[string]interface{})
@@ -54,13 +54,13 @@ func TestIsJWTRevoked(t *testing.T) {
 	tc["iat"] = "400000"
 	jt := &jwt.Token{Raw: rawJwt, Claims: tc}
 
-	if !crp.isJWTRevoked(jt) {
+	if !crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should be revoked. %#v", jt)
 	}
 
 	tc["iat"] = "250000"
 	jt = &jwt.Token{Raw: rawJwt, Claims: tc}
-	if crp.isJWTRevoked(jt) {
+	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should not be revoked. %#v", jt)
 	}
 	crp.cache.Delete(hashTokenClaim(rawJwt))
@@ -68,13 +68,13 @@ func TestIsJWTRevoked(t *testing.T) {
 	// Revoke a claim
 	tc["iat"] = "150000"
 	jt = &jwt.Token{Claims: tc}
-	if !crp.isJWTRevoked(jt) {
+	if !crp.IsJWTRevoked(jt) {
 		t.Errorf("Claim should be revoked. %#v", jt)
 	}
 
 	tc["iat"] = "250000"
 	jt = &jwt.Token{Claims: tc}
-	if crp.isJWTRevoked(jt) {
+	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Claim should not be revoked. %#v", jt)
 	}
 	crp.cache.Delete(sub + hashTokenClaim(subVal))
@@ -82,13 +82,13 @@ func TestIsJWTRevoked(t *testing.T) {
 	// Global revocation
 	tc["iat"] = "50000"
 	jt = &jwt.Token{Raw: rawJwt, Claims: tc}
-	if !crp.isJWTRevoked(jt) {
+	if !crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should be revoked (GLOBAL). %#v", jt)
 	}
 
 	tc["iat"] = "150000"
 	jt = &jwt.Token{Raw: rawJwt, Claims: tc}
-	if crp.isJWTRevoked(jt) {
+	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should not be revoked (GLOBAL). %#v", jt)
 	}
 

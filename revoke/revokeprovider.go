@@ -13,19 +13,19 @@ import (
 	"time"
 )
 
-type cachingRevokeProvider struct {
+type CachingRevokeProvider struct {
 	url   string
 	cache *Cache
 }
 
-func NewCachingRevokeProvider(u *url.URL) *cachingRevokeProvider {
-	crp := &cachingRevokeProvider{url: u.String(), cache: NewCache()}
+func NewCachingRevokeProvider(u *url.URL) *CachingRevokeProvider {
+	crp := &CachingRevokeProvider{url: u.String(), cache: NewCache()}
 	schedule(options.AppSettings.RevocationProviderRefreshInterval, crp.refreshRevocations)
 	return crp
 }
 
 // TODO: force refresh
-func (crp *cachingRevokeProvider) refreshRevocations() {
+func (crp *CachingRevokeProvider) refreshRevocations() {
 	log.Println("refreshing revocations")
 
 	ts := crp.cache.GetLastTS()
@@ -60,7 +60,7 @@ func (crp *cachingRevokeProvider) refreshRevocations() {
 
 }
 
-func (crp *cachingRevokeProvider) isJWTRevoked(j *jwt.Token) bool {
+func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
 	iat, err := strconv.Atoi(j.Claims["iat"].(string))
 	if err != nil {
