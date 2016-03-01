@@ -1,7 +1,9 @@
 package jwthandler
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"time"
 
@@ -37,6 +39,33 @@ type TokenInfo struct {
 	Realm        string   `json:"realm"`
 	TokenType    string   `json:"token_type"`
 	ExpiresIn    int      `json:"expires_in"`
+}
+
+func (ti *TokenInfo) Marshal(w io.Writer) error {
+	m := make(map[string]interface{})
+	m["access_token"] = ti.AccessToken
+	if ti.RefreshToken != "" {
+		m["refresh_token"] = ti.RefreshToken
+	}
+	m["uid"] = ti.UID
+	m["grant_type"] = ti.GrantType
+	m["open_id"] = ti.OpenID
+	m["scope"] = ti.Scope
+	m["realm"] = ti.Realm
+	m["token_type"] = ti.TokenType
+	m["expires_in"] = ti.ExpiresIn
+
+	if ti.Scope != nil {
+		// compatibility: add "truthy" attributes to Token Info response for all existing scopes
+		// https://github.com/zalando/planb-tokeninfo/issues/29
+		for _, scope := range ti.Scope {
+			_, exists := m[scope]
+			if !exists {
+				m[scope] = true
+			}
+		}
+	}
+	return json.NewEncoder(w).Encode(m)
 }
 
 func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
