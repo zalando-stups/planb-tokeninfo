@@ -13,7 +13,9 @@ func TestIsExpiredExpectTrue(t *testing.T) {
 }
 
 func TestIsExpiredExpectFalse(t *testing.T) {
-	if isExpired(20000000000000) {
+	ti := time.Date(2038, time.January, 1, 0, 0, 0, 0, time.UTC).UnixNano() / 1e6
+
+	if isExpired(int(ti)) {
 		t.Errorf("This is a long time from now; it should not be expired.")
 	}
 }
