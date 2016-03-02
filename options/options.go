@@ -33,7 +33,7 @@ const (
 	defaultOpenIDRefreshInterval         = 30 * time.Second
 	defaultHTTPClientTimeout             = 10 * time.Second
 	defaultHTTPClientTLSTimeout          = 10 * time.Second
-	defaultRevokeExpireLength            = 8 * 60 * 60 * 1000 * time.Millisecond
+	defaultRevokeExpireLength            = 8 * 60 * 60 * time.Millisecond
 	defaultRevokeProviderRefreshInterval = 90 * time.Second
 	defaultHashingSalt                   = "seasaltisthebest"
 )
