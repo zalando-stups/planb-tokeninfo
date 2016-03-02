@@ -51,14 +51,14 @@ func TestIsJWTRevoked(t *testing.T) {
 	// revoke a token
 	tc := make(map[string]interface{})
 	tc[sub] = subVal
-	tc["iat"] = "400000"
+	tc["iat"] = 400000.0
 	jt := &jwt.Token{Raw: rawJwt, Claims: tc}
 
 	if !crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should be revoked. %#v", jt)
 	}
 
-	tc["iat"] = "250000"
+	tc["iat"] = 250000.0
 	jt = &jwt.Token{Raw: rawJwt, Claims: tc}
 	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should not be revoked. %#v", jt)
@@ -66,13 +66,13 @@ func TestIsJWTRevoked(t *testing.T) {
 	crp.cache.Delete(hashTokenClaim(rawJwt))
 
 	// Revoke a claim
-	tc["iat"] = "150000"
+	tc["iat"] = 150000.0
 	jt = &jwt.Token{Claims: tc}
 	if !crp.IsJWTRevoked(jt) {
 		t.Errorf("Claim should be revoked. %#v", jt)
 	}
 
-	tc["iat"] = "250000"
+	tc["iat"] = 250000.0
 	jt = &jwt.Token{Claims: tc}
 	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Claim should not be revoked. %#v", jt)
@@ -80,13 +80,13 @@ func TestIsJWTRevoked(t *testing.T) {
 	crp.cache.Delete(sub + hashTokenClaim(subVal))
 
 	// Global revocation
-	tc["iat"] = "50000"
+	tc["iat"] = 50000.0
 	jt = &jwt.Token{Raw: rawJwt, Claims: tc}
 	if !crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should be revoked (GLOBAL). %#v", jt)
 	}
 
-	tc["iat"] = "150000"
+	tc["iat"] = 150000.0
 	jt = &jwt.Token{Raw: rawJwt, Claims: tc}
 	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should not be revoked (GLOBAL). %#v", jt)

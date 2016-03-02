@@ -62,11 +62,12 @@ func (crp *CachingRevokeProvider) refreshRevocations() {
 
 func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
-	iat, err := strconv.Atoi(j.Claims["iat"].(string))
-	if err != nil {
-		log.Println("Error converting iat to int. " + err.Error())
-		return false
-	}
+	//iat, err := strconv.Atoi(j.Claims["iat"].(string))
+	iat := int(j.Claims["iat"].(float64))
+	//	if err != nil {
+	//		log.Println("Error converting iat to int. " + err.Error())
+	//		return false
+	//	}
 
 	// check global revocation
 	if r := crp.cache.Get("GLOBAL"); r != nil && r.(*Revocation).Timestamp > iat {

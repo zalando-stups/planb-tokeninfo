@@ -6,9 +6,11 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"github.com/zalando/planb-tokeninfo/revoke"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -63,7 +65,9 @@ func init() {
 
 func TestHandler(t *testing.T) {
 	kl := new(mockKeyLoader)
-	h := New(kl)
+	u, _ := url.Parse("localhost")
+	crp := revoke.NewCachingRevokeProvider(u)
+	h := New(kl, crp)
 
 	for _, test := range []struct {
 		token    string
@@ -102,7 +106,9 @@ func TestHandler(t *testing.T) {
 
 func TestRoutingMatch(t *testing.T) {
 	kl := new(mockKeyLoader)
-	h := New(kl)
+	u, _ := url.Parse("localhost")
+	crp := revoke.NewCachingRevokeProvider(u)
+	h := New(kl, crp)
 	for _, test := range []struct {
 		url  string
 		want bool
@@ -124,7 +130,9 @@ func TestRoutingMatch(t *testing.T) {
 
 func TestHandlerCreation(t *testing.T) {
 	kl := new(mockKeyLoader)
-	h := New(kl)
+	u, _ := url.Parse("localhost")
+	crp := revoke.NewCachingRevokeProvider(u)
+	h := New(kl, crp)
 	jh, ok := h.(*jwtHandler)
 	if !ok {
 		t.Fatalf("Wrong type for the handler = %v", reflect.TypeOf(h))
