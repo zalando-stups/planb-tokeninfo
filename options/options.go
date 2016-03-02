@@ -33,10 +33,9 @@ const (
 	defaultOpenIDRefreshInterval         = 30 * time.Second
 	defaultHTTPClientTimeout             = 10 * time.Second
 	defaultHTTPClientTLSTimeout          = 10 * time.Second
-	defaultRevokeExpireLength            = 8 * 60 * 60 * time.Millisecond
+	defaultRevokeExpireLength            = 8 * 60 * 60 * 1000 * time.Millisecond
 	defaultRevokeProviderRefreshInterval = 90 * time.Second
-
-	defaultHashingSalt = "seasaltisthebest"
+	defaultHashingSalt                   = "seasaltisthebest"
 )
 
 var (
@@ -55,6 +54,7 @@ func defaultSettings() *Settings {
 		HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
 		RevokeExpireLength:                defaultRevokeExpireLength,
 		RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
+		HashingSalt:                       defaultHashingSalt,
 	}
 }
 
@@ -116,6 +116,14 @@ func LoadFromEnvironment() error {
 
 	if d := getDuration("HTTP_CLIENT_TLS_TIMEOUT", 0); d > 0 {
 		settings.HTTPClientTLSTimeout = d
+	}
+
+	if d := getDuration("REVOKE_EXPIRE_LENGTH", 0); d > 0 {
+		settings.RevokeExpireLength = d
+	}
+
+	if d := getDuration("REVOCATION_PROVIDER_REFRESH_INTERVAL", 0); d > 0 {
+		settings.RevocationProviderRefreshInterval = d
 	}
 
 	AppSettings = settings
