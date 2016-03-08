@@ -13,7 +13,7 @@ func TestIsExpiredExpectTrue(t *testing.T) {
 }
 
 func TestIsExpiredExpectFalse(t *testing.T) {
-	ti := time.Date(2038, time.January, 1, 0, 0, 0, 0, time.UTC).UnixNano() / 1e6
+	ti := time.Date(2038, time.January, 1, 0, 0, 0, 0, time.UTC).Unix()
 
 	if isExpired(int(ti)) {
 		t.Errorf("This is a long time from now; it should not be expired.")
@@ -36,8 +36,8 @@ func TestCaching(t *testing.T) {
 
 	revData2 := make(map[string]interface{})
 	revData2["token_hash"] = "hash2"
-	revData2["revoked_at"] = strconv.Itoa(int(time.Now().UnixNano() / 1e6))
-	rev2 := &Revocation{Type: "TOKEN", Data: revData2, Timestamp: int(time.Now().UnixNano() / 1e6)}
+	revData2["revoked_at"] = strconv.Itoa(int(time.Now().Unix()))
+	rev2 := &Revocation{Type: "TOKEN", Data: revData2, Timestamp: int(time.Now().Unix())}
 	cache.Add(rev2)
 
 	cache.Delete("hash2")
@@ -69,22 +69,22 @@ func TestCaching(t *testing.T) {
 	revData4 := make(map[string]interface{})
 	revData4["value_hash"] = "hash4"
 	revData4["name"] = "claimName4"
-	revData4["revoked_at"] = strconv.Itoa(int(time.Now().UnixNano() / 1e6))
-	rev4 := &Revocation{Type: "CLAIM", Data: revData4, Timestamp: int(time.Now().UnixNano() / 1e6)}
+	revData4["revoked_at"] = strconv.Itoa(int(time.Now().Unix()))
+	rev4 := &Revocation{Type: "CLAIM", Data: revData4, Timestamp: int(time.Now().Unix())}
 	cache.Add(rev4)
 
 	revData5 := make(map[string]interface{})
 	revData5["value_hash"] = "hash5"
 	revData5["name"] = "claimName5"
-	revData5["revoked_at"] = strconv.Itoa(int(time.Now().UnixNano() / 1e6))
-	rev5 := &Revocation{Type: "CLAIM", Data: revData5, Timestamp: int(time.Now().UnixNano() / 1e6)}
+	revData5["revoked_at"] = strconv.Itoa(int(time.Now().Unix()))
+	rev5 := &Revocation{Type: "CLAIM", Data: revData5, Timestamp: int(time.Now().Unix())}
 	cache.Add(rev5)
 
 	revData6 := make(map[string]interface{})
 	revData6["value_hash"] = "hash6"
 	revData6["name"] = "claimName5"
-	revData6["revoked_at"] = strconv.Itoa(int(time.Now().UnixNano() / 1e6))
-	rev6 := &Revocation{Type: "CLAIM", Data: revData6, Timestamp: int(time.Now().UnixNano() / 1e6)}
+	revData6["revoked_at"] = strconv.Itoa(int(time.Now().Unix()))
+	rev6 := &Revocation{Type: "CLAIM", Data: revData6, Timestamp: int(time.Now().Unix())}
 	cache.Add(rev6)
 
 	if len(cache.GetClaimNames()) != 2 {

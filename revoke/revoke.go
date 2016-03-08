@@ -57,7 +57,7 @@ func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
 func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 
 	// account for some network delay, say three seconds
-	t := int(time.Now().UnixNano()/1e6) - 3*1e6
+	t := int(time.Now().Add(-3 * time.Second).Unix())
 
 	r.Data = make(map[string]interface{})
 	switch j.Type {
