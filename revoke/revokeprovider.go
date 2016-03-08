@@ -30,8 +30,10 @@ func (crp *CachingRevokeProvider) refreshRevocations() {
 
 	ts := crp.cache.GetLastTS()
 	if ts == 0 {
-		ts = int(time.Now().UnixNano()/1e6) - int(options.AppSettings.RevokeExpireLength)
+		ts = int(time.Now().UnixNano()/1e6) - int(options.AppSettings.RevokeExpireLength/1e6)
 	}
+
+	log.Println("Checking revocations from: %d", ts)
 
 	resp, err := http.Get(crp.url + "?from=" + strconv.Itoa(ts))
 	if err != nil {
@@ -62,21 +64,18 @@ func (crp *CachingRevokeProvider) refreshRevocations() {
 
 func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
-	//iat, err := strconv.Atoi(j.Claims["iat"].(string))
 	iat := int(j.Claims["iat"].(float64))
-	//	if err != nil {
-	//		log.Println("Error converting iat to int. " + err.Error())
-	//		return false
-	//	}
 
 	// check global revocation
 	if r := crp.cache.Get("GLOBAL"); r != nil && r.(*Revocation).Timestamp > iat {
+		log.Printf("Found GLOBAL revocation")
 		return true
 	}
 
 	// check token revocation
 	th := hashTokenClaim(j.Raw)
 	if r := crp.cache.Get(th); r != nil && r.(*Revocation).Timestamp < iat {
+		log.Printf("Found TOKEN revocation. Hash: %s", th)
 		return true
 	}
 
@@ -88,6 +87,7 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 	for _, n := range cn {
 		ch := n + hashTokenClaim(j.Claims[n].(string))
 		if r := crp.cache.Get(ch); r != nil && r.(*Revocation).Timestamp > iat {
+			log.Printf("Found CLAIM revocation. hash: %s", ch)
 			return true
 		}
 	}
