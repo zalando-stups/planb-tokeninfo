@@ -28,6 +28,8 @@ Planned features:
 * Download revocation lists from `Plan B Revocation Service`_
 * Deny JWT tokens matching any revocation list
 
+More information is available in our `Plan B Documentation`_.
+
 
 Building
 ========
@@ -118,6 +120,7 @@ Metrics are exposed by default on port 9020 "/metrics". They include:
 
 .. _Plan B OpenID Connect Provider: https://github.com/zalando/planb-provider
 .. _Plan B Revocation Service: https://github.com/zalando/planb-revocation
+.. _Plan B Documentation: http://planb.readthedocs.org/
 .. _JOSE header: https://tools.ietf.org/html/rfc7515#section-4
 .. _set of JWKs: https://tools.ietf.org/html/rfc7517#section-5
 .. _OpenID Connect configuration discovery document: https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfigurationResponse
