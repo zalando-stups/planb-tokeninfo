@@ -5,7 +5,7 @@ import (
 )
 
 var j = []byte(`{
-			  "meta": null,
+			  "meta": {"REFRESH_FROM": 10000, "REFRESH_TIMESTAMP": 10000},
 			    "revocations": [
 			    {
 		      "type": "CLAIM",
@@ -57,7 +57,7 @@ func TestUnmarshalJsonData(t *testing.T) {
 
 	var rev = new(jsonRevoke)
 	rev.UnmarshallJSON(j)
-	if rev.Meta.ForceRefresh != "" || len(rev.Revs) != 3 {
+	if rev.Meta.RefreshTimestamp != 10000 || rev.Meta.RefreshFrom != 10000 || len(rev.Revs) != 3 {
 		t.Errorf("Error unmarshaling revocations\n\n%#v", rev)
 	}
 }

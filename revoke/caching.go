@@ -2,18 +2,20 @@ package revoke
 
 import (
 	"github.com/zalando/planb-tokeninfo/options"
+	"log"
 	"time"
 )
 
 // TODO: consider adding a separate cache for each revocation type
 
 type Cache struct {
-	get    chan *request
-	set    chan *request
-	del    chan *request
-	expire chan bool
-	ts     chan *request
-	cName  chan *request
+	get          chan *request
+	set          chan *request
+	del          chan *request
+	expire       chan bool
+	ts           chan *request // timestamp
+	cName        chan *request // claim names
+	forceRefresh chan int      // expire from timestamp
 }
 
 type request struct {
@@ -30,6 +32,7 @@ func NewCache() *Cache {
 	expire := make(chan bool)
 	ts := make(chan *request)
 	cName := make(chan *request)
+	forceRefresh := make(chan int)
 
 	go func() {
 		c := make(map[string]interface{})
@@ -40,9 +43,10 @@ func NewCache() *Cache {
 				c[r.key] = r.val
 			case r := <-del:
 				delete(c, r.key)
-			case <-expire:
-				for key, revocation := range c {
-					if isExpired(revocation.(*Revocation).Timestamp) {
+			case r := <-forceRefresh:
+				for key, rev := range c {
+					if key != "FORCEREFRESH" && rev.(*Revocation).Data["revoked_at"].(int) >= r {
+						log.Printf("Removing key: %s, forcerefresh: %d, revoked_at: %d", key, r, rev.(*Revocation).Data["revoked_at"].(int))
 						delete(c, key)
 					}
 				}
@@ -64,13 +68,19 @@ func NewCache() *Cache {
 					}
 				}
 				r.res <- names
+			case <-expire:
+				for key, revocation := range c {
+					if isExpired(revocation.(*Revocation).Timestamp) {
+						delete(c, key)
+					}
+				}
 			case r := <-get:
 				r.res <- c[r.key]
 			}
 		}
 	}()
 
-	return &Cache{get: get, set: set, del: del, expire: expire, ts: ts, cName: cName}
+	return &Cache{get: get, set: set, del: del, expire: expire, ts: ts, cName: cName, forceRefresh: forceRefresh}
 }
 
 func (c *Cache) Get(key string) interface{} {
@@ -105,6 +115,13 @@ func (c *Cache) Expire() {
 	c.expire <- true
 }
 
+func (c *Cache) ForceRefresh(ts int) {
+	if ts == 0 {
+		return
+	}
+	c.forceRefresh <- ts
+}
+
 func (c *Cache) Add(rev *Revocation) {
 	var hash string
 	switch rev.Type {
@@ -114,6 +131,8 @@ func (c *Cache) Add(rev *Revocation) {
 		hash = rev.Data["name"].(string) + rev.Data["value_hash"].(string)
 	case "GLOBAL":
 		hash = "GLOBAL"
+	case "FORCEREFRESH":
+		hash = "FORCEREFRESH"
 	default:
 		return
 	}

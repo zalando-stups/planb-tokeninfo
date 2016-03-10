@@ -24,7 +24,6 @@ func NewCachingRevokeProvider(u *url.URL) *CachingRevokeProvider {
 	return crp
 }
 
-// TODO: force refresh
 func (crp *CachingRevokeProvider) refreshRevocations() {
 	log.Println("refreshing revocations")
 
@@ -50,6 +49,19 @@ func (crp *CachingRevokeProvider) refreshRevocations() {
 		return
 	}
 
+	if jr.Meta.RefreshTimestamp != 0 {
+		r := crp.cache.Get("FORCEREFRESH")
+		if r != nil && r.(*Revocation).Timestamp != jr.Meta.RefreshTimestamp {
+			crp.cache.ForceRefresh(jr.Meta.RefreshFrom)
+			rev := new(Revocation)
+			rev.Type = "FORCEREFRESH"
+			rev.Data["refresh_from"] = jr.Meta.RefreshFrom
+			rev.Timestamp = jr.Meta.RefreshTimestamp
+			crp.cache.Add(rev)
+		}
+
+	}
+
 	log.Printf("Number of new revocations: %d", len(jr.Revs))
 
 	for _, j := range jr.Revs {
@@ -59,6 +71,8 @@ func (crp *CachingRevokeProvider) refreshRevocations() {
 			crp.cache.Add(r)
 		}
 	}
+
+	crp.cache.Expire()
 
 }
 

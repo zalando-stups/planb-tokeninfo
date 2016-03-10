@@ -14,7 +14,8 @@ type Revocation struct {
 
 type jsonRevoke struct {
 	Meta struct {
-		ForceRefresh string `json:"force_refresh"`
+		RefreshFrom      int `json:"REFRESH_FROM"`
+		RefreshTimestamp int `json:"REFRESH_TIMESTAMP"`
 	} `json:"meta"`
 	Revs []jsonRevocation `json:"revocations"`
 }
@@ -37,20 +38,6 @@ func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
 		return err
 	}
 
-	// Note: if we already foreced a refresh, we don't want to do it again
-	// otherwise we'll get stuck in an infinite loop
-	/*
-		if buf.ForceRefresh != "" && !forcedRefresh {
-			i, err := strconv.Atoi(buf.ForceRefresh)
-			if err != nil {
-				log.Println("Error converting ForceRefresh to int." + err.Error())
-			} else {
-				// TODO: not sure how to get the current Cache from here. . .
-				refreshCacheFromTime(i)
-			}
-		}
-	*/
-
 	return
 }
 
@@ -68,7 +55,6 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 			return
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
-		r.Data["revoked_at"] = j.RevokedAt
 	case "CLAIM":
 		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore)
 		if !valid {
@@ -94,6 +80,7 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 		return
 	}
 
+	r.Data["revoked_at"] = j.RevokedAt
 	r.Type = j.Type
 	r.Timestamp = t
 	return
