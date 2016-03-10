@@ -29,7 +29,7 @@ func (crp *CachingRevokeProvider) refreshRevocations() {
 
 	ts := crp.cache.GetLastTS()
 	if ts == 0 {
-		ts = int(time.Now().Add(-1 * options.AppSettings.RevokeExpireLength).Unix())
+		ts = int(time.Now().Add(-1 * options.AppSettings.RevocationCacheTTL).Unix())
 	}
 
 	log.Println("Checking revocations from: %d", ts)

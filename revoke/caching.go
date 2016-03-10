@@ -145,7 +145,7 @@ func (c *Cache) Delete(key string) {
 
 func isExpired(ts int) bool {
 
-	if time.Unix(int64(ts), 0).Add(options.AppSettings.RevokeExpireLength).Before(time.Now()) {
+	if time.Unix(int64(ts), 0).Add(options.AppSettings.RevocationCacheTTL).Before(time.Now()) {
 		return true
 	}
 

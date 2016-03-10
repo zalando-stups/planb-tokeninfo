@@ -19,7 +19,7 @@ type Settings struct {
 	OpenIDProviderRefreshInterval     time.Duration
 	HTTPClientTimeout                 time.Duration
 	HTTPClientTLSTimeout              time.Duration
-	RevokeExpireLength                time.Duration
+	RevocationCacheTTL                time.Duration
 	RevocationProviderRefreshInterval time.Duration
 	RevocationProviderUrl             *url.URL
 	HashingSalt                       string
@@ -33,7 +33,7 @@ const (
 	defaultOpenIDRefreshInterval         = 30 * time.Second
 	defaultHTTPClientTimeout             = 10 * time.Second
 	defaultHTTPClientTLSTimeout          = 10 * time.Second
-	defaultRevokeExpireLength            = 8 * time.Hour
+	defaultRevocationCacheTTL            = 8 * time.Hour
 	defaultRevokeProviderRefreshInterval = 90 * time.Second
 	defaultHashingSalt                   = "seasaltisthebest"
 )
@@ -52,7 +52,7 @@ func defaultSettings() *Settings {
 		OpenIDProviderRefreshInterval:     defaultOpenIDRefreshInterval,
 		HTTPClientTimeout:                 defaultHTTPClientTimeout,
 		HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
-		RevokeExpireLength:                defaultRevokeExpireLength,
+		RevocationCacheTTL:                defaultRevocationCacheTTL,
 		RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 		HashingSalt:                       defaultHashingSalt,
 	}
@@ -118,8 +118,8 @@ func LoadFromEnvironment() error {
 		settings.HTTPClientTLSTimeout = d
 	}
 
-	if d := getDuration("REVOKE_EXPIRE_LENGTH", 0); d > 0 {
-		settings.RevokeExpireLength = d
+	if d := getDuration("REVOCATION_CACHE_TTL", 0); d > 0 {
+		settings.RevocationCacheTTL = d
 	}
 
 	if d := getDuration("REVOCATION_PROVIDER_REFRESH_INTERVAL", 0); d > 0 {
