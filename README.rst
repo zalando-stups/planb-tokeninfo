@@ -82,6 +82,14 @@ The following environment variables are supported:
     Maximum number of entries for upstream token cache. It defaults to 10000.
 ``UPSTREAM_CACHE_TTL``
     The TTL for upstream token cache entries. It defaults to 60 seconds. Zero will disable the cache. See also `Time based settings`_
+``REVOCATION_PROVIDER_URL``
+    URL of of the Revocation service.
+``REVOCATION_PROVIDER_REFRESH_INTERVAL``
+    Refresh interval for polling the Revocation service. See `Time based settings`_
+``REVOCATION_CACHE_TTL``
+    The TTL for Revocation cache entries. Default is 8 hours. See `Time based settings`_
+``HASHING_SALT``
+    Shared salt with Revocation service. Used for comparing hashed tokens from the Revocation service.
 ``LISTEN_ADDRESS``
     The address for the application listener. It defaults to ':9021'
 ``METRICS_LISTEN_ADDRESS``
