@@ -4,9 +4,9 @@ import (
 	"time"
 )
 
-type jobFunc func()
+type JobFunc func()
 
-func schedule(interval time.Duration, job jobFunc) {
+func Schedule(interval time.Duration, job JobFunc) {
 	go func() {
 		for {
 			job()

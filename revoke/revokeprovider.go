@@ -22,7 +22,7 @@ type CachingRevokeProvider struct {
 
 func NewCachingRevokeProvider(u *url.URL) *CachingRevokeProvider {
 	crp := &CachingRevokeProvider{url: u.String(), cache: NewCache()}
-	schedule(options.AppSettings.RevocationProviderRefreshInterval, crp.refreshRevocations)
+	Schedule(options.AppSettings.RevocationProviderRefreshInterval, crp.refreshRevocations)
 	return crp
 }
 
