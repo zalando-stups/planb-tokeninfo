@@ -3,7 +3,9 @@ package revoke
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/options"
 	"io/ioutil"
 	"log"
@@ -82,14 +84,14 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
 	// check global revocation
 	if r := crp.cache.Get("GLOBAL"); r != nil && r.(*Revocation).Timestamp > iat {
-		log.Printf("Found GLOBAL revocation")
+		countRevocations("GLOBAL")
 		return true
 	}
 
 	// check token revocation
 	th := hashTokenClaim(j.Raw)
 	if r := crp.cache.Get(th); r != nil && r.(*Revocation).Timestamp < iat {
-		log.Printf("Found TOKEN revocation. Hash: %s", th)
+		countRevocations("TOKEN")
 		return true
 	}
 
@@ -101,7 +103,7 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 	for _, n := range cn {
 		ch := n + hashTokenClaim(j.Claims[n].(string))
 		if r := crp.cache.Get(ch); r != nil && r.(*Revocation).Timestamp > iat {
-			log.Printf("Found CLAIM revocation. hash: %s", ch)
+			countRevocations("CLAIM")
 			return true
 		}
 	}
@@ -121,6 +123,13 @@ func hashTokenClaim(h string) string {
 	hash.Write(buf)
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 
+}
+
+func countRevocations(r string) {
+	rev := fmt.Sprintf("planb.tokeninfo.revocation.%s", r)
+	if c, ok := metrics.DefaultRegistry.GetOrRegister(rev, metrics.NewCounter).(metrics.Counter); ok {
+		c.Inc(1)
+	}
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go
