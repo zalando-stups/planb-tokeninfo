@@ -5,6 +5,13 @@ import (
 	"testing"
 )
 
+/*
+func init() {
+	schedFunc = noSched
+}
+
+func noSched(_ time.Duration, _ RefreshRevocations) {}
+*/
 func TestHashTokenClaimEmpty(t *testing.T) {
 	h := hashTokenClaim("")
 	if h != "" {
@@ -30,21 +37,21 @@ func TestIsJWTRevoked(t *testing.T) {
 	// token
 	revData := make(map[string]interface{})
 	revData["token_hash"] = hashTokenClaim(rawJwt)
-	revData["revoked_at"] = "300000"
+	revData["revoked_at"] = 300000
 	rev := &Revocation{Type: "TOKEN", Data: revData, Timestamp: 300000}
 	crp.cache.Add(rev)
 
 	// claim
 	revData2 := make(map[string]interface{})
 	revData2["value_hash"] = hashTokenClaim(subVal)
-	revData2["issued_before"] = "200000"
+	revData2["issued_before"] = 200000
 	revData2["name"] = sub
 	rev2 := &Revocation{Type: "CLAIM", Data: revData2, Timestamp: 200000}
 	crp.cache.Add(rev2)
 
 	// global
 	revData3 := make(map[string]interface{})
-	revData3["issued_before"] = "100000"
+	revData3["issued_before"] = 100000
 	rev3 := &Revocation{Type: "GLOBAL", Data: revData3, Timestamp: 100000}
 	crp.cache.Add(rev3)
 
@@ -94,4 +101,15 @@ func TestIsJWTRevoked(t *testing.T) {
 
 }
 
+/*
+func TestRefreshRevocations(t *testing.T) {
+
+	var listener string
+
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+
+	}
+}
+*/
 // vim: ts=4 sw=4 noexpandtab nolist syn=go
