@@ -111,8 +111,11 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
 func hashTokenClaim(h string) string {
 
-	//	salt := options.HashingSalt
-	salt := "seasaltisthebest"
+	if h == "" {
+		return ""
+	}
+
+	salt := options.AppSettings.HashingSalt
 	buf := []byte(salt + h)
 	hash := sha256.New()
 	hash.Write(buf)

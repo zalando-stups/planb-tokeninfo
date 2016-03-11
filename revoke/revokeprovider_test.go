@@ -5,19 +5,19 @@ import (
 	"testing"
 )
 
-/*
-func TestHashTokenClaim(t *testing.T) {
-	t.Errorf("Hash: %s", hashTokenClaim("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwibmFtZSI6InJyZWlzIiwiYWRtaW4iOnRydWV9.UlZhyvrY9e7tRU88l8sfRb37oWGiL2t4insnO9Nsn1c"))
-	t.Errorf("Hash: %s", hashTokenClaim("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwibmFtZSI6ImhqYWNvYnMiLCJhZG1pbiI6dHJ1ZX0.juP59kVFwPKyUCDNYZA6r_9wrWkLu7zJPsIRrrIYpls"))
-	t.Errorf("Hash: %s", hashTokenClaim("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwibmFtZSI6ImxtaW5laXJvIiwiYWRtaW4iOnRydWV9.q8aDgIeENBpSrUbndIFeLLF5oNXhEGoVngsE7ltqyR4"))
-	t.Errorf("Hash: %s", hashTokenClaim("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwibmFtZSI6InRzYXJub3dza2kiLCJhZG1pbiI6dHJ1ZX0.T3ISN9ChkaHmFvTc_5Gb_ldXaL-Ca6qzrmDVhtuZtEQ"))
-	t.Errorf("Hash: %s", hashTokenClaim("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwibmFtZSI6ImFoYXJ0bWFubiIsImFkbWluIjp0cnVlfQ.PEGx0YG9Kr3BMcl-331GiIhz14PmbU5CBBENVvrFI9k"))
-	t.Errorf("Hash: %s", hashTokenClaim("3035729288"))
-	t.Errorf("Hash: %s", hashTokenClaim("0123456710"))
-	t.Errorf("Hash: %s", hashTokenClaim("011011100"))
-	t.Errorf("Hash: %s", hashTokenClaim("0123456789"))
+func TestHashTokenClaimEmpty(t *testing.T) {
+	h := hashTokenClaim("")
+	if h != "" {
+		t.Errorf("Hash should be an empty string. hash: %s", h)
+	}
 }
-*/
+func TestHashTokenClaimValid(t *testing.T) {
+	revHash := "j_FwkAS8Nw6eQgPybCH3jk8pgHOJ20AV7C9tK97P8Mg="
+	h := hashTokenClaim("testingHashFunction")
+	if h != revHash {
+		t.Errorf("Hashes should match. expected: %s, actual: %s", revHash, h)
+	}
+}
 
 func TestIsJWTRevoked(t *testing.T) {
 
