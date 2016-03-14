@@ -91,7 +91,7 @@ The following environment variables are supported:
     Refresh interval for polling the Revocation service. See `Time based settings`_
 ``REVOCATION_CACHE_TTL``
     The TTL for Revocation cache entries. Default is 8 hours. See `Time based settings`_
-``HASHING_SALT``
+``REVOCATION_HASHING_SALT``
     Shared salt with Revocation service. Used for comparing hashed tokens from the Revocation service.
 ``LISTEN_ADDRESS``
     The address for the application listener. It defaults to ':9021'

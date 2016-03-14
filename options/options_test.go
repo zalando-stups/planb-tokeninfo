@@ -441,7 +441,7 @@ func TestLoading(t *testing.T) {
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
 				"REVOCATION_PROVIDER_URL":           "http://example.com",
-				"HASHING_SALT":                      "TestSalt",
+				"REVOCATION_HASHING_SALT":           "TestSalt",
 			},
 			&Settings{
 				UpstreamTokenInfoURL:              exampleCom,

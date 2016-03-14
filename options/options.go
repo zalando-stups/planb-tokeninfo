@@ -86,7 +86,7 @@ func LoadFromEnvironment() error {
 	}
 	settings.RevocationProviderUrl = url
 
-	if s := getString("HASHING_SALT", ""); s != "" {
+	if s := getString("REVOCATION_HASHING_SALT", ""); s != "" {
 		settings.HashingSalt = s
 	}
 

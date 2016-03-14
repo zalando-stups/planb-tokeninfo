@@ -112,10 +112,14 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 		return false
 	}
 	for _, n := range cn {
-		ch := n + hashTokenClaim(j.Claims[n].(string))
-		if r := crp.cache.Get(ch); r != nil && r.(*Revocation).Data["issued_before"].(int) > iat {
-			countRevocations("CLAIM")
-			return true
+		val, ok := j.Claims[n]
+		// claim might not be present in this JWT!
+		if ok {
+			ch := n + hashTokenClaim(val.(string))
+			if r := crp.cache.Get(ch); r != nil && r.(*Revocation).Data["issued_before"].(int) > iat {
+				countRevocations("CLAIM")
+				return true
+			}
 		}
 	}
 
