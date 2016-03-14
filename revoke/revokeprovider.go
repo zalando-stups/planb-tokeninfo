@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/rcrowley/go-metrics"
+	"github.com/zalando/planb-tokeninfo/breaker"
 	"github.com/zalando/planb-tokeninfo/options"
 	"io/ioutil"
 	"log"
@@ -39,9 +40,14 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 
 	log.Printf("Checking for new revocations since %d..", ts)
 
-	resp, err := http.Get(crp.url + "?from=" + strconv.Itoa(ts))
+	resp, err := breaker.Get("refreshRevocations", crp.url+"?from="+strconv.Itoa(ts))
 	if err != nil {
 		log.Println("Failed to get revocations. " + err.Error())
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to get revocations. Server returned status %s.", resp.Status)
 		return
 	}
 
