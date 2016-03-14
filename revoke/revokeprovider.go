@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+// always refresh with additional tolerance to make sure we catch all revocations
+// (server clocks might not be synchronized, Cassandra replication might be delayed)
+const refreshToleranceSeconds = 60
+
 type CachingRevokeProvider struct {
 	url   string
 	cache *Cache
@@ -27,14 +31,13 @@ func NewCachingRevokeProvider(u *url.URL) *CachingRevokeProvider {
 }
 
 func (crp *CachingRevokeProvider) RefreshRevocations() {
-	log.Println("refreshing revocations")
-
 	ts := crp.cache.GetLastTS()
 	if ts == 0 {
 		ts = int(time.Now().Add(-1 * options.AppSettings.RevocationCacheTTL).Unix())
 	}
+	ts = ts - refreshToleranceSeconds
 
-	log.Println("Checking revocations from: %d", ts)
+	log.Printf("Checking for new revocations since %d..", ts)
 
 	resp, err := http.Get(crp.url + "?from=" + strconv.Itoa(ts))
 	if err != nil {
@@ -64,7 +67,9 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 
 	}
 
-	log.Printf("Number of new revocations: %d", len(jr.Revs))
+	if len(jr.Revs) > 0 {
+		log.Printf("Received %d new revocations", len(jr.Revs))
+	}
 
 	for _, j := range jr.Revs {
 		var r = new(Revocation)

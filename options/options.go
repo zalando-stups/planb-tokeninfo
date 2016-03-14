@@ -34,7 +34,7 @@ const (
 	defaultHTTPClientTimeout             = 10 * time.Second
 	defaultHTTPClientTLSTimeout          = 10 * time.Second
 	defaultRevocationCacheTTL            = 8 * time.Hour
-	defaultRevokeProviderRefreshInterval = 90 * time.Second
+	defaultRevokeProviderRefreshInterval = 10 * time.Second
 	defaultHashingSalt                   = "seasaltisthebest"
 )
 
