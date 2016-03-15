@@ -2,6 +2,7 @@ package revoke
 
 import (
 	"testing"
+	"time"
 )
 
 var j = []byte(`{
@@ -13,16 +14,16 @@ var j = []byte(`{
 			        "name": "uid",
 			        "value_hash": "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=",
 			        "hash_algorithm": "SHA-256",
-			        "issued_before": 1456300677000
+			        "issued_before": 1456300677
 			      },
-			      "revoked_at": 1456300677000
+			      "revoked_at": 1456300677
 			    },
 			    {
 			    "type": "GLOBAL",
 			    "data": {
-			        "issued_before": 1456296158000
+			        "issued_before": 1456296158
 			      },
-			    "revoked_at": 1456296158000
+			    "revoked_at": 1456296158
 			    },
 				{
 			    "type": "TOKEN",
@@ -30,13 +31,17 @@ var j = []byte(`{
 			        "token_hash": "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=",
 			        "hash_algorithm": "SHA-256"
 			    },
-			    "revoked_at": 1456302443000
+			    "revoked_at": 1456302443
 			    }
 			  ]
 		}`)
 
 func TestIsValidHashTimestampValid(t *testing.T) {
 	if !isHashTimestampValid("hash", 123) {
+		t.Errorf("Error validating hash and timestamp.")
+	}
+
+	if !isHashTimestampValid("hash", 123, 456, 789) {
 		t.Errorf("Error validating hash and timestamp.")
 	}
 }
@@ -49,6 +54,10 @@ func TestIsValidHashTimestampInvalidHash(t *testing.T) {
 
 func TestIsValidHashTimestampEmptyTimestamp(t *testing.T) {
 	if isHashTimestampValid("hash", 0) {
+		t.Errorf("Error validating timestamp.")
+	}
+
+	if isHashTimestampValid("hash", 100, 50, 0) {
 		t.Errorf("Error validating timestamp.")
 	}
 }
@@ -72,7 +81,7 @@ func TestGetRevocationFromJSONToken(t *testing.T) {
 
 	if r.Type != "TOKEN" ||
 		r.Data["token_hash"] != "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=" ||
-		r.Data["revoked_at"] != 1456302443000 {
+		r.Data["revoked_at"] != 1456302443 {
 		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[2], r)
 	}
 }
@@ -87,7 +96,7 @@ func TestGetRevocationFromJSONClaim(t *testing.T) {
 
 	if r.Type != "CLAIM" ||
 		r.Data["value_hash"] != "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=" ||
-		r.Data["issued_before"] != 1456300677000 ||
+		r.Data["issued_before"] != 1456300677 ||
 		r.Data["name"] != "uid" {
 		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[0], r)
 	}
@@ -102,7 +111,7 @@ func TestGetRevocationFromJSONGlobal(t *testing.T) {
 	r.getRevocationFromJson(&rev.Revs[1])
 
 	if r.Type != "GLOBAL" ||
-		r.Data["issued_before"] != 1456296158000 {
+		r.Data["issued_before"] != 1456296158 {
 		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[1], r)
 	}
 }
@@ -110,6 +119,7 @@ func TestGetRevocationFromJSONGlobal(t *testing.T) {
 func TestGetRevocationFromJSONInvalidType(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "INVALID"
+	j.RevokedAt = 222
 	j.Data.Name = "name"
 	j.Data.ValueHash = "hash"
 	j.Data.IssuedBefore = 123
@@ -124,6 +134,7 @@ func TestGetRevocationFromJSONInvalidType(t *testing.T) {
 func TestGetRevocationFromJSONInvalidClaimName(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "CLAIM"
+	j.RevokedAt = 222
 	j.Data.Name = ""
 	j.Data.ValueHash = "hash"
 	j.Data.IssuedBefore = 123
@@ -138,6 +149,7 @@ func TestGetRevocationFromJSONInvalidClaimName(t *testing.T) {
 func TestGetRevocationFromJSONInvalidClaimHash(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "CLAIM"
+	j.RevokedAt = 222
 	j.Data.Name = "name"
 	j.Data.ValueHash = ""
 	j.Data.IssuedBefore = 123
@@ -152,6 +164,7 @@ func TestGetRevocationFromJSONInvalidClaimHash(t *testing.T) {
 func TestGetRevocationFromJSONInvalidClaimTS(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "CLAIM"
+	j.RevokedAt = 222
 	j.Data.Name = "name"
 	j.Data.ValueHash = "abc"
 	j.Data.IssuedBefore = 0
@@ -161,11 +174,26 @@ func TestGetRevocationFromJSONInvalidClaimTS(t *testing.T) {
 	if r.Type != "" {
 		t.Errorf("Revocation shouldn't be valid.")
 	}
+
+	j.RevokedAt = 0
+	j.Data.IssuedBefore = 222
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+
+	j.RevokedAt = 0
+	j.Data.IssuedBefore = 0
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
 }
 
 func TestGetRevocationFromJSONInvalidTokenHash(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "TOKEN"
+	j.RevokedAt = 222
 	j.Data.TokenHash = ""
 	j.Data.IssuedBefore = 123
 
@@ -180,7 +208,20 @@ func TestGetRevocationFromJSONInvalidTokenTS(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "TOKEN"
 	j.Data.TokenHash = "abc"
-	j.Data.IssuedBefore = 0
+
+	var r = new(Revocation)
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+
+}
+
+func TestGetRevocationFromJSONInvalidGlobalIssuedBefore(t *testing.T) {
+	var j = new(jsonRevocation)
+	j.Type = "GLOBAL"
+	j.RevokedAt = 123456
+	j.Data.IssuedBefore = int(time.Now().Add(10 * time.Second).Unix())
 
 	var r = new(Revocation)
 	r.getRevocationFromJson(j)

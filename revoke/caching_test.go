@@ -92,6 +92,46 @@ func TestCaching(t *testing.T) {
 
 }
 
+func TestCachingMissingRevocationValues(t *testing.T) {
+
+	cache := NewCache()
+
+	// missing token_hash
+	revData := make(map[string]interface{})
+	revData["revoked_at"] = int(time.Now().Unix())
+
+	rev := &Revocation{Type: "TOKEN", Data: revData, Timestamp: int(time.Now().Unix())}
+
+	cache.Add(rev)
+	if cache.GetLastTS() != 0 {
+		t.Errorf("Cache should be empty.")
+	}
+
+	// missing claim name
+	revData1 := make(map[string]interface{})
+	revData1["value_hash"] = "hash1"
+	revData1["revoked_at"] = int(time.Now().Unix())
+	rev1 := &Revocation{Type: "CLAIM", Data: revData1, Timestamp: int(time.Now().Unix())}
+
+	cache.Add(rev1)
+
+	if cache.GetLastTS() != 0 {
+		t.Errorf("Cache should be empty.")
+	}
+
+	// missing claim value_hash
+	revData2 := make(map[string]interface{})
+	revData2["name"] = "name"
+	revData2["revoked_at"] = int(time.Now().Unix())
+	rev2 := &Revocation{Type: "CLAIM", Data: revData2, Timestamp: int(time.Now().Unix())}
+
+	cache.Add(rev2)
+
+	if cache.GetLastTS() != 0 {
+		t.Errorf("Cache should be empty.")
+	}
+}
+
 func TestCachingForceRefresh(t *testing.T) {
 	cache := NewCache()
 

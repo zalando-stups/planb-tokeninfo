@@ -43,22 +43,21 @@ func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
 
 func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 
-	// account for some network delay, say three seconds
-	t := int(time.Now().Add(-3 * time.Second).Unix())
+	t := int(time.Now().Unix())
 
 	r.Data = make(map[string]interface{})
 	switch j.Type {
 	case "TOKEN":
 		valid := isHashTimestampValid(j.Data.TokenHash, j.RevokedAt)
 		if !valid {
-			log.Println("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
+			log.Printf("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
 			return
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
 	case "CLAIM":
-		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore)
+		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore, j.RevokedAt)
 		if !valid {
-			log.Println("Invalid revocation data (CLAIM). ValueHash: %s, IssuedBefore: %d", j.Data.ValueHash, j.Data.IssuedBefore)
+			log.Printf("Invalid revocation data (CLAIM). ValueHash: %s, IssuedBefore: %d, RevokedAt: %d", j.Data.ValueHash, j.Data.IssuedBefore, j.RevokedAt)
 			return
 		}
 		if j.Data.Name == "" {
@@ -69,14 +68,18 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 		r.Data["issued_before"] = j.Data.IssuedBefore
 		r.Data["name"] = j.Data.Name
 	case "GLOBAL":
-		valid := isHashTimestampValid("thisStringDoesntMatter", j.Data.IssuedBefore)
+		valid := isHashTimestampValid("thisStringDoesntMatter", j.Data.IssuedBefore, j.RevokedAt)
 		if !valid {
-			log.Println("Invalid revocation data (GLOBAL). IssuedBefore: %d", j.Data.IssuedBefore)
+			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore: %d, RevokedAt: %d", j.Data.IssuedBefore, j.RevokedAt)
+			return
+		}
+		if j.Data.IssuedBefore > t {
+			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %s", t, j.Data.IssuedBefore)
 			return
 		}
 		r.Data["issued_before"] = j.Data.IssuedBefore
 	default:
-		log.Println("Unsupported revocation type: %s", j.Type)
+		log.Printf("Unsupported revocation type: %s", j.Type)
 		return
 	}
 
@@ -86,8 +89,18 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 	return
 }
 
-func isHashTimestampValid(hash string, timestamp int) bool {
-	return hash != "" && timestamp != 0
+func isHashTimestampValid(hash string, timestamp ...int) bool {
+	if hash == "" {
+		return false
+	}
+
+	for _, val := range timestamp {
+		if val <= 0 {
+			return false
+		}
+	}
+
+	return true
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

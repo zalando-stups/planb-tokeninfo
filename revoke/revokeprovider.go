@@ -91,19 +91,27 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 
 func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
+	if _, ok := j.Claims["iat"]; !ok {
+		log.Println("JWT missing required field 'iat'")
+		return false
+	}
 	iat := int(j.Claims["iat"].(float64))
 
 	// check global revocation
-	if r := crp.cache.Get("GLOBAL"); r != nil && r.(*Revocation).Data["issued_before"].(int) > iat {
-		countRevocations("GLOBAL")
-		return true
+	if r := crp.cache.Get("GLOBAL"); r != nil {
+		if val, ok := r.(*Revocation).Data["issued_before"]; ok && val.(int) > iat {
+			countRevocations("GLOBAL")
+			return true
+		}
 	}
 
 	// check token revocation
 	th := hashTokenClaim(j.Raw)
-	if r := crp.cache.Get(th); r != nil && r.(*Revocation).Data["revoked_at"].(int) < iat {
-		countRevocations("TOKEN")
-		return true
+	if r := crp.cache.Get(th); r != nil {
+		if val, ok := r.(*Revocation).Data["revoked_at"]; ok && val.(int) < iat {
+			countRevocations("TOKEN")
+			return true
+		}
 	}
 
 	// check claim revocation
@@ -112,13 +120,14 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 		return false
 	}
 	for _, n := range cn {
-		val, ok := j.Claims[n]
 		// claim might not be present in this JWT!
-		if ok {
+		if val, ok := j.Claims[n]; ok {
 			ch := n + hashTokenClaim(val.(string))
-			if r := crp.cache.Get(ch); r != nil && r.(*Revocation).Data["issued_before"].(int) > iat {
-				countRevocations("CLAIM")
-				return true
+			if r := crp.cache.Get(ch); r != nil {
+				if v, ok := r.(*Revocation).Data["issued_before"]; ok && v.(int) > iat {
+					countRevocations("CLAIM")
+					return true
+				}
 			}
 		}
 	}
