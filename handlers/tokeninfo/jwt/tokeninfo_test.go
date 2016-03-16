@@ -51,6 +51,22 @@ func TestTokenInfo(t *testing.T) {
 				Realm:     "/test",
 				ExpiresIn: 1},
 			false},
+		{
+			jwt.Token{Claims: map[string]interface{}{
+				"scope": []interface{}{},
+				"sub":   "foo",
+				"realm": "/test",
+				"azp":   "myclient-123",
+				"exp":   float64(43)}},
+			&TokenInfo{
+				GrantType: "password",
+				TokenType: "Bearer",
+				Scope:     []string{},
+				UID:       "foo",
+				Realm:     "/test",
+				ClientId:  "myclient-123",
+				ExpiresIn: 1},
+			false},
 	} {
 		ti, err := newTokenInfo(&test.token, time.Unix(42, 0))
 
