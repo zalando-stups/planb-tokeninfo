@@ -14,6 +14,7 @@ const (
 	jwtClaimScope = "scope"
 	jwtClaimSub   = "sub"
 	jwtClaimRealm = "realm"
+	jwtClaimAzp   = "azp"
 	jwtClaimExp   = "exp"
 )
 
@@ -24,6 +25,7 @@ var (
 	ErrInvalidClaimSub = errors.New("Invalid claim: sub")
 	// ErrInvalidClaimRealm should be used whenever the scope realm is invalid or missing in the JWT
 	ErrInvalidClaimRealm = errors.New("Invalid claim: realm")
+	ErrInvalidClaimAzp   = errors.New("Invalid claim: azp")
 	// ErrInvalidClaimExp should be used whenever the scope exp is invalid or missing in the JWT
 	ErrInvalidClaimExp = errors.New("Invalid claim: exp")
 )
@@ -37,6 +39,7 @@ type TokenInfo struct {
 	OpenID       string   `json:"open_id"`
 	Scope        []string `json:"scope"`
 	Realm        string   `json:"realm"`
+	ClientId     string   `json:"client_id"`
 	TokenType    string   `json:"token_type"`
 	ExpiresIn    int      `json:"expires_in"`
 }
@@ -65,6 +68,11 @@ func (ti *TokenInfo) Marshal(w io.Writer) error {
 			}
 		}
 	}
+
+	if ti.ClientId != "" {
+		m["client_id"] = ti.ClientId
+	}
+
 	return json.NewEncoder(w).Encode(m)
 }
 
@@ -84,6 +92,15 @@ func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
 		return nil, ErrInvalidClaimRealm
 	}
 
+	clientId := ""
+	_, has := t.Claims[jwtClaimAzp]
+	if has {
+		clientId, ok = claimAsString(t, jwtClaimAzp)
+		if !ok {
+			return nil, ErrInvalidClaimAzp
+		}
+	}
+
 	exp, ok := claimAsInt64(t, jwtClaimExp)
 	if !ok {
 		return nil, ErrInvalidClaimExp
@@ -98,6 +115,7 @@ func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
 		OpenID:      t.Raw,
 		Scope:       scopes,
 		Realm:       realm,
+		ClientId:    clientId,
 		TokenType:   "Bearer",
 		ExpiresIn:   expiresIn,
 	}, nil
