@@ -1,18 +1,23 @@
 package revoke
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+
 	"github.com/dgrijalva/jwt-go"
 
 	"testing"
+	"time"
 )
 
-/*
 func init() {
-	schedFunc = noSched
+	scheduleFunc = noSched
 }
 
-func noSched(_ time.Duration, _ interface{}) {}
-*/
+func noSched(_ time.Duration, _ JobFunc) {}
+
 func TestHashTokenClaimEmpty(t *testing.T) {
 	h := hashTokenClaim("")
 	if h != "" {
@@ -169,14 +174,11 @@ func TestIsJWTRevokedMissingCacheFields(t *testing.T) {
 	}
 }
 
-/*
 func TestRefreshRevocations(t *testing.T) {
 
 	var listener string
 
-	handler := func(w http.ResponseWriter, req *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{
+	j := fmt.Sprintf(`{
 				  "meta": {"REFRESH_FROM": 0, "REFRESH_TIMESTAMP": 0},
 				    "revocations": [
 				    {
@@ -185,16 +187,16 @@ func TestRefreshRevocations(t *testing.T) {
 				        "name": "uid",
 				        "value_hash": "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=",
 				        "hash_algorithm": "SHA-256",
-				        "issued_before": 1456300677
+				        "issued_before": %d
 				      },
-				      "revoked_at": 1456300677
+				      "revoked_at": %d
 				    },
 				    {
 				    "type": "GLOBAL",
 				    "data": {
-				        "issued_before": 1456296158
+				        "issued_before": %d
 				      },
-				    "revoked_at": 1456296158
+				    "revoked_at": %d
 				    },
 					{
 				    "type": "TOKEN",
@@ -202,25 +204,95 @@ func TestRefreshRevocations(t *testing.T) {
 				        "token_hash": "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=",
 				        "hash_algorithm": "SHA-256"
 				    },
-				    "revoked_at": 1456302443
+				    "revoked_at": %d
 				    }
 				  ]
-			}`)
+			}`, int(time.Now().Add(-1*time.Hour).Unix()), int(time.Now().Add(-1*time.Hour).Unix()),
+		int(time.Now().Add(-2*time.Hour).Unix()), int(time.Now().Add(-2*time.Hour).Unix()),
+		int(time.Now().Add(-3*time.Hour).Unix()))
 
-		server := httptest.NewServer(http.HandlerFunc(handler))
-		defer server.Close()
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, j)
+	}
 
-		listener = fmt.Sprintf("http://%s", server.Listener.Addr())
-		u, _ := url.Parse(listener)
-		crp := NewCachingRevokeProvider(u)
-		crp.RefreshRevocations()
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
 
-		if crp.cache.Get("3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=") == nil ||
-			crp.cache.Get("uid+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=") == nil ||
-			crp.cache.Get("GLOBAL") == nil {
-			t.Errorf("Should have had three revocations in the cache. . .")
-		}
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	u, _ := url.Parse(listener)
+	crp := NewCachingRevokeProvider(u)
+	crp.RefreshRevocations()
+
+	if crp.cache.Get("3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=") == nil ||
+		crp.cache.Get("uid+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=") == nil ||
+		crp.cache.Get("GLOBAL") == nil {
+		t.Errorf("Should have had three revocations in the cache. . .")
 	}
 }
-*/
+
+func TestForceRefresh(t *testing.T) {
+
+	var listener string
+	rf := int(time.Now().Add(-4 * time.Hour).Unix())
+	rt := int(time.Now().Add(-3 * time.Hour).Unix())
+	fr := fmt.Sprintf(`{                                                                                                                                       
+	                    "meta": {"REFRESH_FROM": %d, "REFRESH_TIMESTAMP": %d},                                                                                        
+	                    "revocations": []                                                                                                                           
+		           }`, rf, rt)
+
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, fr)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	u, _ := url.Parse(listener)
+	crp := NewCachingRevokeProvider(u)
+
+	revData := make(map[string]interface{})
+	revData["token_hash"] = "t1"
+	revData["revoked_at"] = int(time.Now().Add(-5 * time.Hour).Unix())
+	crp.cache.Add(&Revocation{Type: "TOKEN", Data: revData, Timestamp: int(time.Now().Add(-4 * time.Hour).Unix())})
+
+	revData = make(map[string]interface{})
+	revData["token_hash"] = "t2"
+	revData["revoked_at"] = int(time.Now().Add(-4 * time.Hour).Unix())
+
+	crp.cache.Add(&Revocation{Type: "TOKEN", Data: revData, Timestamp: int(time.Now().Add(-3 * time.Hour).Unix())})
+
+	revData = make(map[string]interface{})
+	revData["value_hash"] = "c1"
+	revData["name"] = "c1"
+	revData["revoked_at"] = int(time.Now().Add(-3 * time.Hour).Unix())
+	crp.cache.Add(&Revocation{Type: "CLAIM", Data: revData, Timestamp: int(time.Now().Add(-2 * time.Hour).Unix())})
+
+	revData = make(map[string]interface{})
+	revData["value_hash"] = "c2"
+	revData["name"] = "c2"
+	revData["revoked_at"] = int(time.Now().Add(-2 * time.Hour).Unix())
+	crp.cache.Add(&Revocation{Type: "CLAIM", Data: revData, Timestamp: int(time.Now().Add(-1 * time.Hour).Unix())})
+
+	revData = make(map[string]interface{})
+	revData["value_hash"] = "GLOBAL"
+	revData["revoked_at"] = int(time.Now().Add(-6 * time.Hour).Unix())
+	crp.cache.Add(&Revocation{Type: "GLOBAL", Data: revData, Timestamp: int(time.Now().Add(-5 * time.Hour).Unix())})
+
+	crp.RefreshRevocations()
+
+	if crp.cache.Get("FORCEREFRESH") == nil {
+		t.Errorf("Error force refreshing cache. FORCEREFRESH entry should exist in the cache")
+	}
+	if ts := crp.cache.GetLastTS(); ts != rt {
+		t.Errorf("Error force refreshing cache. Next pull timestamp is incorrect. Expected: %d, Actual: %d", rt, ts)
+	}
+
+	if crp.cache.Get("t1") == nil || crp.cache.Get("GLOBAL") == nil {
+		t.Errorf("Error force refreshing cache. Revocation 't1' and 'GLOBAL' should exist in cache.")
+	}
+}
+
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

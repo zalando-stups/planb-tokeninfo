@@ -20,6 +20,8 @@ import (
 // (server clocks might not be synchronized, Cassandra replication might be delayed)
 const refreshToleranceSeconds = 60
 
+var scheduleFunc = Schedule
+
 type CachingRevokeProvider struct {
 	url   string
 	cache *Cache
@@ -27,7 +29,7 @@ type CachingRevokeProvider struct {
 
 func NewCachingRevokeProvider(u *url.URL) *CachingRevokeProvider {
 	crp := &CachingRevokeProvider{url: u.String(), cache: NewCache()}
-	Schedule(options.AppSettings.RevocationProviderRefreshInterval, crp.RefreshRevocations)
+	scheduleFunc(options.AppSettings.RevocationProviderRefreshInterval, crp.RefreshRevocations)
 	return crp
 }
 
@@ -62,11 +64,13 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 
 	if jr.Meta.RefreshTimestamp != 0 {
 		r := crp.cache.Get("FORCEREFRESH")
-		if r != nil && r.(*Revocation).Timestamp != jr.Meta.RefreshTimestamp {
+		if r == nil || (r != nil && r.(*Revocation).Timestamp != jr.Meta.RefreshTimestamp) {
 			crp.cache.ForceRefresh(jr.Meta.RefreshFrom)
 			rev := new(Revocation)
+			d := make(map[string]interface{})
 			rev.Type = "FORCEREFRESH"
-			rev.Data["refresh_from"] = jr.Meta.RefreshFrom
+			d["refresh_from"] = jr.Meta.RefreshFrom
+			rev.Data = d
 			rev.Timestamp = jr.Meta.RefreshTimestamp
 			crp.cache.Add(rev)
 		}
