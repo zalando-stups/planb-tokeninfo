@@ -91,6 +91,8 @@ func TestMarshal(t *testing.T) {
 			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
 		{&TokenInfo{RefreshToken: "foo"},
 			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"refresh_token\":\"foo\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
+		{&TokenInfo{ClientId: "client-123"},
+			"{\"access_token\":\"\",\"client_id\":\"client-123\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
 		{&TokenInfo{
 			GrantType: "password",
 			TokenType: "Bearer",
