@@ -21,6 +21,7 @@ func TestTokenInfo(t *testing.T) {
 		{jwt.Token{Claims: map[string]interface{}{"scope": []interface{}{"uid"}, "sub": 42}}, nil, true},
 		{jwt.Token{Claims: map[string]interface{}{"scope": []interface{}{"uid"}, "sub": "foo"}}, nil, true},
 		{jwt.Token{Claims: map[string]interface{}{"scope": []interface{}{"uid"}, "sub": "foo", "realm": "/test"}}, nil, true},
+		{jwt.Token{Claims: map[string]interface{}{"scope": []interface{}{}, "sub": "foo", "realm": "/test", "azp": 123}}, nil, true},
 		{
 			jwt.Token{Claims: map[string]interface{}{
 				"scope": []interface{}{"uid"},
