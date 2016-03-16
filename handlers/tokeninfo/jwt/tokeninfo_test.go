@@ -21,6 +21,7 @@ func TestTokenInfo(t *testing.T) {
 		{jwt.Token{Claims: map[string]interface{}{"scope": []interface{}{"uid"}, "sub": 42}}, nil, true},
 		{jwt.Token{Claims: map[string]interface{}{"scope": []interface{}{"uid"}, "sub": "foo"}}, nil, true},
 		{jwt.Token{Claims: map[string]interface{}{"scope": []interface{}{"uid"}, "sub": "foo", "realm": "/test"}}, nil, true},
+		{jwt.Token{Claims: map[string]interface{}{"scope": []interface{}{}, "sub": "foo", "realm": "/test", "azp": 123}}, nil, true},
 		{
 			jwt.Token{Claims: map[string]interface{}{
 				"scope": []interface{}{"uid"},
@@ -51,6 +52,22 @@ func TestTokenInfo(t *testing.T) {
 				Realm:     "/test",
 				ExpiresIn: 1},
 			false},
+		{
+			jwt.Token{Claims: map[string]interface{}{
+				"scope": []interface{}{},
+				"sub":   "foo",
+				"realm": "/test",
+				"azp":   "myclient-123",
+				"exp":   float64(43)}},
+			&TokenInfo{
+				GrantType: "password",
+				TokenType: "Bearer",
+				Scope:     []string{},
+				UID:       "foo",
+				Realm:     "/test",
+				ClientId:  "myclient-123",
+				ExpiresIn: 1},
+			false},
 	} {
 		ti, err := newTokenInfo(&test.token, time.Unix(42, 0))
 
@@ -74,6 +91,8 @@ func TestMarshal(t *testing.T) {
 			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
 		{&TokenInfo{RefreshToken: "foo"},
 			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"refresh_token\":\"foo\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
+		{&TokenInfo{ClientId: "client-123"},
+			"{\"access_token\":\"\",\"client_id\":\"client-123\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
 		{&TokenInfo{
 			GrantType: "password",
 			TokenType: "Bearer",
