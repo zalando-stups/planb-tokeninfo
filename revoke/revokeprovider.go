@@ -40,7 +40,7 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 	}
 	ts = ts - refreshToleranceSeconds
 
-	log.Printf("Checking for new revocations since %d..", ts)
+	log.Printf("Checking for new revocations since %d...", ts)
 
 	resp, err := breaker.Get("refreshRevocations", crp.url+"?from="+strconv.Itoa(ts))
 	if err != nil {
@@ -65,6 +65,7 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 	if jr.Meta.RefreshTimestamp != 0 {
 		r := crp.cache.Get("FORCEREFRESH")
 		if r == nil || (r != nil && r.(*Revocation).Timestamp != jr.Meta.RefreshTimestamp) {
+			log.Printf("Force refreshing cache from %d...", jr.Meta.RefreshFrom)
 			crp.cache.ForceRefresh(jr.Meta.RefreshFrom)
 			rev := new(Revocation)
 			d := make(map[string]interface{})
@@ -120,9 +121,6 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
 	// check claim revocation
 	cn := crp.cache.GetClaimNames()
-	if len(cn) == 0 {
-		return false
-	}
 	for _, n := range cn {
 		// claim might not be present in this JWT!
 		if val, ok := j.Claims[n]; ok {

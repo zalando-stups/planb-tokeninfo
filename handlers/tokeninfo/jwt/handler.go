@@ -1,6 +1,7 @@
 package jwthandler
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,6 +19,11 @@ type jwtHandler struct {
 	keyLoader keyloader.KeyLoader
 	crp       *revoke.CachingRevokeProvider
 }
+
+var (
+	ErrInvalidJWT   = errors.New("Invalid JWT token.")
+	ErrRevokedToken = errors.New("Token is revoked.")
+)
 
 // New returns an http.Handler that is able to validate JWT tokens
 func New(kl keyloader.KeyLoader, crp *revoke.CachingRevokeProvider) tokeninfo.Handler {
@@ -54,14 +60,21 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	start := time.Now()
 	token, err := jwt.ParseFromRequest(req, jwtValidator(h.keyLoader))
-	if err == nil {
-		measureRequest(start, fmt.Sprintf("planb.tokeninfo.jwt.validation.%s", token.Method.Alg()))
+	if err != nil {
+		log.Println("Failed to validate token: ", err)
+		return nil, err
 	}
-	if err == nil && token.Valid && !h.crp.IsJWTRevoked(token) {
-		return newTokenInfo(token, time.Now())
+
+	measureRequest(start, fmt.Sprintf("planb.tokeninfo.jwt.validation.%s", token.Method.Alg()))
+	if !token.Valid {
+		log.Println("Falied to validate token: ", ErrInvalidJWT)
+		return nil, ErrInvalidJWT
 	}
-	log.Println("Failed to validate token: ", err)
-	return nil, err
+	if h.crp.IsJWTRevoked(token) {
+		log.Println("Failed to validate token: ", ErrRevokedToken)
+		return nil, ErrRevokedToken
+	}
+	return newTokenInfo(token, time.Now())
 }
 
 // Checks if the Request contains a JWT that can be handled by this Handler

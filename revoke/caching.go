@@ -46,7 +46,6 @@ func NewCache() *Cache {
 			case r := <-forceRefresh:
 				for key, rev := range c {
 					if key != "FORCEREFRESH" && rev.(*Revocation).Data["revoked_at"].(int) >= r {
-						log.Printf("Removing key: %s, forcerefresh: %d, revoked_at: %d", key, r, rev.(*Revocation).Data["revoked_at"].(int))
 						delete(c, key)
 					}
 				}
