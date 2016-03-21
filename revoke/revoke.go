@@ -3,6 +3,7 @@ package revoke
 import (
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -24,11 +25,11 @@ type jsonRevocation struct {
 	Type      string `json:"type"` // TOKEN, CLAIM, GLOBAL
 	RevokedAt int    `json:"revoked_at"`
 	Data      struct {
-		Name          string `json:"name,omitempty"`           // CLAIM
-		ValueHash     string `json:"value_hash,omitempty"`     // CLAIM
-		IssuedBefore  int    `json:"issued_before,omitempty"`  // CLAIM, GLOBAL
-		TokenHash     string `json:"token_hash,omitempty"`     // TOKEN
-		HashAlgorithm string `json:"hash_algorithm,omitempty"` // CLAIM, TOKEN
+		Names         []string `json:"names,omitempty"`          // CLAIM
+		ValueHash     string   `json:"value_hash,omitempty"`     // CLAIM
+		IssuedBefore  int      `json:"issued_before,omitempty"`  // CLAIM, GLOBAL
+		TokenHash     string   `json:"token_hash,omitempty"`     // TOKEN
+		HashAlgorithm string   `json:"hash_algorithm,omitempty"` // CLAIM, TOKEN
 	} `json:"data"`
 }
 
@@ -60,13 +61,13 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 			log.Printf("Invalid revocation data (CLAIM). ValueHash: %s, IssuedBefore: %d, RevokedAt: %d", j.Data.ValueHash, j.Data.IssuedBefore, j.RevokedAt)
 			return
 		}
-		if j.Data.Name == "" {
+		if len(j.Data.Names) == 0 {
 			log.Println("Invalid revocation data (missing claim name).")
 			return
 		}
 		r.Data["value_hash"] = j.Data.ValueHash
 		r.Data["issued_before"] = j.Data.IssuedBefore
-		r.Data["name"] = j.Data.Name
+		r.Data["names"] = strings.Join(j.Data.Names, "|")
 	case "GLOBAL":
 		valid := isHashTimestampValid("thisStringDoesntMatter", j.Data.IssuedBefore, j.RevokedAt)
 		if !valid {

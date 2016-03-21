@@ -4,16 +4,18 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/rcrowley/go-metrics"
-	"github.com/zalando/planb-tokeninfo/breaker"
-	"github.com/zalando/planb-tokeninfo/options"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/rcrowley/go-metrics"
+	"github.com/zalando/planb-tokeninfo/breaker"
+	"github.com/zalando/planb-tokeninfo/options"
 )
 
 // always refresh with additional tolerance to make sure we catch all revocations
@@ -120,16 +122,28 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 	}
 
 	// check claim revocation
-	cn := crp.cache.GetClaimNames()
-	for _, n := range cn {
-		// claim might not be present in this JWT!
-		if val, ok := j.Claims[n]; ok {
-			ch := n + hashTokenClaim(val.(string))
-			if r := crp.cache.Get(ch); r != nil {
-				if v, ok := r.(*Revocation).Data["issued_before"]; ok && v.(int) > iat {
-					countRevocations("CLAIM")
-					return true
-				}
+	// each cNames entry can have multiple claim names separated by a '|'
+	// if multiple claim names, the values are appended with a '|' between and hashed
+	cNames := crp.cache.GetClaimNames()
+	for _, cName := range cNames {
+		names := strings.Split(cName, "|")
+		var vals string
+		for _, n := range names {
+			val, ok := j.Claims[n]
+			if !ok {
+				break
+			}
+			if vals == "" {
+				vals = val.(string)
+				continue
+			}
+			vals += "|" + val.(string)
+		}
+		ch := hashTokenClaim(vals)
+		if r := crp.cache.Get(ch); r != nil {
+			if v, ok := r.(*Revocation).Data["issued_before"]; ok && v.(int) > iat {
+				countRevocations("CLAIM")
+				return true
 			}
 		}
 	}
