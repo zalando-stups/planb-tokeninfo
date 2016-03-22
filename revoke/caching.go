@@ -63,7 +63,7 @@ func NewCache() *Cache {
 				names := make(map[string]int)
 				for _, rev := range c {
 					if rev.(*Revocation).Type == "CLAIM" {
-						names[rev.(*Revocation).Data["name"].(string)] = 1
+						names[rev.(*Revocation).Data["names"].(string)] = 1
 					}
 				}
 				r.res <- names
@@ -131,7 +131,7 @@ func (c *Cache) Add(rev *Revocation) {
 		}
 		hash = rev.Data["token_hash"].(string)
 	case "CLAIM":
-		if _, ok := rev.Data["name"]; !ok {
+		if _, ok := rev.Data["names"]; !ok {
 			log.Println("Error adding revocation to cache: missing claim name.")
 			return
 		}
@@ -139,7 +139,7 @@ func (c *Cache) Add(rev *Revocation) {
 			log.Println("Error adding revocation to cache: missing claim value_hash.")
 			return
 		}
-		hash = rev.Data["name"].(string) + rev.Data["value_hash"].(string)
+		hash = rev.Data["value_hash"].(string)
 	case "GLOBAL":
 		hash = "GLOBAL"
 	case "FORCEREFRESH":

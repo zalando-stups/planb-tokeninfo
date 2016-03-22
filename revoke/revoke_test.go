@@ -11,7 +11,7 @@ var j = []byte(`{
 			    {
 		      "type": "CLAIM",
 		        "data": {
-			        "name": "uid",
+			        "names": ["uid"],
 			        "value_hash": "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=",
 			        "hash_algorithm": "SHA-256",
 			        "issued_before": 1456300677
@@ -32,6 +32,16 @@ var j = []byte(`{
 			        "hash_algorithm": "SHA-256"
 			    },
 			    "revoked_at": 1456302443
+			    },
+			    {
+		      "type": "CLAIM",
+		        "data": {
+			        "names": ["sub", "uid"],
+			        "value_hash": "13sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=",
+			        "hash_algorithm": "SHA-256",
+			        "issued_before": 1456300677
+			      },
+			      "revoked_at": 1456300677
 			    }
 			  ]
 		}`)
@@ -66,7 +76,7 @@ func TestUnmarshalJsonData(t *testing.T) {
 
 	var rev = new(jsonRevoke)
 	rev.UnmarshallJSON(j)
-	if rev.Meta.RefreshTimestamp != 10000 || rev.Meta.RefreshFrom != 10000 || len(rev.Revs) != 3 {
+	if rev.Meta.RefreshTimestamp != 10000 || rev.Meta.RefreshFrom != 10000 || len(rev.Revs) != 4 {
 		t.Errorf("Error unmarshaling revocations\n\n%#v", rev)
 	}
 }
@@ -97,8 +107,23 @@ func TestGetRevocationFromJSONClaim(t *testing.T) {
 	if r.Type != "CLAIM" ||
 		r.Data["value_hash"] != "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=" ||
 		r.Data["issued_before"] != 1456300677 ||
-		r.Data["name"] != "uid" {
+		r.Data["names"] != "uid" {
 		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[0], r)
+	}
+}
+
+func TestGetRevocationFromJSONMutliNameClaim(t *testing.T) {
+	var rev = new(jsonRevoke)
+	rev.UnmarshallJSON(j)
+
+	var r = new(Revocation)
+	r.getRevocationFromJson(&rev.Revs[3])
+
+	if r.Type != "CLAIM" ||
+		r.Data["value_hash"] != "13sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=" ||
+		r.Data["issued_before"] != 1456300677 ||
+		r.Data["names"] != "sub|uid" {
+		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[3], r)
 	}
 }
 
@@ -120,7 +145,7 @@ func TestGetRevocationFromJSONInvalidType(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "INVALID"
 	j.RevokedAt = 222
-	j.Data.Name = "name"
+	j.Data.Names = []string{"name"}
 	j.Data.ValueHash = "hash"
 	j.Data.IssuedBefore = 123
 
@@ -135,7 +160,7 @@ func TestGetRevocationFromJSONInvalidClaimName(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "CLAIM"
 	j.RevokedAt = 222
-	j.Data.Name = ""
+	j.Data.Names = nil
 	j.Data.ValueHash = "hash"
 	j.Data.IssuedBefore = 123
 
@@ -150,7 +175,7 @@ func TestGetRevocationFromJSONInvalidClaimHash(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "CLAIM"
 	j.RevokedAt = 222
-	j.Data.Name = "name"
+	j.Data.Names = []string{"name"}
 	j.Data.ValueHash = ""
 	j.Data.IssuedBefore = 123
 
@@ -165,7 +190,7 @@ func TestGetRevocationFromJSONInvalidClaimTS(t *testing.T) {
 	var j = new(jsonRevocation)
 	j.Type = "CLAIM"
 	j.RevokedAt = 222
-	j.Data.Name = "name"
+	j.Data.Names = []string{"name"}
 	j.Data.ValueHash = "abc"
 	j.Data.IssuedBefore = 0
 

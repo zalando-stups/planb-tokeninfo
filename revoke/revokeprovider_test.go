@@ -37,6 +37,8 @@ func TestIsJWTRevoked(t *testing.T) {
 	rawJwt := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwibmFtZSI6InJyZWlzIiwiYWRtaW4iOnRydWV9.UlZhyvrY9e7tRU88l8sfRb37oWGiL2t4insnO9Nsn1c"
 	sub := "sub"
 	subVal := "jeff@zalando"
+	uid := "uid"
+	uidVal := "12345"
 
 	crp := &CachingRevokeProvider{url: "localhost", cache: NewCache()}
 
@@ -51,7 +53,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	revData2 := make(map[string]interface{})
 	revData2["value_hash"] = hashTokenClaim(subVal)
 	revData2["issued_before"] = 200000
-	revData2["name"] = sub
+	revData2["names"] = sub
 	rev2 := &Revocation{Type: "CLAIM", Data: revData2, Timestamp: 200000}
 	crp.cache.Add(rev2)
 
@@ -60,6 +62,14 @@ func TestIsJWTRevoked(t *testing.T) {
 	revData3["issued_before"] = 100000
 	rev3 := &Revocation{Type: "GLOBAL", Data: revData3, Timestamp: 100000}
 	crp.cache.Add(rev3)
+
+	// multi-name claim
+	revData4 := make(map[string]interface{})
+	revData4["value_hash"] = hashTokenClaim(subVal + "|" + uidVal)
+	revData4["issued_before"] = 200000
+	revData4["names"] = sub + "|" + uid
+	rev4 := &Revocation{Type: "CLAIM", Data: revData4, Timestamp: 200000}
+	crp.cache.Add(rev4)
 
 	// revoke a token
 	tc := make(map[string]interface{})
@@ -89,6 +99,20 @@ func TestIsJWTRevoked(t *testing.T) {
 	jt = &jwt.Token{Claims: tc}
 	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Claim should not be revoked. %#v", jt)
+	}
+
+	// revoke multi-name claim
+	tc[uid] = uidVal
+	tc["iat"] = 150000.0
+	jt = &jwt.Token{Claims: tc}
+	if !crp.IsJWTRevoked(jt) {
+		t.Errorf("Multi-name claim should be reovked. %v", jt)
+	}
+
+	tc["iat"] = 250000.0
+	jt = &jwt.Token{Claims: tc}
+	if crp.IsJWTRevoked(jt) {
+		t.Errorf("Multi-name claim should not be revoked. %#v", jt)
 	}
 
 	// Global revocation
@@ -184,7 +208,7 @@ func TestRefreshRevocations(t *testing.T) {
 				    {
 			      "type": "CLAIM",
 			        "data": {
-				        "name": "uid",
+				        "names": ["uid"],
 				        "value_hash": "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=",
 				        "hash_algorithm": "SHA-256",
 				        "issued_before": %d
@@ -225,7 +249,7 @@ func TestRefreshRevocations(t *testing.T) {
 	crp.RefreshRevocations()
 
 	if crp.cache.Get("3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=") == nil ||
-		crp.cache.Get("uid+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=") == nil ||
+		crp.cache.Get("+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=") == nil ||
 		crp.cache.Get("GLOBAL") == nil {
 		t.Errorf("Should have had three revocations in the cache. . .")
 	}
@@ -266,13 +290,13 @@ func TestForceRefresh(t *testing.T) {
 
 	revData = make(map[string]interface{})
 	revData["value_hash"] = "c1"
-	revData["name"] = "c1"
+	revData["names"] = "c1"
 	revData["revoked_at"] = int(time.Now().Add(-3 * time.Hour).Unix())
 	crp.cache.Add(&Revocation{Type: "CLAIM", Data: revData, Timestamp: int(time.Now().Add(-2 * time.Hour).Unix())})
 
 	revData = make(map[string]interface{})
 	revData["value_hash"] = "c2"
-	revData["name"] = "c2"
+	revData["names"] = "c2"
 	revData["revoked_at"] = int(time.Now().Add(-2 * time.Hour).Unix())
 	crp.cache.Add(&Revocation{Type: "CLAIM", Data: revData, Timestamp: int(time.Now().Add(-1 * time.Hour).Unix())})
 
