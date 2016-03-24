@@ -18,10 +18,6 @@ import (
 	"github.com/zalando/planb-tokeninfo/options"
 )
 
-// always refresh with additional tolerance to make sure we catch all revocations
-// (server clocks might not be synchronized, Cassandra replication might be delayed)
-const refreshToleranceSeconds = 60
-
 var scheduleFunc = Schedule
 
 type CachingRevokeProvider struct {
@@ -40,7 +36,7 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 	if ts == 0 {
 		ts = int(time.Now().Add(-1 * options.AppSettings.RevocationCacheTTL).Unix())
 	}
-	ts = ts - refreshToleranceSeconds
+	ts = ts - int(options.AppSettings.RevocationRefreshTolerance.Seconds())
 
 	log.Printf("Checking for new revocations since %d...", ts)
 

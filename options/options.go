@@ -21,6 +21,7 @@ type Settings struct {
 	HTTPClientTLSTimeout              time.Duration
 	RevocationCacheTTL                time.Duration
 	RevocationProviderRefreshInterval time.Duration
+	RevocationRefreshTolerance        time.Duration
 	RevocationProviderUrl             *url.URL
 	HashingSalt                       string
 }
@@ -35,6 +36,7 @@ const (
 	defaultHTTPClientTLSTimeout          = 10 * time.Second
 	defaultRevocationCacheTTL            = 8 * time.Hour
 	defaultRevokeProviderRefreshInterval = 10 * time.Second
+	defaultRevocationRereshTolerance     = 60 * time.Second
 	defaultHashingSalt                   = "seasaltisthebest"
 )
 
@@ -54,6 +56,7 @@ func defaultSettings() *Settings {
 		HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
 		RevocationCacheTTL:                defaultRevocationCacheTTL,
 		RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
+		RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
 		HashingSalt:                       defaultHashingSalt,
 	}
 }
@@ -124,6 +127,10 @@ func LoadFromEnvironment() error {
 
 	if d := getDuration("REVOCATION_PROVIDER_REFRESH_INTERVAL", 0); d > 0 {
 		settings.RevocationProviderRefreshInterval = d
+	}
+
+	if d := getDuration("REVOCATION_REFRESH_TOLERANCE", 0); d > 0 {
+		settings.RevocationRefreshTolerance = d
 	}
 
 	AppSettings = settings

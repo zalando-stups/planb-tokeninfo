@@ -89,6 +89,8 @@ The following environment variables are supported:
     URL of of the Revocation service.
 ``REVOCATION_PROVIDER_REFRESH_INTERVAL``
     Refresh interval for polling the Revocation service. See `Time based settings`_
+``REVOCATION_REFRESH_TOLERANCE``
+    Amount of time to account for network latencies when polling the revocation service. Default is 60 seconds. See `Time based settings`_
 ``REVOCATION_CACHE_TTL``
     The TTL for Revocation cache entries. Default is 8 hours. See `Time based settings`_
 ``REVOCATION_HASHING_SALT``
