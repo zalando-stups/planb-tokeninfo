@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+var (
+	REVOCATION_TYPE_TOKEN        = "TOKEN"
+	REVOCATION_TYPE_CLAIM        = "CLAIM"
+	REVOCATION_TYPE_GLOBAL       = "GLOBAL"
+	REVOCATION_TYPE_FORCEREFRESH = "FORCEREFRESH"
+)
+
 type Revocation struct {
 	Type      string // token, claim, global
 	Data      map[string]interface{}
@@ -48,14 +55,14 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 
 	r.Data = make(map[string]interface{})
 	switch j.Type {
-	case "TOKEN":
+	case REVOCATION_TYPE_TOKEN:
 		valid := isHashTimestampValid(j.Data.TokenHash, j.RevokedAt)
 		if !valid {
 			log.Printf("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
 			return
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
-	case "CLAIM":
+	case REVOCATION_TYPE_CLAIM:
 		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore, j.RevokedAt)
 		if !valid {
 			log.Printf("Invalid revocation data (CLAIM). ValueHash: %s, IssuedBefore: %d, RevokedAt: %d", j.Data.ValueHash, j.Data.IssuedBefore, j.RevokedAt)
@@ -68,7 +75,7 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 		r.Data["value_hash"] = j.Data.ValueHash
 		r.Data["issued_before"] = j.Data.IssuedBefore
 		r.Data["names"] = strings.Join(j.Data.Names, "|")
-	case "GLOBAL":
+	case REVOCATION_TYPE_GLOBAL:
 		valid := isHashTimestampValid("thisStringDoesntMatter", j.Data.IssuedBefore, j.RevokedAt)
 		if !valid {
 			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore: %d, RevokedAt: %d", j.Data.IssuedBefore, j.RevokedAt)

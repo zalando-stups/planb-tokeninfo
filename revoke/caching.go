@@ -45,7 +45,7 @@ func NewCache() *Cache {
 				delete(c, r.key)
 			case r := <-forceRefresh:
 				for key, rev := range c {
-					if key != "FORCEREFRESH" && rev.(*Revocation).Data["revoked_at"].(int) >= r {
+					if key != REVOCATION_TYPE_FORCEREFRESH && rev.(*Revocation).Data["revoked_at"].(int) >= r {
 						delete(c, key)
 					}
 				}
@@ -62,7 +62,7 @@ func NewCache() *Cache {
 			case r := <-cName:
 				names := make(map[string]int)
 				for _, rev := range c {
-					if rev.(*Revocation).Type == "CLAIM" {
+					if rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
 						names[rev.(*Revocation).Data["names"].(string)] = 1
 					}
 				}
@@ -124,13 +124,13 @@ func (c *Cache) ForceRefresh(ts int) {
 func (c *Cache) Add(rev *Revocation) {
 	var hash string
 	switch rev.Type {
-	case "TOKEN":
+	case REVOCATION_TYPE_TOKEN:
 		if _, ok := rev.Data["token_hash"]; !ok {
 			log.Println("Error adding revocation to cache: missing token_hash.")
 			return
 		}
 		hash = rev.Data["token_hash"].(string)
-	case "CLAIM":
+	case REVOCATION_TYPE_CLAIM:
 		if _, ok := rev.Data["names"]; !ok {
 			log.Println("Error adding revocation to cache: missing claim name.")
 			return
@@ -140,10 +140,10 @@ func (c *Cache) Add(rev *Revocation) {
 			return
 		}
 		hash = rev.Data["value_hash"].(string)
-	case "GLOBAL":
-		hash = "GLOBAL"
-	case "FORCEREFRESH":
-		hash = "FORCEREFRESH"
+	case REVOCATION_TYPE_GLOBAL:
+		hash = REVOCATION_TYPE_GLOBAL
+	case REVOCATION_TYPE_FORCEREFRESH:
+		hash = REVOCATION_TYPE_FORCEREFRESH
 	default:
 		return
 	}

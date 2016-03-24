@@ -65,13 +65,13 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 	}
 
 	if jr.Meta.RefreshTimestamp != 0 {
-		r := crp.cache.Get("FORCEREFRESH")
+		r := crp.cache.Get(REVOCATION_TYPE_FORCEREFRESH)
 		if r == nil || (r != nil && r.(*Revocation).Timestamp != jr.Meta.RefreshTimestamp) {
 			log.Printf("Force refreshing cache from %d...", jr.Meta.RefreshFrom)
 			crp.cache.ForceRefresh(jr.Meta.RefreshFrom)
 			rev := new(Revocation)
 			d := make(map[string]interface{})
-			rev.Type = "FORCEREFRESH"
+			rev.Type = REVOCATION_TYPE_FORCEREFRESH
 			d["refresh_from"] = jr.Meta.RefreshFrom
 			rev.Data = d
 			rev.Timestamp = jr.Meta.RefreshTimestamp
@@ -105,9 +105,9 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 	iat := int(j.Claims["iat"].(float64))
 
 	// check global revocation
-	if r := crp.cache.Get("GLOBAL"); r != nil {
+	if r := crp.cache.Get(REVOCATION_TYPE_GLOBAL); r != nil {
 		if val, ok := r.(*Revocation).Data["issued_before"]; ok && val.(int) > iat {
-			countRevocations("GLOBAL")
+			countRevocations(REVOCATION_TYPE_GLOBAL)
 			return true
 		}
 	}
@@ -116,7 +116,7 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 	th := hashTokenClaim(j.Raw)
 	if r := crp.cache.Get(th); r != nil {
 		if val, ok := r.(*Revocation).Data["revoked_at"]; ok && val.(int) < iat {
-			countRevocations("TOKEN")
+			countRevocations(REVOCATION_TYPE_TOKEN)
 			return true
 		}
 	}
@@ -142,7 +142,7 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 		ch := hashTokenClaim(vals)
 		if r := crp.cache.Get(ch); r != nil {
 			if v, ok := r.(*Revocation).Data["issued_before"]; ok && v.(int) > iat {
-				countRevocations("CLAIM")
+				countRevocations(REVOCATION_TYPE_CLAIM)
 				return true
 			}
 		}
