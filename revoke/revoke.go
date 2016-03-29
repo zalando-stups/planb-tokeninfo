@@ -59,7 +59,7 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 	case REVOCATION_TYPE_TOKEN:
 		valid := isHashTimestampValid(j.Data.TokenHash, j.RevokedAt, j.Data.IssuedAfter)
 		if !valid {
-			log.Printf("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
+			log.Printf("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d, IssuedAfter: %d", j.Data.TokenHash, j.RevokedAt, j.Data.IssuedAfter)
 			return
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
