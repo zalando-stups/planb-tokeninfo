@@ -29,7 +29,8 @@ var j = []byte(`{
 			    "type": "TOKEN",
 			    "data": {
 			        "token_hash": "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=",
-			        "hash_algorithm": "SHA-256"
+			        "hash_algorithm": "SHA-256",
+					"issued_after": 1456302440
 			    },
 			    "revoked_at": 1456302443
 			    },
@@ -91,7 +92,8 @@ func TestGetRevocationFromJSONToken(t *testing.T) {
 
 	if r.Type != REVOCATION_TYPE_TOKEN ||
 		r.Data["token_hash"] != "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=" ||
-		r.Data["revoked_at"] != 1456302443 {
+		r.Data["revoked_at"] != 1456302443 ||
+		r.Data["issued_after"] != 1456302440 {
 		t.Errorf("Error getting revocation from jsonRevocation. jsonRev: %#v\n\nRevocation: %#v", rev.Revs[2], r)
 	}
 }
@@ -240,6 +242,18 @@ func TestGetRevocationFromJSONInvalidTokenTS(t *testing.T) {
 		t.Errorf("Revocation shouldn't be valid.")
 	}
 
+	j.RevokedAt = 123456789
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+
+	j.RevokedAt = 0
+	j.Data.IssuedAfter = 987654321
+	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
 }
 
 func TestGetRevocationFromJSONInvalidGlobalIssuedBefore(t *testing.T) {

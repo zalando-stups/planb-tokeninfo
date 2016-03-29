@@ -35,6 +35,7 @@ type jsonRevocation struct {
 		Names         []string `json:"names,omitempty"`          // CLAIM
 		ValueHash     string   `json:"value_hash,omitempty"`     // CLAIM
 		IssuedBefore  int      `json:"issued_before,omitempty"`  // CLAIM, GLOBAL
+		IssuedAfter   int      `json:"issued_after,omitempty"`   // TOKEN
 		TokenHash     string   `json:"token_hash,omitempty"`     // TOKEN
 		HashAlgorithm string   `json:"hash_algorithm,omitempty"` // CLAIM, TOKEN
 	} `json:"data"`
@@ -56,12 +57,13 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 	r.Data = make(map[string]interface{})
 	switch j.Type {
 	case REVOCATION_TYPE_TOKEN:
-		valid := isHashTimestampValid(j.Data.TokenHash, j.RevokedAt)
+		valid := isHashTimestampValid(j.Data.TokenHash, j.RevokedAt, j.Data.IssuedAfter)
 		if !valid {
 			log.Printf("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
 			return
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
+		r.Data["issued_after"] = j.Data.IssuedAfter
 	case REVOCATION_TYPE_CLAIM:
 		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore, j.RevokedAt)
 		if !valid {
