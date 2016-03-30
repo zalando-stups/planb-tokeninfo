@@ -115,7 +115,7 @@ func (c *Cache) Expire() {
 }
 
 func (c *Cache) ForceRefresh(ts int) {
-	if ts == 0 {
+	if ts <= 0 {
 		return
 	}
 	c.forceRefresh <- ts

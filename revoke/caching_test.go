@@ -121,7 +121,7 @@ func TestCachingMissingRevocationValues(t *testing.T) {
 
 	// missing claim value_hash
 	revData2 := make(map[string]interface{})
-	revData2["name"] = "name"
+	revData2["names"] = "names"
 	revData2["revoked_at"] = int(time.Now().Unix())
 	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2, Timestamp: int(time.Now().Unix())}
 
@@ -129,6 +129,20 @@ func TestCachingMissingRevocationValues(t *testing.T) {
 
 	if cache.GetLastTS() != 0 {
 		t.Errorf("Cache should be empty.")
+	}
+
+	// missing type
+	revData3 := make(map[string]interface{})
+	revData3["revoked_at"] = int(time.Now().Unix())
+	revData3["token_hash"] = "token"
+	revData3["value_hash"] = "value"
+	revData3["names"] = "names"
+	rev3 := &Revocation{Type: "", Data: revData3, Timestamp: int(time.Now().Unix())}
+
+	cache.Add(rev3)
+
+	if cache.GetLastTS() != 0 {
+		t.Errorf("Cache should be empty")
 	}
 }
 
@@ -162,6 +176,15 @@ func TestCachingForceRefresh(t *testing.T) {
 	revData["revoked_at"] = 1000
 	cache.Add(&Revocation{Type: REVOCATION_TYPE_GLOBAL, Data: revData, Timestamp: int(time.Now().Unix())})
 
+	cache.ForceRefresh(0)
+
+	if cache.Get("t1") == nil ||
+		cache.Get("t2") == nil ||
+		cache.Get("c1") == nil ||
+		cache.Get("c2") == nil ||
+		cache.Get(REVOCATION_TYPE_GLOBAL) == nil {
+		t.Errorf("Force refresh should not have removed any elements.")
+	}
 	cache.ForceRefresh(2001)
 
 	if cache.Get("t1") == nil ||

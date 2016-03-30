@@ -25,7 +25,7 @@ type jsonRevoke struct {
 		RefreshFrom      int `json:"REFRESH_FROM"`
 		RefreshTimestamp int `json:"REFRESH_TIMESTAMP"`
 	} `json:"meta"`
-	Revs []jsonRevocation `json:"revocations"`
+	Revs []*jsonRevocation `json:"revocations"`
 }
 
 type jsonRevocation struct {

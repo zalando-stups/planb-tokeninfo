@@ -75,10 +75,16 @@ func TestIsValidHashTimestampEmptyTimestamp(t *testing.T) {
 func TestUnmarshalJsonData(t *testing.T) {
 
 	var rev = new(jsonRevoke)
-	rev.UnmarshallJSON(j)
-	if rev.Meta.RefreshTimestamp != 10000 || rev.Meta.RefreshFrom != 10000 || len(rev.Revs) != 4 {
+	err := rev.UnmarshallJSON(j)
+	if err != nil || rev.Meta.RefreshTimestamp != 10000 || rev.Meta.RefreshFrom != 10000 || len(rev.Revs) != 4 {
 		t.Errorf("Error unmarshaling revocations\n\n%#v", rev)
 	}
+
+	bad := []byte("bad json data")
+	if err = rev.UnmarshallJSON(bad); err == nil {
+		t.Errorf("Passed in bad data to unmarshal. Should have received an error.")
+	}
+
 }
 
 func TestGetRevocationFromJSONToken(t *testing.T) {
@@ -87,7 +93,7 @@ func TestGetRevocationFromJSONToken(t *testing.T) {
 	rev.UnmarshallJSON(j)
 
 	var r = new(Revocation)
-	r.getRevocationFromJson(&rev.Revs[2])
+	r.getRevocationFromJson(rev.Revs[2])
 
 	if r.Type != REVOCATION_TYPE_TOKEN ||
 		r.Data["token_hash"] != "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=" ||
@@ -102,7 +108,7 @@ func TestGetRevocationFromJSONClaim(t *testing.T) {
 	rev.UnmarshallJSON(j)
 
 	var r = new(Revocation)
-	r.getRevocationFromJson(&rev.Revs[0])
+	r.getRevocationFromJson(rev.Revs[0])
 
 	if r.Type != REVOCATION_TYPE_CLAIM ||
 		r.Data["value_hash"] != "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=" ||
@@ -117,7 +123,7 @@ func TestGetRevocationFromJSONMutliNameClaim(t *testing.T) {
 	rev.UnmarshallJSON(j)
 
 	var r = new(Revocation)
-	r.getRevocationFromJson(&rev.Revs[3])
+	r.getRevocationFromJson(rev.Revs[3])
 
 	if r.Type != REVOCATION_TYPE_CLAIM ||
 		r.Data["value_hash"] != "13sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=" ||
@@ -133,7 +139,7 @@ func TestGetRevocationFromJSONGlobal(t *testing.T) {
 	rev.UnmarshallJSON(j)
 
 	var r = new(Revocation)
-	r.getRevocationFromJson(&rev.Revs[1])
+	r.getRevocationFromJson(rev.Revs[1])
 
 	if r.Type != REVOCATION_TYPE_GLOBAL ||
 		r.Data["issued_before"] != 1456296158 {
@@ -250,6 +256,13 @@ func TestGetRevocationFromJSONInvalidGlobalIssuedBefore(t *testing.T) {
 
 	var r = new(Revocation)
 	r.getRevocationFromJson(j)
+	if r.Type != "" {
+		t.Errorf("Revocation shouldn't be valid.")
+	}
+
+	j.Data.IssuedBefore = 0
+	r.getRevocationFromJson(j)
+
 	if r.Type != "" {
 		t.Errorf("Revocation shouldn't be valid.")
 	}
