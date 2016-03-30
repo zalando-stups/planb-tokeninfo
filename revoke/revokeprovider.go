@@ -102,7 +102,8 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 // Test if a JWT token is revoked by comparing the token type, the hash (cache key), and the issued at time (iat) of
 // the token.
 // Revocations are checked in the following order GLOBAL, TOKEN, CLAIM. This is to speed up processing time, as
-// GLOBAL and TOKEN revocations are much faster to test than CLAIM.
+// GLOBAL and TOKEN revocations are much faster to test than CLAIM (CLAIM has to check each name stored in the cache
+// against the token).
 func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
 	if _, ok := j.Claims["iat"]; !ok {
