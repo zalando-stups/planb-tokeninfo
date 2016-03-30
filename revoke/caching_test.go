@@ -151,29 +151,29 @@ func TestCachingForceRefresh(t *testing.T) {
 
 	revData := make(map[string]interface{})
 	revData["token_hash"] = "t1"
-	revData["revoked_at"] = 1000
+	revData["revoked_at"] = int(time.Now().Add(-1 * time.Hour).Unix())
 	cache.Add(&Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: int(time.Now().Unix())})
 
 	revData = make(map[string]interface{})
 	revData["token_hash"] = "t2"
-	revData["revoked_at"] = 2000
+	revData["revoked_at"] = int(time.Now().Add(-3 * time.Hour).Unix())
 	cache.Add(&Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: int(time.Now().Unix())})
 
 	revData = make(map[string]interface{})
 	revData["value_hash"] = "c1"
 	revData["names"] = "c1"
-	revData["revoked_at"] = 1000
+	revData["revoked_at"] = int(time.Now().Add(-1 * time.Hour).Unix())
 	cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData, Timestamp: int(time.Now().Unix())})
 
 	revData = make(map[string]interface{})
 	revData["value_hash"] = "c2"
 	revData["names"] = "c2"
-	revData["revoked_at"] = 2000
+	revData["revoked_at"] = int(time.Now().Add(-3 * time.Hour).Unix())
 	cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData, Timestamp: int(time.Now().Unix())})
 
 	revData = make(map[string]interface{})
 	revData["value_hash"] = REVOCATION_TYPE_GLOBAL
-	revData["revoked_at"] = 1000
+	revData["revoked_at"] = int(time.Now().Add(-1 * time.Hour).Unix())
 	cache.Add(&Revocation{Type: REVOCATION_TYPE_GLOBAL, Data: revData, Timestamp: int(time.Now().Unix())})
 
 	cache.ForceRefresh(0)
@@ -185,7 +185,8 @@ func TestCachingForceRefresh(t *testing.T) {
 		cache.Get(REVOCATION_TYPE_GLOBAL) == nil {
 		t.Errorf("Force refresh should not have removed any elements.")
 	}
-	cache.ForceRefresh(2001)
+
+	cache.ForceRefresh(int(time.Now().Unix()))
 
 	if cache.Get("t1") == nil ||
 		cache.Get("t2") == nil ||
@@ -195,17 +196,17 @@ func TestCachingForceRefresh(t *testing.T) {
 		t.Errorf("Force refresh should not have removed any elements.")
 	}
 
-	cache.ForceRefresh(1500)
+	cache.ForceRefresh(int(time.Now().Add(-2 * time.Hour).Unix()))
 
-	if cache.Get("t1") == nil ||
-		cache.Get("t2") != nil ||
-		cache.Get("c1") == nil ||
-		cache.Get("c2") != nil ||
-		cache.Get(REVOCATION_TYPE_GLOBAL) == nil {
+	if cache.Get("t1") != nil ||
+		cache.Get("t2") == nil ||
+		cache.Get("c1") != nil ||
+		cache.Get("c2") == nil ||
+		cache.Get(REVOCATION_TYPE_GLOBAL) != nil {
 		t.Errorf("Force refresh should not have removed token t2 and claim c2.")
 	}
 
-	cache.ForceRefresh(1000)
+	cache.ForceRefresh(int(time.Now().Add(-4 * time.Hour).Unix()))
 
 	if cache.Get("t1") != nil ||
 		cache.Get("t2") != nil ||
@@ -214,6 +215,7 @@ func TestCachingForceRefresh(t *testing.T) {
 		cache.Get(REVOCATION_TYPE_GLOBAL) != nil {
 		t.Errorf("Force refresh should have removed all cached elements.")
 	}
+
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

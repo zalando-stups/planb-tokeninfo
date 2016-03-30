@@ -1,7 +1,6 @@
 package revoke
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"strings"
@@ -13,6 +12,11 @@ var (
 	REVOCATION_TYPE_CLAIM        = "CLAIM"
 	REVOCATION_TYPE_GLOBAL       = "GLOBAL"
 	REVOCATION_TYPE_FORCEREFRESH = "FORCEREFRESH"
+
+	ErrInvalidRevocation = errors.New("Invalid Revocation data")
+	ErrIssuedInFuture    = errors.New("Issued in the future")
+	ErrUnsupportedType   = errors.New("Unsupported revocation type")
+	ErrMissingClaimName  = errors.New("Missing claim name")
 )
 
 type Revocation struct {
@@ -41,21 +45,33 @@ type jsonRevocation struct {
 	} `json:"data"`
 }
 
-func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
-	if err = json.Unmarshal(data, &r); err != nil {
-		log.Println("Error unmarshalling revocation json. " + err.Error())
-		return err
+func (j *jsonRevocation) validToken() bool {
+	if j.Type == REVOCATION_TYPE_TOKEN &&
+		j.RevokedAt != 0 &&
+		j.Data.TokenHash != "" {
+		return true
 	}
-
-	return
+	return false
 }
 
-var (
-	ErrInvalidRevocation = errors.New("Invalid Revocation data")
-	ErrIssuedInFuture    = errors.New("Issued in the future")
-	ErrUnsupportedType   = errors.New("Unsupported revocation type")
-	ErrMissingClaimName  = errors.New("Missing claim name")
-)
+func (j *jsonRevocation) validClaim() bool {
+	if j.Type == REVOCATION_TYPE_CLAIM &&
+		j.RevokedAt != 0 &&
+		j.Data.ValueHash != "" &&
+		j.Data.IssuedBefore != 0 {
+		return true
+	}
+	return false
+}
+
+func (j *jsonRevocation) validGlobal() bool {
+	if j.Type == REVOCATION_TYPE_GLOBAL &&
+		j.RevokedAt != 0 &&
+		j.Data.IssuedBefore != 0 {
+		return true
+	}
+	return false
+}
 
 func getRevocationFromJson(j *jsonRevocation) (*Revocation, error) {
 
@@ -96,27 +112,13 @@ func getRevocationFromJson(j *jsonRevocation) (*Revocation, error) {
 		r.Data["issued_before"] = j.Data.IssuedBefore
 	default:
 		log.Printf("Unsupported revocation type: %s", j.Type)
-		return ErrUnsupportedType
+		return nil, ErrUnsupportedType
 	}
 
 	r.Data["revoked_at"] = j.RevokedAt
 	r.Type = j.Type
 	r.Timestamp = t
 	return r, nil
-}
-
-func isHashTimestampValid(hash string, timestamp ...int) bool {
-	if hash == "" {
-		return false
-	}
-
-	for _, val := range timestamp {
-		if val <= 0 {
-			return false
-		}
-	}
-
-	return true
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

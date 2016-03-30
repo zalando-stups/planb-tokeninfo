@@ -3,6 +3,7 @@ package revoke
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -54,8 +55,8 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
-	jr := new(jsonRevoke)
-	if err := jr.UnmarshallJSON(body); err != nil {
+	jr := &jsonRevoke{}
+	if err := json.Unmarshal(body, &jr); err != nil {
 		log.Println("Failed to unmarshall revocation data. " + err.Error())
 		return
 	}
@@ -65,7 +66,7 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 		if r == nil || (r.(*Revocation).Timestamp != jr.Meta.RefreshTimestamp) {
 			log.Printf("Force refreshing cache from %d...", jr.Meta.RefreshFrom)
 			crp.cache.ForceRefresh(jr.Meta.RefreshFrom)
-			rev := new(Revocation)
+			rev := &Revocation{}
 			d := make(map[string]interface{})
 			rev.Type = REVOCATION_TYPE_FORCEREFRESH
 			d["refresh_from"] = jr.Meta.RefreshFrom
@@ -82,7 +83,7 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 
 	for _, j := range jr.Revs {
 		r, err := getRevocationFromJson(j)
-		if err != nil {
+		if err == nil {
 			crp.cache.Add(r)
 		}
 	}

@@ -58,7 +58,11 @@ func NewCache() *Cache {
 						key = k
 					}
 				}
-				r.res <- c[key]
+				if v, ok := c[key]; ok {
+					r.res <- v
+				} else {
+					r.res <- nil
+				}
 			case r := <-cName:
 				names := make(map[string]int)
 				for _, rev := range c {
@@ -115,7 +119,7 @@ func (c *Cache) Expire() {
 }
 
 func (c *Cache) ForceRefresh(ts int) {
-	if ts <= 0 {
+	if ts < int(time.Now().Add(-1*options.AppSettings.RevocationCacheTTL).Unix()) {
 		return
 	}
 	c.forceRefresh <- ts
@@ -145,6 +149,7 @@ func (c *Cache) Add(rev *Revocation) {
 	case REVOCATION_TYPE_FORCEREFRESH:
 		hash = REVOCATION_TYPE_FORCEREFRESH
 	default:
+		log.Printf("Error adding revocation to cache. Unknown revocation type: %s", rev.Type)
 		return
 	}
 	c.set <- &request{key: hash, val: rev}
