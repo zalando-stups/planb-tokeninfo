@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Types of accepted revocations
 var (
 	REVOCATION_TYPE_TOKEN        = "TOKEN"
 	REVOCATION_TYPE_CLAIM        = "CLAIM"
@@ -14,12 +15,15 @@ var (
 	REVOCATION_TYPE_FORCEREFRESH = "FORCEREFRESH"
 )
 
+// Revocation structure used to store a revocation.
+// Used in the cache.
 type Revocation struct {
 	Type      string // token, claim, global
 	Data      map[string]interface{}
 	Timestamp int
 }
 
+// Stores all data received from a call to the Revocation Provider.
 type jsonRevoke struct {
 	Meta struct {
 		RefreshFrom      int `json:"REFRESH_FROM"`
@@ -28,6 +32,7 @@ type jsonRevoke struct {
 	Revs []jsonRevocation `json:"revocations"`
 }
 
+// Stores individual revocations from a call to the Revocation Provider.
 type jsonRevocation struct {
 	Type      string `json:"type"` // TOKEN, CLAIM, GLOBAL
 	RevokedAt int    `json:"revoked_at"`
@@ -40,6 +45,7 @@ type jsonRevocation struct {
 	} `json:"data"`
 }
 
+// Unmarshal json data recevied from a call to the Revocation Provider and store it in a jsonRevoke struct.
 func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
 	if err = json.Unmarshal(data, &r); err != nil {
 		log.Println("Error unmarshalling revocation json. " + err.Error())
@@ -49,6 +55,8 @@ func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
 	return
 }
 
+// Verify the data in a jsonRevocation (e.g. proper revocation type, valid hash, valid timestamp) and create a
+// Revocation.
 func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 
 	t := int(time.Now().Unix())
@@ -97,6 +105,8 @@ func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
 	return
 }
 
+// Validate a hash and one or more timestamps.
+// Used for validating revocation data.
 func isHashTimestampValid(hash string, timestamp ...int) bool {
 	if hash == "" {
 		return false
