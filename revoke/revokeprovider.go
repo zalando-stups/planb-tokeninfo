@@ -81,9 +81,8 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 	}
 
 	for _, j := range jr.Revs {
-		var r = new(Revocation)
-		r.getRevocationFromJson(j)
-		if r.Type != "" {
+		r, err := getRevocationFromJson(j)
+		if err != nil {
 			crp.cache.Add(r)
 		}
 	}
