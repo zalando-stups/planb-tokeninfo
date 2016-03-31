@@ -219,6 +219,15 @@ func TestLoading(t *testing.T) {
 		},
 		{
 			map[string]string{
+				"UPSTREAM_TOKENINFO_URL":            "",
+				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
+				"REVOCATION_PROVIDER_URL":           "http://example.com",
+			},
+			nil,
+			true,
+		},
+		{
+			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
 				"REVOCATION_PROVIDER_URL":           "http://example.com",
