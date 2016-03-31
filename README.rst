@@ -51,6 +51,7 @@ Running
 
     $ export OPENID_PROVIDER_CONFIGURATION_URL=https://planb-provider.example.org/.well-known/openid-configuration
     $ export UPSTREAM_TOKENINFO_URL=https://auth.example.org/oauth2/tokeninfo
+    $ export REVOCATION_PROVIDER_URL=https://planb-revocation.example.org/revocations
     $ $GOPATH/bin/planb-tokeninfo  # start server on port 9021
 
 Now we can test our token info endpoint with a valid JWT access token:
@@ -84,6 +85,16 @@ The following environment variables are supported:
     Maximum number of entries for upstream token cache. It defaults to 10000.
 ``UPSTREAM_CACHE_TTL``
     The TTL for upstream token cache entries. It defaults to 60 seconds. Zero will disable the cache. See also `Time based settings`_
+``REVOCATION_PROVIDER_URL``
+    URL of of the Revocation service.
+``REVOCATION_PROVIDER_REFRESH_INTERVAL``
+    Refresh interval for polling the Revocation service. See `Time based settings`_
+``REVOCATION_REFRESH_TOLERANCE``
+    Amount of time to account for network latencies when polling the revocation service. Default is 60 seconds. See `Time based settings`_
+``REVOCATION_CACHE_TTL``
+    The TTL for Revocation cache entries. Default is 8 hours. See `Time based settings`_
+``REVOCATION_HASHING_SALT``
+    Shared salt with Revocation service. Used for comparing hashed tokens from the Revocation service.
 ``LISTEN_ADDRESS``
     The address for the application listener. It defaults to ':9021'
 ``METRICS_LISTEN_ADDRESS``

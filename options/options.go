@@ -10,25 +10,34 @@ import (
 
 // The Settings type contains the application configurable options
 type Settings struct {
-	ListenAddress                  string
-	MetricsListenAddress           string
-	UpstreamTokenInfoURL           *url.URL
-	UpstreamCacheMaxSize           int64
-	UpstreamCacheTTL               time.Duration
-	OpenIDProviderConfigurationURL *url.URL
-	OpenIDProviderRefreshInterval  time.Duration
-	HTTPClientTimeout              time.Duration
-	HTTPClientTLSTimeout           time.Duration
+	ListenAddress                     string
+	MetricsListenAddress              string
+	UpstreamTokenInfoURL              *url.URL
+	UpstreamCacheMaxSize              int64
+	UpstreamCacheTTL                  time.Duration
+	OpenIDProviderConfigurationURL    *url.URL
+	OpenIDProviderRefreshInterval     time.Duration
+	HTTPClientTimeout                 time.Duration
+	HTTPClientTLSTimeout              time.Duration
+	RevocationCacheTTL                time.Duration
+	RevocationProviderRefreshInterval time.Duration
+	RevocationRefreshTolerance        time.Duration
+	RevocationProviderUrl             *url.URL
+	HashingSalt                       string
 }
 
 const (
-	defaultListenAddress         = ":9021"
-	defaultMetricsListenAddress  = ":9020"
-	defaultUpstreamCacheMaxSize  = 10000
-	defaultUpstreamCacheTTL      = 60 * time.Second
-	defaultOpenIDRefreshInterval = 30 * time.Second
-	defaultHTTPClientTimeout     = 10 * time.Second
-	defaultHTTPClientTLSTimeout  = 10 * time.Second
+	defaultListenAddress                 = ":9021"
+	defaultMetricsListenAddress          = ":9020"
+	defaultUpstreamCacheMaxSize          = 10000
+	defaultUpstreamCacheTTL              = 60 * time.Second
+	defaultOpenIDRefreshInterval         = 30 * time.Second
+	defaultHTTPClientTimeout             = 10 * time.Second
+	defaultHTTPClientTLSTimeout          = 10 * time.Second
+	defaultRevocationCacheTTL            = 8 * time.Hour
+	defaultRevokeProviderRefreshInterval = 10 * time.Second
+	defaultRevocationRereshTolerance     = 60 * time.Second
+	defaultHashingSalt                   = "seasaltisthebest"
 )
 
 var (
@@ -38,13 +47,17 @@ var (
 
 func defaultSettings() *Settings {
 	return &Settings{
-		ListenAddress:                 defaultListenAddress,
-		MetricsListenAddress:          defaultMetricsListenAddress,
-		UpstreamCacheMaxSize:          defaultUpstreamCacheMaxSize,
-		UpstreamCacheTTL:              defaultUpstreamCacheTTL,
-		OpenIDProviderRefreshInterval: defaultOpenIDRefreshInterval,
-		HTTPClientTimeout:             defaultHTTPClientTimeout,
-		HTTPClientTLSTimeout:          defaultHTTPClientTLSTimeout,
+		ListenAddress:                     defaultListenAddress,
+		MetricsListenAddress:              defaultMetricsListenAddress,
+		UpstreamCacheMaxSize:              defaultUpstreamCacheMaxSize,
+		UpstreamCacheTTL:                  defaultUpstreamCacheTTL,
+		OpenIDProviderRefreshInterval:     defaultOpenIDRefreshInterval,
+		HTTPClientTimeout:                 defaultHTTPClientTimeout,
+		HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
+		RevocationCacheTTL:                defaultRevocationCacheTTL,
+		RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
+		RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+		HashingSalt:                       defaultHashingSalt,
 	}
 }
 
@@ -54,6 +67,7 @@ func defaultSettings() *Settings {
 //
 //      UPSTREAM_TOKENINFO_URL
 //      OPENID_PROVIDER_CONFIGURATION_URL
+//	REVOCATION_PROVIDER_URL
 //
 // The remaining options have sane defaults and are not mandatory
 func LoadFromEnvironment() error {
@@ -69,6 +83,16 @@ func LoadFromEnvironment() error {
 		return fmt.Errorf("Invalid OPENID_PROVIDER_CONFIGURATION_URL: %v\n", err)
 	}
 	settings.OpenIDProviderConfigurationURL = url
+
+	url, err = getURL("REVOCATION_PROVIDER_URL")
+	if err != nil || url == nil {
+		return fmt.Errorf("Invalid REVOCATION_PROVIDER_URL: %v\n", err)
+	}
+	settings.RevocationProviderUrl = url
+
+	if s := getString("REVOCATION_HASHING_SALT", ""); s != "" {
+		settings.HashingSalt = s
+	}
 
 	if s := getString("LISTEN_ADDRESS", ""); s != "" {
 		settings.ListenAddress = s
@@ -97,6 +121,19 @@ func LoadFromEnvironment() error {
 	if d := getDuration("HTTP_CLIENT_TLS_TIMEOUT", 0); d > 0 {
 		settings.HTTPClientTLSTimeout = d
 	}
+
+	if d := getDuration("REVOCATION_CACHE_TTL", 0); d > 0 {
+		settings.RevocationCacheTTL = d
+	}
+
+	if d := getDuration("REVOCATION_PROVIDER_REFRESH_INTERVAL", 0); d > 0 {
+		settings.RevocationProviderRefreshInterval = d
+	}
+
+	if d := getDuration("REVOCATION_REFRESH_TOLERANCE", 0); d > 0 {
+		settings.RevocationRefreshTolerance = d
+	}
+
 	AppSettings = settings
 	return nil
 }

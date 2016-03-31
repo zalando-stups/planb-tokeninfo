@@ -17,6 +17,7 @@ import (
 	"github.com/zalando/planb-tokeninfo/ht"
 	"github.com/zalando/planb-tokeninfo/keyloader/openid"
 	"github.com/zalando/planb-tokeninfo/options"
+	"github.com/zalando/planb-tokeninfo/revoke"
 )
 
 var version string
@@ -41,7 +42,8 @@ func main() {
 
 	ph := tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL, settings.UpstreamCacheMaxSize, settings.UpstreamCacheTTL)
 	kl := openid.NewCachingOpenIDProviderLoader(settings.OpenIDProviderConfigurationURL)
-	jh := jwthandler.New(kl)
+	crp := revoke.NewCachingRevokeProvider(settings.RevocationProviderUrl)
+	jh := jwthandler.New(kl, crp)
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthcheck.NewHandler(kl, version))
