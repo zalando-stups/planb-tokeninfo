@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Types of accepted revocations
 var (
 	REVOCATION_TYPE_TOKEN        = "TOKEN"
 	REVOCATION_TYPE_CLAIM        = "CLAIM"
@@ -19,12 +20,15 @@ var (
 	ErrMissingClaimName  = errors.New("Missing claim name")
 )
 
+// Revocation structure used to store a revocation.
+// Used in the cache.
 type Revocation struct {
 	Type      string // token, claim, global
 	Data      map[string]interface{}
 	Timestamp int
 }
 
+// Stores all data received from a call to the Revocation Provider.
 type jsonRevoke struct {
 	Meta struct {
 		RefreshFrom      int `json:"REFRESH_FROM"`
@@ -33,6 +37,7 @@ type jsonRevoke struct {
 	Revs []*jsonRevocation `json:"revocations"`
 }
 
+// Stores individual revocations from a call to the Revocation Provider.
 type jsonRevocation struct {
 	Type      string `json:"type"` // TOKEN, CLAIM, GLOBAL
 	RevokedAt int    `json:"revoked_at"`
@@ -45,6 +50,7 @@ type jsonRevocation struct {
 	} `json:"data"`
 }
 
+// Test whether the jsonRevocation holds a valid token revocation.
 func (j *jsonRevocation) validToken() bool {
 	if j.Type == REVOCATION_TYPE_TOKEN &&
 		j.RevokedAt != 0 &&
@@ -54,6 +60,7 @@ func (j *jsonRevocation) validToken() bool {
 	return false
 }
 
+// Test whether the jsonRevocation holds a valid claim revocation.
 func (j *jsonRevocation) validClaim() bool {
 	if j.Type == REVOCATION_TYPE_CLAIM &&
 		j.RevokedAt != 0 &&
@@ -64,6 +71,7 @@ func (j *jsonRevocation) validClaim() bool {
 	return false
 }
 
+// Test whether the jsonRevocation holds a valid global revocation.
 func (j *jsonRevocation) validGlobal() bool {
 	if j.Type == REVOCATION_TYPE_GLOBAL &&
 		j.RevokedAt != 0 &&
@@ -73,6 +81,7 @@ func (j *jsonRevocation) validGlobal() bool {
 	return false
 }
 
+// Returns a Revocation if json data is valid; otherwise, return an error.
 func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 
 	r := &Revocation{}

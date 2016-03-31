@@ -21,17 +21,24 @@ import (
 
 var scheduleFunc = Schedule
 
+// Caching provider holds the URL to the Revocation Provider and a reference to the revocation cache.
+// The URL is set with an environment variable: REVOCATION_PROVIDER_URL.
 type CachingRevokeProvider struct {
 	url   string
 	cache *Cache
 }
 
+// Return a new CachingRevokeProvider and start polling the Revocation Provider based on a set interval.
+// Uses the environemnt variables: REVOCATION_PROVIDER_URL and REVOCATION_PROVIDER_REFRESH_INTERVAL.
 func NewCachingRevokeProvider(u *url.URL) *CachingRevokeProvider {
 	crp := &CachingRevokeProvider{url: u.String(), cache: NewCache()}
 	scheduleFunc(options.AppSettings.RevocationProviderRefreshInterval, crp.RefreshRevocations)
 	return crp
 }
 
+// Polls the Revocation Provider for new revocations and adds them to the revocation cache; handles the Force Refresh
+// condition (e.g. refresh cache from a specific timestamp); expires revocations older than the
+// REVOCATION_CACHE_TTL envionment variable.
 func (crp *CachingRevokeProvider) RefreshRevocations() {
 	ts := crp.cache.GetLastTS()
 	if ts == 0 {
@@ -92,6 +99,11 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 
 }
 
+// Test if a JWT token is revoked by comparing the token type, the hash (cache key), and the issued at time (iat) of
+// the token.
+// Revocations are checked in the following order GLOBAL, TOKEN, CLAIM. This is to speed up processing time, as
+// GLOBAL and TOKEN revocations are much faster to test than CLAIM (CLAIM has to check each name stored in the cache
+// against the token).
 func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
 	if _, ok := j.Claims["iat"]; !ok {
@@ -119,7 +131,7 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
 	// check claim revocation
 	// each cNames entry can have multiple claim names separated by a '|'
-	// if multiple claim names, the values are appended with a '|' between and hashed
+	// if multiple claim names, the values are appended with a '|' between and then hashed
 	cNames := crp.cache.GetClaimNames()
 	for _, cName := range cNames {
 		names := strings.Split(cName, "|")
@@ -147,6 +159,8 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 	return false
 }
 
+// SHA256 Hashes and base64 URL encodes a token or claim value(s) using the salt provided in the envionment variable
+// REVOCATION_HASHING_SALT.
 func hashTokenClaim(h string) string {
 
 	if h == "" {
@@ -161,6 +175,7 @@ func hashTokenClaim(h string) string {
 
 }
 
+// Metrics used to count the number of each type of revocation.
 func countRevocations(r string) {
 	rev := fmt.Sprintf("planb.tokeninfo.revocation.%s", r)
 	if c, ok := metrics.DefaultRegistry.GetOrRegister(rev, metrics.NewCounter).(metrics.Counter); ok {
