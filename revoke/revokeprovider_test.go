@@ -258,6 +258,87 @@ func TestRefreshRevocations(t *testing.T) {
 	}
 }
 
+func TestRefreshRevocationsInvalidJSON(t *testing.T) {
+
+	var listener string
+
+	j := fmt.Sprintf(`{
+						Invalid JSON
+					}`)
+
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, j)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	u, _ := url.Parse(listener)
+	crp := NewCachingRevokeProvider(u)
+	crp.RefreshRevocations()
+
+	if crp.cache.GetLastTS() != 0 {
+		t.Errorf("Expecting invalid JSON. Should have 0 entries in the cache.")
+	}
+}
+
+func TestRefreshRevocationsBadHTTPStatus(t *testing.T) {
+
+	var listener string
+
+	j := fmt.Sprintf(`{
+				  "meta": {"REFRESH_FROM": 0, "REFRESH_TIMESTAMP": 0},
+				    "revocations": [
+				    {
+			      "type": "CLAIM",
+			        "data": {
+				        "names": ["uid"],
+				        "value_hash": "+3sDm1MGB3+WGg7CzeMOBwse8V076MyYfNIF1W9A0B0=",
+				        "hash_algorithm": "SHA-256",
+				        "issued_before": %d
+				      },
+				      "revoked_at": %d
+				    },
+				    {
+				    "type": "GLOBAL",
+				    "data": {
+				        "issued_before": %d
+				      },
+				    "revoked_at": %d
+				    },
+					{
+				    "type": "TOKEN",
+				    "data": {
+				        "token_hash": "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=",
+				        "hash_algorithm": "SHA-256"
+				    },
+				    "revoked_at": %d
+				    }
+				  ]
+			}`, int(time.Now().Add(-1*time.Hour).Unix()), int(time.Now().Add(-1*time.Hour).Unix()),
+		int(time.Now().Add(-2*time.Hour).Unix()), int(time.Now().Add(-2*time.Hour).Unix()),
+		int(time.Now().Add(-3*time.Hour).Unix()))
+
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, j)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	u, _ := url.Parse(listener)
+	crp := NewCachingRevokeProvider(u)
+	crp.RefreshRevocations()
+
+	if crp.cache.GetLastTS() != 0 {
+		t.Errorf("Expecting invalid JSON. Should have 0 entries in the cache.")
+	}
+}
+
 func TestForceRefresh(t *testing.T) {
 
 	var listener string

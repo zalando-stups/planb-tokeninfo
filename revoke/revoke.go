@@ -1,33 +1,43 @@
 package revoke
 
 import (
-	"encoding/json"
+	"errors"
 	"log"
 	"strings"
 	"time"
 )
 
+// Types of accepted revocations
 var (
 	REVOCATION_TYPE_TOKEN        = "TOKEN"
 	REVOCATION_TYPE_CLAIM        = "CLAIM"
 	REVOCATION_TYPE_GLOBAL       = "GLOBAL"
 	REVOCATION_TYPE_FORCEREFRESH = "FORCEREFRESH"
+
+	ErrInvalidRevocation = errors.New("Invalid Revocation data")
+	ErrIssuedInFuture    = errors.New("Issued in the future")
+	ErrUnsupportedType   = errors.New("Unsupported revocation type")
+	ErrMissingClaimName  = errors.New("Missing claim name")
 )
 
+// Revocation structure used to store a revocation.
+// Used in the cache.
 type Revocation struct {
 	Type      string // token, claim, global
 	Data      map[string]interface{}
 	Timestamp int
 }
 
+// Stores all data received from a call to the Revocation Provider.
 type jsonRevoke struct {
 	Meta struct {
 		RefreshFrom      int `json:"REFRESH_FROM"`
 		RefreshTimestamp int `json:"REFRESH_TIMESTAMP"`
 	} `json:"meta"`
-	Revs []jsonRevocation `json:"revocations"`
+	Revs []*jsonRevocation `json:"revocations"`
 }
 
+// Stores individual revocations from a call to the Revocation Provider.
 type jsonRevocation struct {
 	Type      string `json:"type"` // TOKEN, CLAIM, GLOBAL
 	RevokedAt int    `json:"revoked_at"`
@@ -41,76 +51,86 @@ type jsonRevocation struct {
 	} `json:"data"`
 }
 
-func (r *jsonRevoke) UnmarshallJSON(data []byte) (err error) {
-	if err = json.Unmarshal(data, &r); err != nil {
-		log.Println("Error unmarshalling revocation json. " + err.Error())
-		return err
+// Test whether the jsonRevocation holds a valid token revocation.
+func (j *jsonRevocation) validToken() bool {
+	if j.Type == REVOCATION_TYPE_TOKEN &&
+		j.RevokedAt != 0 &&
+		j.Data.IssuedAfter != 0 &&
+		j.Data.TokenHash != "" {
+		return true
 	}
-
-	return
+	return false
 }
 
-func (r *Revocation) getRevocationFromJson(j *jsonRevocation) {
+// Test whether the jsonRevocation holds a valid claim revocation.
+func (j *jsonRevocation) validClaim() bool {
+	if j.Type == REVOCATION_TYPE_CLAIM &&
+		j.RevokedAt != 0 &&
+		j.Data.ValueHash != "" &&
+		j.Data.IssuedBefore != 0 {
+		return true
+	}
+	return false
+}
 
+// Test whether the jsonRevocation holds a valid global revocation.
+func (j *jsonRevocation) validGlobal() bool {
+	if j.Type == REVOCATION_TYPE_GLOBAL &&
+		j.RevokedAt != 0 &&
+		j.Data.IssuedBefore != 0 {
+		return true
+	}
+	return false
+}
+
+// Returns a Revocation if json data is valid; otherwise, return an error.
+func (j *jsonRevocation) toRevocation() (*Revocation, error) {
+
+	r := &Revocation{}
 	t := int(time.Now().Unix())
 
 	r.Data = make(map[string]interface{})
 	switch j.Type {
 	case REVOCATION_TYPE_TOKEN:
-		valid := isHashTimestampValid(j.Data.TokenHash, j.RevokedAt, j.Data.IssuedAfter)
-		if !valid {
-			log.Printf("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d, IssuedAfter: %d", j.Data.TokenHash, j.RevokedAt, j.Data.IssuedAfter)
-			return
+		if !j.validToken() {
+			log.Printf("Invalid revocation data (TOKEN). TokenHash: %s, RevokedAt: %d", j.Data.TokenHash, j.RevokedAt)
+			return nil, ErrInvalidRevocation
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
 		r.Data["issued_after"] = j.Data.IssuedAfter
+
 	case REVOCATION_TYPE_CLAIM:
-		valid := isHashTimestampValid(j.Data.ValueHash, j.Data.IssuedBefore, j.RevokedAt)
-		if !valid {
+		if !j.validClaim() {
 			log.Printf("Invalid revocation data (CLAIM). ValueHash: %s, IssuedBefore: %d, RevokedAt: %d", j.Data.ValueHash, j.Data.IssuedBefore, j.RevokedAt)
-			return
+			return nil, ErrInvalidRevocation
 		}
 		if len(j.Data.Names) == 0 {
 			log.Println("Invalid revocation data (missing claim name).")
-			return
+			return nil, ErrMissingClaimName
 		}
 		r.Data["value_hash"] = j.Data.ValueHash
 		r.Data["issued_before"] = j.Data.IssuedBefore
 		r.Data["names"] = strings.Join(j.Data.Names, "|")
+
 	case REVOCATION_TYPE_GLOBAL:
-		valid := isHashTimestampValid("thisStringDoesntMatter", j.Data.IssuedBefore, j.RevokedAt)
-		if !valid {
+		if !j.validGlobal() {
 			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore: %d, RevokedAt: %d", j.Data.IssuedBefore, j.RevokedAt)
-			return
+			return nil, ErrInvalidRevocation
 		}
 		if j.Data.IssuedBefore > t {
 			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %s", t, j.Data.IssuedBefore)
-			return
+			return nil, ErrIssuedInFuture
 		}
 		r.Data["issued_before"] = j.Data.IssuedBefore
 	default:
 		log.Printf("Unsupported revocation type: %s", j.Type)
-		return
+		return nil, ErrUnsupportedType
 	}
 
 	r.Data["revoked_at"] = j.RevokedAt
 	r.Type = j.Type
 	r.Timestamp = t
-	return
-}
-
-func isHashTimestampValid(hash string, timestamp ...int) bool {
-	if hash == "" {
-		return false
-	}
-
-	for _, val := range timestamp {
-		if val <= 0 {
-			return false
-		}
-	}
-
-	return true
+	return r, nil
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

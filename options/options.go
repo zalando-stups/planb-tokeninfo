@@ -67,6 +67,7 @@ func defaultSettings() *Settings {
 //
 //      UPSTREAM_TOKENINFO_URL
 //      OPENID_PROVIDER_CONFIGURATION_URL
+//	REVOCATION_PROVIDER_URL
 //
 // The remaining options have sane defaults and are not mandatory
 func LoadFromEnvironment() error {
