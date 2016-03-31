@@ -73,7 +73,7 @@ func (j *jsonRevocation) validGlobal() bool {
 	return false
 }
 
-func getRevocationFromJson(j *jsonRevocation) (*Revocation, error) {
+func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 
 	r := &Revocation{}
 	t := int(time.Now().Unix())
