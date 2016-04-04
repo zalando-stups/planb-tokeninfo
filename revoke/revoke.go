@@ -96,7 +96,6 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 			return nil, ErrInvalidRevocation
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
-		r.Data["issued_before"] = j.Data.IssuedBefore
 
 	case REVOCATION_TYPE_CLAIM:
 		if !j.validClaim() {
@@ -108,7 +107,6 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 			return nil, ErrMissingClaimName
 		}
 		r.Data["value_hash"] = j.Data.ValueHash
-		r.Data["issued_before"] = j.Data.IssuedBefore
 		r.Data["names"] = strings.Join(j.Data.Names, "|")
 
 	case REVOCATION_TYPE_GLOBAL:
@@ -116,16 +114,17 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore: %d, RevokedAt: %d", j.Data.IssuedBefore, j.RevokedAt)
 			return nil, ErrInvalidRevocation
 		}
-		if j.Data.IssuedBefore > t {
-			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %s", t, j.Data.IssuedBefore)
-			return nil, ErrIssuedInFuture
-		}
-		r.Data["issued_before"] = j.Data.IssuedBefore
 	default:
 		log.Printf("Unsupported revocation type: %s", j.Type)
 		return nil, ErrUnsupportedType
 	}
 
+	if j.Data.IssuedBefore > t {
+		log.Printf("Invalid revocation data. IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %s", t, j.Data.IssuedBefore)
+		return nil, ErrIssuedInFuture
+	}
+
+	r.Data["issued_before"] = j.Data.IssuedBefore
 	r.Data["revoked_at"] = j.RevokedAt
 	r.Type = j.Type
 	r.Timestamp = t
