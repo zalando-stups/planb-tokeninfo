@@ -153,11 +153,11 @@ func (c *Cache) Add(rev *Revocation) {
 		hash = rev.Data["token_hash"].(string)
 	case REVOCATION_TYPE_CLAIM:
 		if _, ok := rev.Data["names"]; !ok {
-			log.Println("Error adding revocation to cache: missing claim name.")
+			log.Println("Error adding revocation to cache: missing claim names.")
 			return
 		}
 		if _, ok := rev.Data["value_hash"]; !ok {
-			log.Println("Error adding revocation to cache: missing claim value_hash.")
+			log.Println("Error adding revocation to cache: missing claim values hash.")
 			return
 		}
 		hash = rev.Data["value_hash"].(string)

@@ -46,7 +46,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	revData := make(map[string]interface{})
 	revData["token_hash"] = hashTokenClaim(rawJwt)
 	revData["revoked_at"] = 300000
-	revData["issued_after"] = 300000
+	revData["issued_before"] = 300000
 	rev := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: 300000}
 	crp.cache.Add(rev)
 
@@ -156,7 +156,7 @@ func TestIsJWTRevokedMissingCacheFields(t *testing.T) {
 
 	crp := &CachingRevokeProvider{url: "localhost", cache: NewCache()}
 
-	// token missing issued_after
+	// token missing issued_before
 	revData := make(map[string]interface{})
 	revData["token_hash"] = hashTokenClaim(rawJwt)
 	revData["revoked_at"] = 300000
@@ -229,7 +229,7 @@ func TestRefreshRevocations(t *testing.T) {
 				    "data": {
 				        "token_hash": "3AW57qxY0oO9RlVOW7zor7uUOFnoTNBSaYbEOYeJPRg=",
 				        "hash_algorithm": "SHA-256",
-						"issued_after": %d
+						"issued_before": %d
 				    },
 				    "revoked_at": %d
 				    }
@@ -364,13 +364,13 @@ func TestForceRefresh(t *testing.T) {
 	revData := make(map[string]interface{})
 	revData["token_hash"] = "t1"
 	revData["revoked_at"] = int(time.Now().Add(-5 * time.Hour).Unix())
-	revData["issued_after"] = int(time.Now().Add(-5 * time.Hour).Unix())
+	revData["issued_before"] = int(time.Now().Add(-5 * time.Hour).Unix())
 	crp.cache.Add(&Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: int(time.Now().Add(-4 * time.Hour).Unix())})
 
 	revData = make(map[string]interface{})
 	revData["token_hash"] = "t2"
 	revData["revoked_at"] = int(time.Now().Add(-4 * time.Hour).Unix())
-	revData["issued_after"] = int(time.Now().Add(-4 * time.Hour).Unix())
+	revData["issued_before"] = int(time.Now().Add(-4 * time.Hour).Unix())
 
 	crp.cache.Add(&Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: int(time.Now().Add(-3 * time.Hour).Unix())})
 

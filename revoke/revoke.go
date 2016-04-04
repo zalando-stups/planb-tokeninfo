@@ -44,8 +44,7 @@ type jsonRevocation struct {
 	Data      struct {
 		Names         []string `json:"names,omitempty"`          // CLAIM
 		ValueHash     string   `json:"value_hash,omitempty"`     // CLAIM
-		IssuedBefore  int      `json:"issued_before,omitempty"`  // CLAIM, GLOBAL
-		IssuedAfter   int      `json:"issued_after,omitempty"`   // TOKEN
+		IssuedBefore  int      `json:"issued_before,omitempty"`  // CLAIM, TOKEN, GLOBAL
 		TokenHash     string   `json:"token_hash,omitempty"`     // TOKEN
 		HashAlgorithm string   `json:"hash_algorithm,omitempty"` // CLAIM, TOKEN
 	} `json:"data"`
@@ -55,7 +54,7 @@ type jsonRevocation struct {
 func (j *jsonRevocation) validToken() bool {
 	if j.Type == REVOCATION_TYPE_TOKEN &&
 		j.RevokedAt != 0 &&
-		j.Data.IssuedAfter != 0 &&
+		j.Data.IssuedBefore != 0 &&
 		j.Data.TokenHash != "" {
 		return true
 	}
@@ -97,7 +96,7 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 			return nil, ErrInvalidRevocation
 		}
 		r.Data["token_hash"] = j.Data.TokenHash
-		r.Data["issued_after"] = j.Data.IssuedAfter
+		r.Data["issued_before"] = j.Data.IssuedBefore
 
 	case REVOCATION_TYPE_CLAIM:
 		if !j.validClaim() {
@@ -105,7 +104,7 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 			return nil, ErrInvalidRevocation
 		}
 		if len(j.Data.Names) == 0 {
-			log.Println("Invalid revocation data (missing claim name).")
+			log.Println("Invalid revocation data (missing claim names).")
 			return nil, ErrMissingClaimName
 		}
 		r.Data["value_hash"] = j.Data.ValueHash
