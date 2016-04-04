@@ -34,7 +34,7 @@ const (
 	defaultOpenIDRefreshInterval         = 30 * time.Second
 	defaultHTTPClientTimeout             = 10 * time.Second
 	defaultHTTPClientTLSTimeout          = 10 * time.Second
-	defaultRevocationCacheTTL            = 8 * time.Hour
+	defaultRevocationCacheTTL            = 30 * 24 * time.Hour
 	defaultRevokeProviderRefreshInterval = 10 * time.Second
 	defaultRevocationRereshTolerance     = 60 * time.Second
 	defaultHashingSalt                   = "seasaltisthebest"

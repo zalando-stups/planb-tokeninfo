@@ -92,7 +92,7 @@ The following environment variables are supported:
 ``REVOCATION_REFRESH_TOLERANCE``
     Amount of time to account for network latencies when polling the revocation service. Default is 60 seconds. See `Time based settings`_
 ``REVOCATION_CACHE_TTL``
-    The TTL for Revocation cache entries. Default is 8 hours. See `Time based settings`_
+    The TTL for Revocation cache entries. Default is 30 days. See `Time based settings`_
 ``REVOCATION_HASHING_SALT``
     Shared salt with Revocation service. Used for comparing hashed tokens from the Revocation service.
 ``LISTEN_ADDRESS``
