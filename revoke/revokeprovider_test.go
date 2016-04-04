@@ -258,6 +258,66 @@ func TestRefreshRevocations(t *testing.T) {
 	}
 }
 
+func TestRefreshRevocationsDisallowFuture(t *testing.T) {
+
+	var listener string
+
+	now := int(time.Now().Unix())
+	future := now + 300
+	past := now - 300
+
+	j := fmt.Sprintf(`{
+				  "meta": {"REFRESH_FROM": 0, "REFRESH_TIMESTAMP": 0},
+				    "revocations": [
+				    {
+			      "type": "CLAIM",
+			        "data": {
+				        "names": ["uid"],
+				        "value_hash": "infuture",
+				        "hash_algorithm": "SHA-256",
+				        "issued_before": %d
+				      },
+				      "revoked_at": %d
+				    },
+				    {
+			      "type": "CLAIM",
+			        "data": {
+				        "names": ["uid"],
+				        "value_hash": "inpast",
+				        "hash_algorithm": "SHA-256",
+				        "issued_before": %d
+				      },
+				      "revoked_at": %d
+				    }
+				  ]
+			}`,
+		future,
+		now,
+		past,
+		now)
+
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, j)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	u, _ := url.Parse(listener)
+	crp := NewCachingRevokeProvider(u)
+	crp.RefreshRevocations()
+
+	if crp.cache.Get("inpast") == nil {
+		t.Errorf("Revocation of old tokens should work")
+	}
+
+	if crp.cache.Get("infuture") != nil {
+		t.Errorf("Revocation of future tokens should not work")
+	}
+}
+
 func TestRefreshRevocationsInvalidJSON(t *testing.T) {
 
 	var listener string
@@ -344,9 +404,9 @@ func TestForceRefresh(t *testing.T) {
 	var listener string
 	rf := int(time.Now().Add(-4 * time.Hour).Unix())
 	rt := int(time.Now().Add(-3 * time.Hour).Unix())
-	fr := fmt.Sprintf(`{                                                                                                                                       
-	                    "meta": {"REFRESH_FROM": %d, "REFRESH_TIMESTAMP": %d},                                                                                        
-	                    "revocations": []                                                                                                                           
+	fr := fmt.Sprintf(`{
+	                    "meta": {"REFRESH_FROM": %d, "REFRESH_TIMESTAMP": %d},
+	                    "revocations": []
 		           }`, rf, rt)
 
 	handler := func(w http.ResponseWriter, req *http.Request) {
