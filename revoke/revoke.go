@@ -44,7 +44,7 @@ type jsonRevocation struct {
 	Data      struct {
 		Names         []string `json:"names,omitempty"`          // CLAIM
 		ValueHash     string   `json:"value_hash,omitempty"`     // CLAIM
-		IssuedBefore  int      `json:"issued_before,omitempty"`  // CLAIM, GLOBAL
+		IssuedBefore  int      `json:"issued_before,omitempty"`  // CLAIM, TOKEN, GLOBAL
 		TokenHash     string   `json:"token_hash,omitempty"`     // TOKEN
 		HashAlgorithm string   `json:"hash_algorithm,omitempty"` // CLAIM, TOKEN
 	} `json:"data"`
@@ -54,6 +54,7 @@ type jsonRevocation struct {
 func (j *jsonRevocation) validToken() bool {
 	if j.Type == REVOCATION_TYPE_TOKEN &&
 		j.RevokedAt != 0 &&
+		j.Data.IssuedBefore != 0 &&
 		j.Data.TokenHash != "" {
 		return true
 	}
@@ -102,11 +103,10 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 			return nil, ErrInvalidRevocation
 		}
 		if len(j.Data.Names) == 0 {
-			log.Println("Invalid revocation data (missing claim name).")
+			log.Println("Invalid revocation data (missing claim names).")
 			return nil, ErrMissingClaimName
 		}
 		r.Data["value_hash"] = j.Data.ValueHash
-		r.Data["issued_before"] = j.Data.IssuedBefore
 		r.Data["names"] = strings.Join(j.Data.Names, "|")
 
 	case REVOCATION_TYPE_GLOBAL:
@@ -114,16 +114,17 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore: %d, RevokedAt: %d", j.Data.IssuedBefore, j.RevokedAt)
 			return nil, ErrInvalidRevocation
 		}
-		if j.Data.IssuedBefore > t {
-			log.Printf("Invalid revocation data (GLOBAL). IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %s", t, j.Data.IssuedBefore)
-			return nil, ErrIssuedInFuture
-		}
-		r.Data["issued_before"] = j.Data.IssuedBefore
 	default:
 		log.Printf("Unsupported revocation type: %s", j.Type)
 		return nil, ErrUnsupportedType
 	}
 
+	if j.Data.IssuedBefore > t {
+		log.Printf("Invalid revocation data. IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %s", t, j.Data.IssuedBefore)
+		return nil, ErrIssuedInFuture
+	}
+
+	r.Data["issued_before"] = j.Data.IssuedBefore
 	r.Data["revoked_at"] = j.RevokedAt
 	r.Type = j.Type
 	r.Timestamp = t
