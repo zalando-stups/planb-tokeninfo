@@ -123,7 +123,7 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 	// check token revocation
 	th := hashTokenClaim(j.Raw)
 	if r := crp.cache.Get(th); r != nil {
-		if val, ok := r.(*Revocation).Data["issued_before"]; ok && val.(int) < iat {
+		if val, ok := r.(*Revocation).Data["issued_before"]; ok && val.(int) > iat {
 			countRevocations(REVOCATION_TYPE_TOKEN)
 			return true
 		}

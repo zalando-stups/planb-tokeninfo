@@ -45,8 +45,8 @@ func TestIsJWTRevoked(t *testing.T) {
 	// token
 	revData := make(map[string]interface{})
 	revData["token_hash"] = hashTokenClaim(rawJwt)
-	revData["revoked_at"] = 300000
-	revData["issued_before"] = 300000
+	revData["revoked_at"] = 500000
+	revData["issued_before"] = 500000
 	rev := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: 300000}
 	crp.cache.Add(rev)
 
@@ -82,7 +82,7 @@ func TestIsJWTRevoked(t *testing.T) {
 		t.Errorf("Token should be revoked. %#v", jt)
 	}
 
-	tc["iat"] = 250000.0
+	tc["iat"] = 550000.0
 	jt = &jwt.Token{Raw: rawJwt, Claims: tc}
 	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should not be revoked. %#v", jt)
@@ -178,7 +178,7 @@ func TestIsJWTRevokedMissingCacheFields(t *testing.T) {
 	// token
 	tc := make(map[string]interface{})
 	tc[sub] = subVal
-	tc["iat"] = 400000.0
+	tc["iat"] = 200000.0
 	jt := &jwt.Token{Raw: rawJwt, Claims: tc}
 
 	if crp.IsJWTRevoked(jt) {
