@@ -23,9 +23,8 @@ var (
 // Revocation structure used to store a revocation.
 // Used in the cache.
 type Revocation struct {
-	Type      string // token, claim, global
-	Data      map[string]interface{}
-	Timestamp int
+	Type string // token, claim, global
+	Data map[string]interface{}
 }
 
 // Stores all data received from a call to the Revocation Provider.
@@ -86,7 +85,6 @@ func (j *jsonRevocation) validGlobal() bool {
 func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 
 	r := &Revocation{}
-	t := int(time.Now().Unix())
 
 	r.Data = make(map[string]interface{})
 	switch j.Type {
@@ -119,7 +117,7 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 		return nil, ErrUnsupportedType
 	}
 
-	if j.Data.IssuedBefore > t {
+	if t := int(time.Now().Unix()); j.Data.IssuedBefore > t {
 		log.Printf("Invalid revocation data. IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %s", t, j.Data.IssuedBefore)
 		return nil, ErrIssuedInFuture
 	}
@@ -127,7 +125,6 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 	r.Data["issued_before"] = j.Data.IssuedBefore
 	r.Data["revoked_at"] = j.RevokedAt
 	r.Type = j.Type
-	r.Timestamp = t
 	return r, nil
 }
 

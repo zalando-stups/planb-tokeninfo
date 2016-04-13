@@ -70,15 +70,15 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 
 	if jr.Meta.RefreshTimestamp != 0 {
 		r := crp.cache.Get(REVOCATION_TYPE_FORCEREFRESH)
-		if r == nil || (r.(*Revocation).Timestamp != jr.Meta.RefreshTimestamp) {
+		if r == nil || (r.(*Revocation).Data["revoked_at"] != jr.Meta.RefreshTimestamp) {
 			log.Printf("Force refreshing cache from %d...", jr.Meta.RefreshFrom)
 			crp.cache.ForceRefresh(jr.Meta.RefreshFrom)
 			rev := &Revocation{}
 			d := make(map[string]interface{})
 			rev.Type = REVOCATION_TYPE_FORCEREFRESH
 			d["refresh_from"] = jr.Meta.RefreshFrom
+			d["revoked_at"] = jr.Meta.RefreshTimestamp
 			rev.Data = d
-			rev.Timestamp = jr.Meta.RefreshTimestamp
 			crp.cache.Add(rev)
 		}
 

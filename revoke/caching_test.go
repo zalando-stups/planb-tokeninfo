@@ -27,7 +27,7 @@ func TestCaching(t *testing.T) {
 	revData["revoked_at"] = 123
 	revData["issued_before"] = 123
 
-	rev := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: 234}
+	rev := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData}
 
 	cache.Add(rev)
 	if cache.Get("hash") == nil {
@@ -38,7 +38,7 @@ func TestCaching(t *testing.T) {
 	revData2["token_hash"] = "hash2"
 	revData2["revoked_at"] = int(time.Now().Unix())
 	revData2["issued_before"] = int(time.Now().Unix())
-	rev2 := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData2, Timestamp: int(time.Now().Unix())}
+	rev2 := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData2}
 	cache.Add(rev2)
 
 	cache.Delete("hash2")
@@ -56,12 +56,12 @@ func TestCaching(t *testing.T) {
 	revData3["revoked_at"] = 20000000
 	revData3["issued_before"] = 20000000
 
-	rev3 := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: 2000000}
+	rev3 := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData3}
 
 	cache.Add(rev3)
 
-	if cache.GetLastTS() != 2000000 {
-		t.Errorf("Error getting last pull timestamp. Expected: 2,000,000. Actual: %d", cache.GetLastTS())
+	if cache.GetLastTS() != 20000000 {
+		t.Errorf("Error getting last pull timestamp. Expected: 2000000. Actual: %d", cache.GetLastTS())
 	}
 
 	if len(cache.GetClaimNames()) != 0 {
@@ -72,21 +72,21 @@ func TestCaching(t *testing.T) {
 	revData4["value_hash"] = "hash4"
 	revData4["names"] = "claimName4"
 	revData4["revoked_at"] = int(time.Now().Unix())
-	rev4 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData4, Timestamp: int(time.Now().Unix())}
+	rev4 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData4}
 	cache.Add(rev4)
 
 	revData5 := make(map[string]interface{})
 	revData5["value_hash"] = "hash5"
 	revData5["names"] = "claimName5"
 	revData5["revoked_at"] = int(time.Now().Unix())
-	rev5 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData5, Timestamp: int(time.Now().Unix())}
+	rev5 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData5}
 	cache.Add(rev5)
 
 	revData6 := make(map[string]interface{})
 	revData6["value_hash"] = "hash6"
 	revData6["names"] = "claimName5"
 	revData6["revoked_at"] = int(time.Now().Unix())
-	rev6 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData6, Timestamp: int(time.Now().Unix())}
+	rev6 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData6}
 	cache.Add(rev6)
 
 	if len(cache.GetClaimNames()) != 2 {
@@ -104,7 +104,7 @@ func TestCachingMissingRevocationValues(t *testing.T) {
 	revData["revoked_at"] = int(time.Now().Unix())
 	revData["issued_before"] = int(time.Now().Unix())
 
-	rev := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: int(time.Now().Unix())}
+	rev := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData}
 
 	cache.Add(rev)
 	if cache.GetLastTS() != 0 {
@@ -115,7 +115,7 @@ func TestCachingMissingRevocationValues(t *testing.T) {
 	revData1 := make(map[string]interface{})
 	revData1["value_hash"] = "hash1"
 	revData1["revoked_at"] = int(time.Now().Unix())
-	rev1 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData1, Timestamp: int(time.Now().Unix())}
+	rev1 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData1}
 
 	cache.Add(rev1)
 
@@ -127,7 +127,7 @@ func TestCachingMissingRevocationValues(t *testing.T) {
 	revData2 := make(map[string]interface{})
 	revData2["names"] = "names"
 	revData2["revoked_at"] = int(time.Now().Unix())
-	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2, Timestamp: int(time.Now().Unix())}
+	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2}
 
 	cache.Add(rev2)
 
@@ -141,7 +141,7 @@ func TestCachingMissingRevocationValues(t *testing.T) {
 	revData3["token_hash"] = "token"
 	revData3["value_hash"] = "value"
 	revData3["names"] = "names"
-	rev3 := &Revocation{Type: "", Data: revData3, Timestamp: int(time.Now().Unix())}
+	rev3 := &Revocation{Type: "", Data: revData3}
 
 	cache.Add(rev3)
 
@@ -157,30 +157,30 @@ func TestCachingForceRefresh(t *testing.T) {
 	revData["token_hash"] = "t1"
 	revData["revoked_at"] = int(time.Now().Add(-1 * time.Hour).Unix())
 	revData["issued_before"] = int(time.Now().Add(-1 * time.Hour).Unix())
-	cache.Add(&Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: int(time.Now().Unix())})
+	cache.Add(&Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData})
 
 	revData = make(map[string]interface{})
 	revData["token_hash"] = "t2"
 	revData["revoked_at"] = int(time.Now().Add(-3 * time.Hour).Unix())
 	revData["issued_before"] = int(time.Now().Add(-3 * time.Hour).Unix())
-	cache.Add(&Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData, Timestamp: int(time.Now().Unix())})
+	cache.Add(&Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData})
 
 	revData = make(map[string]interface{})
 	revData["value_hash"] = "c1"
 	revData["names"] = "c1"
 	revData["revoked_at"] = int(time.Now().Add(-1 * time.Hour).Unix())
-	cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData, Timestamp: int(time.Now().Unix())})
+	cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData})
 
 	revData = make(map[string]interface{})
 	revData["value_hash"] = "c2"
 	revData["names"] = "c2"
 	revData["revoked_at"] = int(time.Now().Add(-3 * time.Hour).Unix())
-	cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData, Timestamp: int(time.Now().Unix())})
+	cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData})
 
 	revData = make(map[string]interface{})
 	revData["value_hash"] = REVOCATION_TYPE_GLOBAL
 	revData["revoked_at"] = int(time.Now().Add(-1 * time.Hour).Unix())
-	cache.Add(&Revocation{Type: REVOCATION_TYPE_GLOBAL, Data: revData, Timestamp: int(time.Now().Unix())})
+	cache.Add(&Revocation{Type: REVOCATION_TYPE_GLOBAL, Data: revData})
 
 	cache.ForceRefresh(0)
 

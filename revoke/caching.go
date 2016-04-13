@@ -56,8 +56,8 @@ func NewCache() *Cache {
 				t := 0
 				key := ""
 				for k, rev := range c {
-					if rev.(*Revocation).Timestamp > t {
-						t = rev.(*Revocation).Timestamp
+					if rev.(*Revocation).Data["revoked_at"].(int) > t {
+						t = rev.(*Revocation).Data["revoked_at"].(int)
 						key = k
 					}
 				}
@@ -76,7 +76,7 @@ func NewCache() *Cache {
 				r.res <- names
 			case <-expire:
 				for key, revocation := range c {
-					if isExpired(revocation.(*Revocation).Timestamp) {
+					if isExpired(revocation.(*Revocation).Data["revoked_at"].(int)) {
 						delete(c, key)
 					}
 				}
@@ -105,7 +105,7 @@ func (c *Cache) GetLastTS() int {
 	if r == nil {
 		return 0
 	}
-	return r.(*Revocation).Timestamp
+	return r.(*Revocation).Data["revoked_at"].(int)
 }
 
 // Returns an array of all claim names stored in the cache.
