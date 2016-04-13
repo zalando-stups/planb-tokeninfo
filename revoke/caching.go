@@ -54,13 +54,16 @@ func NewCache() *Cache {
 				}
 			case r := <-ts:
 				t := 0
+				count := 0
 				key := ""
 				for k, rev := range c {
+					count++
 					if rev.(*Revocation).Data["revoked_at"].(int) > t {
 						t = rev.(*Revocation).Data["revoked_at"].(int)
 						key = k
 					}
 				}
+				log.Printf("Revocation Cache Count: %d", count)
 				if v, ok := c[key]; ok {
 					r.res <- v
 				} else {
