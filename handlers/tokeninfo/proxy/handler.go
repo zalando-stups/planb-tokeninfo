@@ -81,7 +81,7 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		}
 	}
 	incCounter("planb.tokeninfo.proxy.cache.misses")
-	hystrix.Do("proxy", func() error {
+	err := hystrix.Do("proxy", func() error {
 		upstreamStart := time.Now()
 		rw := newResponseBuffer(w)
 		rw.Header().Set("X-Cache", "MISS")
@@ -93,6 +93,15 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		upstreamTimer.UpdateSince(upstreamStart)
 		return nil
 	}, nil)
+
+	if err == hystrix.ErrTimeout {
+		incCounter("planb.tokeninfo.proxy.upstream.timeouts")
+		w.WriteHeader(http.StatusGatewayTimeout)
+		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		w.Write([]byte(http.StatusText(http.StatusGatewayTimeout)))
+		return
+	}
+
 	t := metrics.DefaultRegistry.GetOrRegister("planb.tokeninfo.proxy", metrics.NewTimer).(metrics.Timer)
 	t.UpdateSince(start)
 }
