@@ -94,11 +94,28 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		return nil
 	}, nil)
 
-	if err == hystrix.ErrTimeout {
-		incCounter("planb.tokeninfo.proxy.upstream.timeouts")
-		w.WriteHeader(http.StatusGatewayTimeout)
+	if err != nil {
+		status := http.StatusInternalServerError
 		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
-		w.Write([]byte(http.StatusText(http.StatusGatewayTimeout)))
+		switch err {
+		case hystrix.ErrTimeout:
+			{
+				status = http.StatusGatewayTimeout
+				incCounter("planb.tokeninfo.proxy.upstream.timeouts")
+			}
+		case hystrix.ErrMaxConcurrency:
+			{
+				status = http.StatusTooManyRequests
+				incCounter("planb.tokeninfo.proxy.upstream.overruns")
+			}
+		case hystrix.ErrCircuitOpen:
+			{
+				status = http.StatusBadGateway
+				incCounter("planb.tokeninfo.proxy.upstream.openrequests")
+			}
+		}
+		w.WriteHeader(status)
+		w.Write([]byte(http.StatusText(status)))
 		return
 	}
 
