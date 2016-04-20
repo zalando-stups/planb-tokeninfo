@@ -2,6 +2,7 @@ package tokeninfoproxy
 
 import (
 	"fmt"
+	"github.com/afex/hystrix-go/hystrix"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -174,5 +175,34 @@ func TestCacheDisabled(t *testing.T) {
 	}
 	if counter < 3 {
 		t.Errorf("Second request for 'foo' token should NOT have been cached, but we only got %d calls to upstream", counter)
+	}
+}
+
+func TestUpstreamTimeout(t *testing.T) {
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	upstream := fmt.Sprintf("http://%s", server.Listener.Addr())
+	url, _ := url.Parse(upstream)
+	h := NewTokenInfoProxyHandler(url, 0, 0)
+
+	w := httptest.NewRecorder()
+	r, _ := http.NewRequest("GET", "/oauth2/tokeninfo?access_token=foo", nil)
+
+	hystrix.ConfigureCommand("proxy", hystrix.CommandConfig{
+		Timeout:                1,
+		MaxConcurrentRequests:  hystrix.DefaultMaxConcurrent,
+		RequestVolumeThreshold: hystrix.DefaultVolumeThreshold,
+		SleepWindow:            hystrix.DefaultSleepWindow,
+		ErrorPercentThreshold:  hystrix.DefaultErrorPercentThreshold,
+	})
+	h.ServeHTTP(w, r)
+
+	if w.Code != http.StatusGatewayTimeout {
+		t.Errorf("Response code should be 504 Gateway Timeout but was %d %s instead", w.Code, http.StatusText(w.Code))
 	}
 }
