@@ -38,49 +38,57 @@ func NewCache() *Cache {
 	forceRefresh := make(chan int)
 
 	go func() {
-		c := make(map[string]interface{})
+		c := make(map[string]interface{}) // store revocations
+		n := make(map[string]int)         // store all claim names
+		t := 0                            // store last pull timestamp
 
 		for {
 			select {
 			case r := <-set:
+				if r.val.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+					n[r.val.(*Revocation).Data["names"].(string)] += 1
+				}
+				if r.val.(*Revocation).Type == REVOCATION_TYPE_FORCEREFRESH ||
+					r.val.(*Revocation).Data["revoked_at"].(int) > t {
+					t = r.val.(*Revocation).Data["revoked_at"].(int)
+				}
 				c[r.key] = r.val
 			case r := <-del:
 				delete(c, r.key)
 			case r := <-forceRefresh:
 				for key, rev := range c {
 					if key != REVOCATION_TYPE_FORCEREFRESH && rev.(*Revocation).Data["revoked_at"].(int) >= r {
+						if rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+							n[rev.(*Revocation).Data["names"].(string)] -= 1
+						}
 						delete(c, key)
 					}
 				}
-			case r := <-ts:
-				t := 0
-				count := 0
-				key := ""
-				for k, rev := range c {
-					count++
-					if rev.(*Revocation).Data["revoked_at"].(int) > t {
-						t = rev.(*Revocation).Data["revoked_at"].(int)
-						key = k
+				for name, count := range n {
+					if count == 0 {
+						delete(n, name)
 					}
 				}
-				log.Printf("Revocation Cache Count: %d", count)
-				if v, ok := c[key]; ok {
-					r.res <- v
+			case r := <-ts:
+				if t != 0 {
+					r.res <- t
 				} else {
 					r.res <- nil
 				}
 			case r := <-cName:
-				names := make(map[string]int)
-				for _, rev := range c {
-					if rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
-						names[rev.(*Revocation).Data["names"].(string)] = 1
+				r.res <- n
+			case <-expire:
+				for key, rev := range c {
+					if isExpired(rev.(*Revocation).Data["revoked_at"].(int)) {
+						if rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+							n[rev.(*Revocation).Data["names"].(string)] -= 1
+						}
+						delete(c, key)
 					}
 				}
-				r.res <- names
-			case <-expire:
-				for key, revocation := range c {
-					if isExpired(revocation.(*Revocation).Data["revoked_at"].(int)) {
-						delete(c, key)
+				for name, count := range n {
+					if count == 0 {
+						delete(n, name)
 					}
 				}
 			case r := <-get:
@@ -108,7 +116,7 @@ func (c *Cache) GetLastTS() int {
 	if r == nil {
 		return 0
 	}
-	return r.(*Revocation).Data["revoked_at"].(int)
+	return r.(int)
 }
 
 // Returns an array of all claim names stored in the cache.

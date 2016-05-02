@@ -54,6 +54,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	revData2 := make(map[string]interface{})
 	revData2["value_hash"] = hashTokenClaim(subVal)
 	revData2["issued_before"] = 200000
+	revData2["revoked_at"] = 200000
 	revData2["names"] = sub
 	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2}
 	crp.cache.Add(rev2)
@@ -61,6 +62,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	// global
 	revData3 := make(map[string]interface{})
 	revData3["issued_before"] = 100000
+	revData3["revoked_at"] = 100000
 	rev3 := &Revocation{Type: REVOCATION_TYPE_GLOBAL, Data: revData3}
 	crp.cache.Add(rev3)
 
@@ -68,6 +70,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	revData4 := make(map[string]interface{})
 	revData4["value_hash"] = hashTokenClaim(subVal + "|" + uidVal)
 	revData4["issued_before"] = 200000
+	revData4["revoked_at"] = 20000
 	revData4["names"] = sub + "|" + uid
 	rev4 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData4}
 	crp.cache.Add(rev4)
@@ -167,11 +170,13 @@ func TestIsJWTRevokedMissingCacheFields(t *testing.T) {
 	revData2 := make(map[string]interface{})
 	revData2["value_hash"] = hashTokenClaim(subVal)
 	revData2["name"] = sub
+	revData2["revoked_at"] = 100000
 	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2}
 	crp.cache.Add(rev2)
 
 	// global missing issued_before
 	revData3 := make(map[string]interface{})
+	revData3["revoked_at"] = 100000
 	rev3 := &Revocation{Type: REVOCATION_TYPE_GLOBAL, Data: revData3}
 	crp.cache.Add(rev3)
 

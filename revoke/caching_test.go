@@ -51,17 +51,18 @@ func TestCaching(t *testing.T) {
 		t.Errorf("Cache value 'hash' should have expired.")
 	}
 
+	lastTS := int(time.Now().Add(1 * time.Hour).Unix())
 	revData3 := make(map[string]interface{})
 	revData3["token_hash"] = "hash"
-	revData3["revoked_at"] = 20000000
-	revData3["issued_before"] = 20000000
+	revData3["revoked_at"] = lastTS
+	revData3["issued_before"] = lastTS
 
 	rev3 := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData3}
 
 	cache.Add(rev3)
 
-	if cache.GetLastTS() != 20000000 {
-		t.Errorf("Error getting last pull timestamp. Expected: 2000000. Actual: %d", cache.GetLastTS())
+	if cache.GetLastTS() != lastTS {
+		t.Errorf("Error getting last pull timestamp. Expected: %d. Actual: %d", lastTS, cache.GetLastTS())
 	}
 
 	if len(cache.GetClaimNames()) != 0 {
