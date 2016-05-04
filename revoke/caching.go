@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-// TODO: consider adding a separate cache for each revocation type
-
 // Cache structure holds all channels for available thread safe operations.
 type Cache struct {
 	get          chan *request
@@ -54,6 +52,11 @@ func NewCache() *Cache {
 				}
 				c[r.key] = r.val
 			case r := <-del:
+				rev := c[r.key]
+				if rev != nil && rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+					n[rev.(*Revocation).Data["names"].(string)] -= 1
+					updateClaimNames(n)
+				}
 				delete(c, r.key)
 			case r := <-forceRefresh:
 				for key, rev := range c {
@@ -64,11 +67,7 @@ func NewCache() *Cache {
 						delete(c, key)
 					}
 				}
-				for name, count := range n {
-					if count == 0 {
-						delete(n, name)
-					}
-				}
+				updateClaimNames(n)
 			case r := <-ts:
 				if t != 0 {
 					r.res <- t
@@ -86,11 +85,7 @@ func NewCache() *Cache {
 						delete(c, key)
 					}
 				}
-				for name, count := range n {
-					if count == 0 {
-						delete(n, name)
-					}
-				}
+				updateClaimNames(n)
 			case r := <-get:
 				r.res <- c[r.key]
 			}
@@ -197,6 +192,14 @@ func isExpired(ts int) bool {
 	}
 
 	return false
+}
+
+func updateClaimNames(n map[string]int) {
+	for name, count := range n {
+		if count <= 0 {
+			delete(n, name)
+		}
+	}
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

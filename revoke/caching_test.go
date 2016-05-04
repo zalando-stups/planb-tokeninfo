@@ -93,7 +93,22 @@ func TestCaching(t *testing.T) {
 	if len(cache.GetClaimNames()) != 2 {
 		t.Errorf("Should have two claim names. ClaimNames: %#v", cache.GetClaimNames())
 	}
+	/*
+		cache.Delete("hash6")
+		if len(cache.GetClaimNames()) != 2 {
+			t.Errorf("Should have two claim names. ClaimNames: %#v", cache.GetClaimNames())
+		}
 
+		cache.Delete("hash5")
+		if len(cache.GetClaimNames()) != 1 {
+			t.Errorf("Should have one claim name. ClaimNames: %#v", cache.GetClaimNames())
+		}
+
+		cache.Delete("hash4")
+		if len(cache.GetClaimNames()) != 0 {
+			t.Errorf("All claim names should be removed from the cache. ClaimNames: %#v", cache.GetClaimNames())
+		}
+	*/
 }
 
 func TestCachingMissingRevocationValues(t *testing.T) {
@@ -223,6 +238,35 @@ func TestCachingForceRefresh(t *testing.T) {
 		t.Errorf("Force refresh should have removed all cached elements.")
 	}
 
+}
+
+func TestUpdateClaimNames(t *testing.T) {
+
+	n := make(map[string]int)
+
+	n["t1"] = 3
+	n["t2"] = 2
+	n["t3"] = 1
+	updateClaimNames(n)
+
+	if len(n) != 3 {
+		t.Errorf("ClaimNames map should have three entries. ClaimNames: %v", n)
+	}
+
+	n["t3"] = 0
+	updateClaimNames(n)
+
+	if len(n) != 2 {
+		t.Errorf("ClaimNames map should have two entries. ClaimNames: %v", n)
+	}
+
+	n["t1"] = 0
+	n["t2"] = 0
+	updateClaimNames(n)
+
+	if len(n) != 0 {
+		t.Errorf("ClaimNames map should have zero entries. ClaimNames: %v", n)
+	}
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go
