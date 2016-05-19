@@ -2,7 +2,6 @@ package revoke
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -475,8 +474,6 @@ func TestForceRefresh(t *testing.T) {
 // benchmarks are checking a valid JWT to ensure that all revocation types are called on each iteration.
 func benchmarkIsJWTRevoked(i int, cNames []string, b *testing.B) {
 
-	rand.Seed(1)
-
 	var listener string
 	fr := fmt.Sprintf(`{}`)
 
@@ -495,7 +492,7 @@ func benchmarkIsJWTRevoked(i int, cNames []string, b *testing.B) {
 	for uid := 1; uid <= i; uid++ {
 		rd := make(map[string]interface{})
 		rd["value_hash"] = strconv.Itoa(uid)
-		rd["names"] = cNames[rand.Intn(len(cNames))]
+		rd["names"] = cNames[uid%len(cNames)]
 		rd["revoked_at"] = int(time.Now().Unix())
 
 		crp.cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: rd})
