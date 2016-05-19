@@ -1,7 +1,7 @@
 approvals:
   minimum: 1
   # approval = comment that matches this regex
-  pattern: "^(:\\+1:|👍)"
+  pattern: "^(:\\+1:|👍|LGTM|lgtm)"
   # note that `from` is by default empty,
   # accepting any matching comment as approval
   from:
