@@ -67,7 +67,7 @@ func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 
 	measureRequest(start, fmt.Sprintf("planb.tokeninfo.jwt.validation.%s", token.Method.Alg()))
 	if !token.Valid {
-		log.Println("Falied to validate token: ", ErrInvalidJWT)
+		log.Println("Failed to validate token: ", ErrInvalidJWT)
 		return nil, ErrInvalidJWT
 	}
 	if h.crp.IsJWTRevoked(token) {
