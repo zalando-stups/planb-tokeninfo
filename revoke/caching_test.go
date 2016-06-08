@@ -187,6 +187,7 @@ func TestCachingForceRefresh(t *testing.T) {
 	if cache.Get("t1") == nil ||
 		cache.Get("t2") == nil ||
 		cache.Get("c1") == nil ||
+
 		cache.Get("c2") == nil ||
 		cache.Get(REVOCATION_TYPE_GLOBAL) == nil {
 		t.Errorf("Force refresh should not have removed any elements.")
@@ -222,6 +223,63 @@ func TestCachingForceRefresh(t *testing.T) {
 		t.Errorf("Force refresh should have removed all cached elements.")
 	}
 
+}
+
+// see https://github.com/zalando/planb-tokeninfo/issues/60
+func TestCacheIgnoresOlderCollidingRevocations(t *testing.T) {
+	cache := NewCache()
+
+	revData2 := make(map[string]interface{})
+	revData2["value_hash"] = "hash"
+	revData2["names"] = "c1"
+	revData2["revoked_at"] = 124
+	revData2["issued_before"] = 124
+	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2}
+	cache.Add(rev2)
+
+	revData := make(map[string]interface{})
+	revData["value_hash"] = "hash"
+	revData["revoked_at"] = 123
+	revData["names"] = "c1"
+	revData["issued_before"] = 123
+
+	rev1 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData}
+
+	cache.Add(rev1)
+
+	storedData := cache.Get("hash")
+
+	if storedData.(*Revocation).Data["issued_before"].(int) == 123 {
+		t.Errorf("Should not override revocation with same claim and older issued_before than current cached one.")
+	}
+}
+
+// see https://github.com/zalando/planb-tokeninfo/issues/60
+func TestCacheUpdatesExistingRevocationWithMostRecent(t *testing.T) {
+	cache := NewCache()
+
+	revData := make(map[string]interface{})
+	revData["value_hash"] = "hash"
+	revData["revoked_at"] = 123
+	revData["names"] = "c1"
+	revData["issued_before"] = 123
+
+	rev1 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData}
+	cache.Add(rev1)
+
+	revData2 := make(map[string]interface{})
+	revData2["value_hash"] = "hash"
+	revData2["names"] = "c1"
+	revData2["revoked_at"] = 124
+	revData2["issued_before"] = 124
+	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2}
+	cache.Add(rev2)
+
+	storedData := cache.Get("hash")
+
+	if storedData.(*Revocation).Data["issued_before"].(int) == 123 {
+		t.Errorf("Should override existing revocation with same claim and newer issued_before.")
+	}
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go
