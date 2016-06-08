@@ -1,9 +1,10 @@
 package revoke
 
 import (
-	"github.com/zalando/planb-tokeninfo/options"
 	"log"
 	"time"
+
+	"github.com/zalando/planb-tokeninfo/options"
 )
 
 // TODO: consider adding a separate cache for each revocation type
@@ -43,7 +44,13 @@ func NewCache() *Cache {
 		for {
 			select {
 			case r := <-set:
-				c[r.key] = r.val
+				if value := c[r.key]; value != nil {
+					if value.(*Revocation).Data["issued_before"].(int) < r.val.(*Revocation).Data["issued_before"].(int) {
+						c[r.key] = r.val
+					}
+				} else {
+					c[r.key] = r.val
+				}
 			case r := <-del:
 				delete(c, r.key)
 			case r := <-forceRefresh:
