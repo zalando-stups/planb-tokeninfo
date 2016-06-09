@@ -51,17 +51,41 @@ func TestCaching(t *testing.T) {
 		t.Errorf("Cache value 'hash' should have expired.")
 	}
 
+	revData7 := make(map[string]interface{})
+	revData7["value_hash"] = "hash7"
+	revData7["names"] = "claimName7"
+	revData7["revoked_at"] = 123
+	rev7 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData7}
+	cache.Add(rev7)
+
+	revData8 := make(map[string]interface{})
+	revData8["value_hash"] = "hash8"
+	revData8["names"] = "claimName8"
+	revData8["revoked_at"] = 123
+	rev8 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData8}
+	cache.Add(rev8)
+
+	if len(cache.GetClaimNames()) != 2 {
+		t.Errorf("Should have two claim names in cache. ClaimNames: %#v", cache.GetClaimNames())
+	}
+
+	cache.Expire()
+	if len(cache.GetClaimNames()) != 0 {
+		t.Errorf("Expire should have removed all claim names. ClaimNames: %#v", cache.GetClaimNames())
+	}
+
+	lastTS := int(time.Now().Add(1 * time.Hour).Unix())
 	revData3 := make(map[string]interface{})
 	revData3["token_hash"] = "hash"
-	revData3["revoked_at"] = 20000000
-	revData3["issued_before"] = 20000000
+	revData3["revoked_at"] = lastTS
+	revData3["issued_before"] = lastTS
 
 	rev3 := &Revocation{Type: REVOCATION_TYPE_TOKEN, Data: revData3}
 
 	cache.Add(rev3)
 
-	if cache.GetLastTS() != 20000000 {
-		t.Errorf("Error getting last pull timestamp. Expected: 2000000. Actual: %d", cache.GetLastTS())
+	if cache.GetLastTS() != lastTS {
+		t.Errorf("Error getting last pull timestamp. Expected: %d. Actual: %d", lastTS, cache.GetLastTS())
 	}
 
 	if len(cache.GetClaimNames()) != 0 {
@@ -93,6 +117,20 @@ func TestCaching(t *testing.T) {
 		t.Errorf("Should have two claim names. ClaimNames: %#v", cache.GetClaimNames())
 	}
 
+	cache.Delete("hash6")
+	if len(cache.GetClaimNames()) != 2 {
+		t.Errorf("Should have two claim names. ClaimNames: %#v", cache.GetClaimNames())
+	}
+
+	cache.Delete("hash5")
+	if len(cache.GetClaimNames()) != 1 {
+		t.Errorf("Should have one claim name. ClaimNames: %#v", cache.GetClaimNames())
+	}
+
+	cache.Delete("hash4")
+	if len(cache.GetClaimNames()) != 0 {
+		t.Errorf("All claim names should be removed from the cache. ClaimNames: %#v", cache.GetClaimNames())
+	}
 }
 
 func TestCachingMissingRevocationValues(t *testing.T) {
@@ -212,6 +250,10 @@ func TestCachingForceRefresh(t *testing.T) {
 		t.Errorf("Force refresh should not have removed token t2 and claim c2.")
 	}
 
+	if len(cache.GetClaimNames()) != 1 {
+		t.Errorf("Force refresh should have removed claim name 'c1' from the map.")
+	}
+
 	cache.ForceRefresh(int(time.Now().Add(-4 * time.Hour).Unix()))
 
 	if cache.Get("t1") != nil ||
@@ -222,6 +264,39 @@ func TestCachingForceRefresh(t *testing.T) {
 		t.Errorf("Force refresh should have removed all cached elements.")
 	}
 
+	if len(cache.GetClaimNames()) != 0 {
+		t.Errorf("Force refresh should have removed all claim names from the map.")
+	}
+
+}
+
+func TestUpdateClaimNames(t *testing.T) {
+
+	n := make(map[string]int)
+
+	n["t1"] = 3
+	n["t2"] = 2
+	n["t3"] = 1
+	updateClaimNames(n)
+
+	if len(n) != 3 {
+		t.Errorf("ClaimNames map should have three entries. ClaimNames: %v", n)
+	}
+
+	n["t3"] = 0
+	updateClaimNames(n)
+
+	if len(n) != 2 {
+		t.Errorf("ClaimNames map should have two entries. ClaimNames: %v", n)
+	}
+
+	n["t1"] = 0
+	n["t2"] = 0
+	updateClaimNames(n)
+
+	if len(n) != 0 {
+		t.Errorf("ClaimNames map should have zero entries. ClaimNames: %v", n)
+	}
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

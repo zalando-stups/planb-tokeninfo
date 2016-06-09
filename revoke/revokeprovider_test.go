@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
 
@@ -54,6 +55,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	revData2 := make(map[string]interface{})
 	revData2["value_hash"] = hashTokenClaim(subVal)
 	revData2["issued_before"] = 200000
+	revData2["revoked_at"] = 200000
 	revData2["names"] = sub
 	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2}
 	crp.cache.Add(rev2)
@@ -61,6 +63,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	// global
 	revData3 := make(map[string]interface{})
 	revData3["issued_before"] = 100000
+	revData3["revoked_at"] = 100000
 	rev3 := &Revocation{Type: REVOCATION_TYPE_GLOBAL, Data: revData3}
 	crp.cache.Add(rev3)
 
@@ -68,6 +71,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	revData4 := make(map[string]interface{})
 	revData4["value_hash"] = hashTokenClaim(subVal + "|" + uidVal)
 	revData4["issued_before"] = 200000
+	revData4["revoked_at"] = 20000
 	revData4["names"] = sub + "|" + uid
 	rev4 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData4}
 	crp.cache.Add(rev4)
@@ -167,11 +171,13 @@ func TestIsJWTRevokedMissingCacheFields(t *testing.T) {
 	revData2 := make(map[string]interface{})
 	revData2["value_hash"] = hashTokenClaim(subVal)
 	revData2["name"] = sub
+	revData2["revoked_at"] = 100000
 	rev2 := &Revocation{Type: REVOCATION_TYPE_CLAIM, Data: revData2}
 	crp.cache.Add(rev2)
 
 	// global missing issued_before
 	revData3 := make(map[string]interface{})
+	revData3["revoked_at"] = 100000
 	rev3 := &Revocation{Type: REVOCATION_TYPE_GLOBAL, Data: revData3}
 	crp.cache.Add(rev3)
 
@@ -463,6 +469,159 @@ func TestForceRefresh(t *testing.T) {
 	if crp.cache.Get("t1") == nil || crp.cache.Get(REVOCATION_TYPE_GLOBAL) == nil {
 		t.Errorf("Error force refreshing cache. Revocation 't1' and 'GLOBAL' should exist in cache.")
 	}
+}
+
+// benchmarks are checking a valid JWT to ensure that all revocation types are called on each iteration.
+func benchmarkIsJWTRevoked(i int, cNames []string, b *testing.B) {
+
+	var listener string
+	fr := fmt.Sprintf(`{}`)
+
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, fr)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	listener = fmt.Sprintf("http://%s", server.Listener.Addr())
+	u, _ := url.Parse(listener)
+	crp := NewCachingRevokeProvider(u)
+
+	for uid := 1; uid <= i; uid++ {
+		rd := make(map[string]interface{})
+		rd["value_hash"] = strconv.Itoa(uid)
+		rd["names"] = cNames[uid%len(cNames)]
+		rd["revoked_at"] = int(time.Now().Unix())
+
+		crp.cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: rd})
+	}
+
+	jc := make(map[string]interface{})
+	jc["uid"] = "UserId"
+	jc["realm"] = "/customers"
+	jc["scope"] = "[uid]"
+	jc["iss"] = "Benchmark"
+	jc["sub"] = "subject"
+	jc["iat"] = float64(time.Now().Unix())
+	jt := &jwt.Token{Raw: "NotARealHash", Claims: jc}
+
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		crp.IsJWTRevoked(jt)
+	}
+}
+
+func benchmarkIsJWTRevokedRevocations(i int, b *testing.B) {
+	cNames := []string{"uid",
+		"uid|realm",
+		"uid|scope",
+		"uid|iss"}
+	benchmarkIsJWTRevoked(i, cNames, b)
+}
+
+func benchmarkIsJWTRevokedClaimNames(cNames []string, b *testing.B) {
+	benchmarkIsJWTRevoked(100000, cNames, b)
+}
+
+// Revocation Benchmarks are using 4 claim names and differing number of revocations
+func BenchmarkIsJWTRevokedRevocations10K(b *testing.B) {
+	benchmarkIsJWTRevokedRevocations(10000, b)
+}
+
+func BenchmarkIsJWTRevokedRevocations100K(b *testing.B) {
+	benchmarkIsJWTRevokedRevocations(100000, b)
+}
+
+func BenchmarkIsJWTRevokedRevocations1M(b *testing.B) {
+	benchmarkIsJWTRevokedRevocations(1000000, b)
+}
+
+func BenchmarkIsJWTRevokedRevocations2M(b *testing.B) {
+	benchmarkIsJWTRevokedRevocations(2000000, b)
+}
+
+func BenchmarkIsJWTRevokedRevocations3M(b *testing.B) {
+	benchmarkIsJWTRevokedRevocations(3000000, b)
+}
+
+func BenchmarkIsJWTRevokedRevocations4M(b *testing.B) {
+	benchmarkIsJWTRevokedRevocations(4000000, b)
+}
+
+func BenchmarkIsJWTRevokedRevocations5M(b *testing.B) {
+	benchmarkIsJWTRevokedRevocations(5000000, b)
+}
+
+// Claim name benchmarks are using a differing number of claim names and a static number of revocations (100K).
+func BenchmarkIsJWTRevokedClaimNames5(b *testing.B) {
+	cNames := []string{"uid",
+		"uid|realm",
+		"uid|scope",
+		"uid|iss",
+		"realm"}
+	benchmarkIsJWTRevokedClaimNames(cNames, b)
+}
+
+func BenchmarkIsJWTRevokedClaimNames10(b *testing.B) {
+	cNames := []string{"uid",
+		"uid|realm",
+		"uid|scope",
+		"uid|iss",
+		"realm",
+		"scope",
+		"iss",
+		"sub",
+		"realm|scope",
+		"realm|iss"}
+	benchmarkIsJWTRevokedClaimNames(cNames, b)
+}
+
+func BenchmarkIsJWTRevokedClaimNames15(b *testing.B) {
+	//Note: order of each name matters (e.g. uid|realm is not the same as realm|uid)
+	cNames := []string{"uid",
+		"uid|realm",
+		"uid|scope",
+		"uid|iss",
+		"realm",
+		"scope",
+		"iss",
+		"sub",
+		"realm|scope",
+		"realm|iss",
+		"realm|sub",
+		"realm|uid",
+		"scope|uid",
+		"scope|real",
+		"scope|iss"}
+	benchmarkIsJWTRevokedClaimNames(cNames, b)
+}
+
+func BenchmarkIsJWTRevokedClaimNames20(b *testing.B) {
+	//Note: order of each name matters (e.g. uid|realm is not the same as realm|uid)
+	cNames := []string{"uid",
+		"uid|realm",
+		"uid|scope",
+		"uid|iss",
+		"realm",
+		"scope",
+		"iss",
+		"sub",
+		"realm|scope",
+		"realm|iss",
+		"realm|sub",
+		"realm|uid",
+		"scope|uid",
+		"scope|real",
+		"scope|iss",
+		"scope|sub",
+		"iss|uid",
+		"iss|realm",
+		"iss|scope",
+		"iss|sub"}
+	benchmarkIsJWTRevokedClaimNames(cNames, b)
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go

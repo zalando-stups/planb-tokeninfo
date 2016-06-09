@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-// TODO: consider adding a separate cache for each revocation type
-
 // Cache structure holds all channels for available thread safe operations.
 type Cache struct {
 	get          chan *request
@@ -38,51 +36,56 @@ func NewCache() *Cache {
 	forceRefresh := make(chan int)
 
 	go func() {
-		c := make(map[string]interface{})
+		c := make(map[string]interface{}) // store revocations
+		n := make(map[string]int)         // store all claim names
+		t := 0                            // store last pull timestamp
 
 		for {
 			select {
 			case r := <-set:
+				if r.val.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+					n[r.val.(*Revocation).Data["names"].(string)] += 1
+				}
+				if r.val.(*Revocation).Type == REVOCATION_TYPE_FORCEREFRESH ||
+					r.val.(*Revocation).Data["revoked_at"].(int) > t {
+					t = r.val.(*Revocation).Data["revoked_at"].(int)
+				}
 				c[r.key] = r.val
 			case r := <-del:
+				rev := c[r.key]
+				if rev != nil && rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+					n[rev.(*Revocation).Data["names"].(string)] -= 1
+					updateClaimNames(n)
+				}
 				delete(c, r.key)
 			case r := <-forceRefresh:
 				for key, rev := range c {
 					if key != REVOCATION_TYPE_FORCEREFRESH && rev.(*Revocation).Data["revoked_at"].(int) >= r {
+						if rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+							n[rev.(*Revocation).Data["names"].(string)] -= 1
+						}
 						delete(c, key)
 					}
 				}
+				updateClaimNames(n)
 			case r := <-ts:
-				t := 0
-				count := 0
-				key := ""
-				for k, rev := range c {
-					count++
-					if rev.(*Revocation).Data["revoked_at"].(int) > t {
-						t = rev.(*Revocation).Data["revoked_at"].(int)
-						key = k
-					}
-				}
-				log.Printf("Revocation Cache Count: %d", count)
-				if v, ok := c[key]; ok {
-					r.res <- v
+				if t != 0 {
+					r.res <- t
 				} else {
 					r.res <- nil
 				}
 			case r := <-cName:
-				names := make(map[string]int)
-				for _, rev := range c {
-					if rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
-						names[rev.(*Revocation).Data["names"].(string)] = 1
-					}
-				}
-				r.res <- names
+				r.res <- n
 			case <-expire:
-				for key, revocation := range c {
-					if isExpired(revocation.(*Revocation).Data["revoked_at"].(int)) {
+				for key, rev := range c {
+					if isExpired(rev.(*Revocation).Data["revoked_at"].(int)) {
+						if rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+							n[rev.(*Revocation).Data["names"].(string)] -= 1
+						}
 						delete(c, key)
 					}
 				}
+				updateClaimNames(n)
 			case r := <-get:
 				r.res <- c[r.key]
 			}
@@ -108,7 +111,7 @@ func (c *Cache) GetLastTS() int {
 	if r == nil {
 		return 0
 	}
-	return r.(*Revocation).Data["revoked_at"].(int)
+	return r.(int)
 }
 
 // Returns an array of all claim names stored in the cache.
@@ -189,6 +192,14 @@ func isExpired(ts int) bool {
 	}
 
 	return false
+}
+
+func updateClaimNames(n map[string]int) {
+	for name, count := range n {
+		if count <= 0 {
+			delete(n, name)
+		}
+	}
 }
 
 // vim: ts=4 sw=4 noexpandtab nolist syn=go
