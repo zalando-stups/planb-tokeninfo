@@ -24,6 +24,12 @@ type request struct {
 	res chan interface{}
 }
 
+func incrementClaimCount (r *request, n map[string]int) {
+	if r.val.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
+		n[r.val.(*Revocation).Data["names"].(string)] += 1
+	}
+}
+
 // Return a new revocation Cache instance.
 func NewCache() *Cache {
 
@@ -43,14 +49,19 @@ func NewCache() *Cache {
 		for {
 			select {
 			case r := <-set:
-				if r.val.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
-					n[r.val.(*Revocation).Data["names"].(string)] += 1
-				}
 				if r.val.(*Revocation).Type == REVOCATION_TYPE_FORCEREFRESH ||
 					r.val.(*Revocation).Data["revoked_at"].(int) > t {
 					t = r.val.(*Revocation).Data["revoked_at"].(int)
 				}
-				c[r.key] = r.val
+				if value := c[r.key]; value != nil {
+					if value.(*Revocation).Data["issued_before"].(int) < r.val.(*Revocation).Data["issued_before"].(int) {
+						c[r.key] = r.val
+						incrementClaimCount(r, n)
+					}
+				} else {
+					c[r.key] = r.val
+					incrementClaimCount(r, n)
+				}
 			case r := <-del:
 				rev := c[r.key]
 				if rev != nil && rev.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
