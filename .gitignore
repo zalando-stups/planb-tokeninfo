@@ -1,7 +1,7 @@
 scm-source.json
 planb-tokeninfo
 run.sh
-
+.vscode
 *.iml
 .idea/
 *.swp
