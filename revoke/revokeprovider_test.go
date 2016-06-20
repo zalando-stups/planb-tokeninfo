@@ -77,7 +77,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	crp.cache.Add(rev4)
 
 	// revoke a token
-	tc := make(map[string]interface{})
+	tc := jwt.MapClaims{}
 	tc[sub] = subVal
 	tc["iat"] = 400000.0
 	jt := &jwt.Token{Raw: rawJwt, Claims: tc}
@@ -135,7 +135,7 @@ func TestIsJWTRevoked(t *testing.T) {
 	}
 
 	// missing 'iat'
-	inv := make(map[string]interface{})
+	inv := jwt.MapClaims{}
 	inv[sub] = subVal
 	jt = &jwt.Token{Raw: rawJwt, Claims: inv}
 	if crp.IsJWTRevoked(jt) {
@@ -143,11 +143,17 @@ func TestIsJWTRevoked(t *testing.T) {
 	}
 
 	// missing 'sub'
-	inv = make(map[string]interface{})
+	inv = jwt.MapClaims{}
 	inv["iat"] = 150000.0
 	jt = &jwt.Token{Raw: rawJwt, Claims: inv}
 	if crp.IsJWTRevoked(jt) {
 		t.Errorf("Token should not be revoked (missing 'sub' claim)")
+	}
+
+	// Test JWT with nil claims
+	jt = &jwt.Token{}
+	if crp.IsJWTRevoked(jt) {
+		t.Errorf("Claim should not be revoked. %#v", jt)
 	}
 
 }
@@ -182,7 +188,7 @@ func TestIsJWTRevokedMissingCacheFields(t *testing.T) {
 	crp.cache.Add(rev3)
 
 	// token
-	tc := make(map[string]interface{})
+	tc := jwt.MapClaims{}
 	tc[sub] = subVal
 	tc["iat"] = 200000.0
 	jt := &jwt.Token{Raw: rawJwt, Claims: tc}
@@ -490,7 +496,7 @@ func benchmarkIsJWTRevoked(i int, cNames []string, b *testing.B) {
 	crp := NewCachingRevokeProvider(u)
 
 	for uid := 1; uid <= i; uid++ {
-		rd := make(map[string]interface{})
+		rd := jwt.MapClaims{}
 		rd["value_hash"] = strconv.Itoa(uid)
 		rd["names"] = cNames[uid%len(cNames)]
 		rd["revoked_at"] = int(time.Now().Unix())
@@ -498,7 +504,7 @@ func benchmarkIsJWTRevoked(i int, cNames []string, b *testing.B) {
 		crp.cache.Add(&Revocation{Type: REVOCATION_TYPE_CLAIM, Data: rd})
 	}
 
-	jc := make(map[string]interface{})
+	jc := jwt.MapClaims{}
 	jc["uid"] = "UserId"
 	jc["realm"] = "/customers"
 	jc["scope"] = "[uid]"
