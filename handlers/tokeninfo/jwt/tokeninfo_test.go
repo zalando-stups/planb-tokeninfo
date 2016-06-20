@@ -88,11 +88,11 @@ func TestMarshal(t *testing.T) {
 		want  string
 	}{
 		{&TokenInfo{},
-			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
+			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
 		{&TokenInfo{RefreshToken: "foo"},
-			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"refresh_token\":\"foo\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
+			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"realm\":\"\",\"refresh_token\":\"foo\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
 		{&TokenInfo{ClientId: "client-123"},
-			"{\"access_token\":\"\",\"client_id\":\"client-123\",\"expires_in\":0,\"grant_type\":\"\",\"open_id\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
+			"{\"access_token\":\"\",\"client_id\":\"client-123\",\"expires_in\":0,\"grant_type\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
 		{&TokenInfo{
 			GrantType: "password",
 			TokenType: "Bearer",
@@ -100,7 +100,7 @@ func TestMarshal(t *testing.T) {
 			UID:       "foo",
 			Realm:     "/test",
 			ExpiresIn: 1},
-			"{\"access_token\":\"\",\"bar\":true,\"expires_in\":1,\"foo\":true,\"grant_type\":\"password\",\"open_id\":\"\",\"realm\":\"/test\",\"scope\":[\"uid\",\"foo\",\"bar\"],\"token_type\":\"Bearer\",\"uid\":\"foo\"}\n"},
+			"{\"access_token\":\"\",\"bar\":true,\"expires_in\":1,\"foo\":true,\"grant_type\":\"password\",\"realm\":\"/test\",\"scope\":[\"uid\",\"foo\",\"bar\"],\"token_type\":\"Bearer\",\"uid\":\"foo\"}\n"},
 	} {
 		buf := new(bytes.Buffer)
 		test.token.Marshal(buf)

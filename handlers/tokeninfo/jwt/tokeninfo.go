@@ -36,7 +36,6 @@ type TokenInfo struct {
 	RefreshToken string   `json:"refresh_token,omitempty"`
 	UID          string   `json:"uid"`
 	GrantType    string   `json:"grant_type"`
-	OpenID       string   `json:"open_id"`
 	Scope        []string `json:"scope"`
 	Realm        string   `json:"realm"`
 	ClientId     string   `json:"client_id"`
@@ -52,7 +51,6 @@ func (ti *TokenInfo) Marshal(w io.Writer) error {
 	}
 	m["uid"] = ti.UID
 	m["grant_type"] = ti.GrantType
-	m["open_id"] = ti.OpenID
 	m["scope"] = ti.Scope
 	m["realm"] = ti.Realm
 	m["token_type"] = ti.TokenType
@@ -112,7 +110,6 @@ func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
 		AccessToken: t.Raw,
 		UID:         sub,
 		GrantType:   "password",
-		OpenID:      t.Raw,
 		Scope:       scopes,
 		Realm:       realm,
 		ClientId:    clientId,
