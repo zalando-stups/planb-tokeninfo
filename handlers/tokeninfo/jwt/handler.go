@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"github.com/zalando/planb-tokeninfo/keyloader"
 	"github.com/zalando/planb-tokeninfo/revoke"
+	"github.com/dgrijalva/jwt-go/request"
 )
 
 type jwtHandler struct {
@@ -48,7 +48,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var tie tokeninfo.Error
 	switch err {
-	case jwt.ErrNoTokenInRequest:
+	case request.ErrNoTokenInRequest:
 		tie = tokeninfo.ErrInvalidRequest
 	default:
 		tie = tokeninfo.ErrInvalidToken
@@ -59,7 +59,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 	start := time.Now()
-	token, err := jwt.ParseFromRequest(req, jwtValidator(h.keyLoader))
+	token, err := request.ParseFromRequest(req, request.OAuth2Extractor, jwtValidator(h.keyLoader))
 	if err != nil {
 		log.Println("Failed to validate token: ", err)
 		return nil, err

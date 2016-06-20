@@ -106,11 +106,16 @@ func (crp *CachingRevokeProvider) RefreshRevocations() {
 // against the token).
 func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 
-	if _, ok := j.Claims["iat"]; !ok {
+	if j.Claims == nil {
+		log.Println("Token has no claims, cannot check revocation")
+		return false
+	}
+	claims := j.Claims.(jwt.MapClaims)
+	if _, ok := claims["iat"]; !ok {
 		log.Println("JWT missing required field 'iat'")
 		return false
 	}
-	iat := int(j.Claims["iat"].(float64))
+	iat := int(claims["iat"].(float64))
 
 	// check global revocation
 	if r := crp.cache.Get(REVOCATION_TYPE_GLOBAL); r != nil {
@@ -137,7 +142,7 @@ func (crp *CachingRevokeProvider) IsJWTRevoked(j *jwt.Token) bool {
 		names := strings.Split(cName, "|")
 		var vals string
 		for _, n := range names {
-			val, ok := j.Claims[n]
+			val, ok := claims[n]
 			if !ok {
 				break
 			}
