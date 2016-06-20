@@ -93,11 +93,13 @@ func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
 	}
 
 	clientId := ""
-	_, has := t.Claims[jwtClaimAzp]
-	if has {
-		clientId, ok = claimAsString(t, jwtClaimAzp)
-		if !ok {
-			return nil, ErrInvalidClaimAzp
+	if claims, ok := t.Claims.(jwt.MapClaims); ok {
+		_, has := claims[jwtClaimAzp]
+		if has {
+			clientId, ok = claimAsString(t, jwtClaimAzp)
+			if !ok {
+				return nil, ErrInvalidClaimAzp
+			}
 		}
 	}
 
@@ -164,10 +166,14 @@ func claimAsInt64(t *jwt.Token, claim string) (int64, bool) {
 }
 
 func getClaim(t *jwt.Token, claim string) (interface{}, bool) {
-	c, has := t.Claims[claim]
-	if !has {
-		log.Printf("Missing claim %q for token %v", claim, t.Raw)
-		return "", false
+	if claims, ok := t.Claims.(jwt.MapClaims); ok {
+		c, has := claims[claim]
+		if !has {
+			log.Printf("Missing claim %q for token %v", claim, t.Raw)
+			return "", false
+		}
+		return c, true
 	}
-	return c, true
+	log.Printf("Missing claim %q for token %v", claim, t.Raw)
+	return "", false
 }
