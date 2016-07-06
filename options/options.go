@@ -67,7 +67,6 @@ func defaultSettings() *Settings {
 // variables are:
 //
 //      UPSTREAM_TOKENINFO_URL
-//      UPSTREAM_UUID_TOKENS
 //      OPENID_PROVIDER_CONFIGURATION_URL
 //	REVOCATION_PROVIDER_URL
 //
