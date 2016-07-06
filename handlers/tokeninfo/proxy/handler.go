@@ -22,8 +22,9 @@ type tokenInfoProxyHandler struct {
 	cacheTTL time.Duration
 }
 
-// NewTokenInfoProxyHandler returns an http.Handler that proxies every Request to the server
-// at the upstreamURL
+// NewTokenInfoProxyHandler returns an tokeninfo.Handler that proxies every Request to the server
+// at the upstreamURL when the env var UPSTREAM_UUID_TOKENS is set to false. When set to a true
+// value the upstreamURL will just get tokens which look like a UUID
 func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) tokeninfo.Handler {
 	log.Printf("Upstream tokeninfo is %s with %v cache (%d max size)", upstreamURL, cacheTTL, cacheMaxSize)
 	p := httputil.NewSingleHostReverseProxy(upstreamURL)
