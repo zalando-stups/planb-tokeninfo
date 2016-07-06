@@ -232,6 +232,9 @@ func TestRoutingMatchUUID(t *testing.T) {
 		{"http://example.com/oauth2/tokeninfo?access_token=header.claims.signature", false},
 		{"http://example.com/oauth1/tokeninfo?access_token=df79b952-5192-44ca-b8db-acdfdef4d7e0", true},
 		{"http://example.com/oauth1/tokeninfo?access_token=Xf79b952-5192-44ca-b8db-acdfdef4d7e0", false},
+		{"http://example.com/oauth1/tokeninfo?access_token=dfX9b952-5192-44ca-b8db-acdfdef4d7e0", false},
+		{"http://example.com/oauth1/tokeninfo?access_token=df79b952X5192-44ca-b8db-acdfdef4d7e0", false},
+		{"http://example.com/oauth1/tokeninfo?access_token=df79b95/-5192-44ca-b8db-acdfdef4d7e0", false},
 	} {
 		req, _ := http.NewRequest("GET", test.url, nil)
 		match := h.Match(req)
