@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"testing"
 	"time"
 
@@ -209,8 +210,8 @@ func TestUpstreamTimeout(t *testing.T) {
 	}
 }
 
-func TestRoutingMatchUUID(t *testing.T) {
-	options.AppSettings.UpstreamHasUUIDTokens = true
+func TestRoutingMatchRegexp(t *testing.T) {
+	options.AppSettings.UpstreamTokenRegexp = regexp.MustCompilePOSIX(`^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$`)
 	handler := func(w http.ResponseWriter, req *http.Request) {
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -245,7 +246,7 @@ func TestRoutingMatchUUID(t *testing.T) {
 	}
 }
 func TestRoutingMatchDefault(t *testing.T) {
-	options.AppSettings.UpstreamHasUUIDTokens = false
+	options.AppSettings.UpstreamTokenRegexp = nil
 	handler := func(w http.ResponseWriter, req *http.Request) {
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -261,8 +262,8 @@ func TestRoutingMatchDefault(t *testing.T) {
 		url  string
 		want bool
 	}{
-		{"http://example.com/oauth2/tokeninfo", true},
-		{"http://example.com/oauth2/tokeninfo?access_token", true},
+		{"http://example.com/oauth2/tokeninfo", false},
+		{"http://example.com/oauth2/tokeninfo?access_token", false},
 		{"http://example.com/oauth2/tokeninfo?access_token=foo", true},
 		{"http://example.com/oauth2/tokeninfo?access_token=header.claims.signature", true},
 		{"http://example.com/oauth1/tokeninfo?access_token=df79b952-5192-44ca-b8db-acdfdef4d7e0", true},

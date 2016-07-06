@@ -1,9 +1,11 @@
 package options
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -30,22 +32,29 @@ func TestGetString(t *testing.T) {
 	}
 }
 
-func TestGetBool(t *testing.T) {
+func TestGetRegexp(t *testing.T) {
 	for _, test := range []struct {
-		def  bool
+		def  *regexp.Regexp
 		val  string
-		want bool
+		want *regexp.Regexp
 	}{
-		{false, "false", false},
-		{false, "true", true},
-		{false, "1", true},
-		{false, "0", false},
-		{false, "", false},
+		{nil, "(", nil},
+		{nil, ".", regexp.MustCompile(`.`)},
+		{nil, "[[:xdigit:]]", regexp.MustCompilePOSIX(`[[:xdigit:]]`)},
 	} {
 		os.Clearenv()
-		os.Setenv("MYENV", test.val)
-		if s := getBoolean("MYENV", test.def); s != test.want {
-			t.Errorf("Failed to retrieve the correct value from the environment. Wanted %t, got %t", test.want, s)
+		os.Setenv("REGEXP", test.val)
+		s, err := getRegexp("REGEXP", test.def)
+		if test.want == nil {
+			if err == nil {
+				t.Errorf("Failed to retrieve the correct value from the environment. Wanted error, got %q", test.want)
+			} else {
+				fmt.Fprintf(os.Stderr, "Successfully got the error: %s", err)
+			}
+		} else {
+			if test.want.String() != s.String() {
+				t.Errorf("Failed to retrieve the correct value from the environment. Wanted %q, got %q", test.want, s)
+			}
 		}
 	}
 }

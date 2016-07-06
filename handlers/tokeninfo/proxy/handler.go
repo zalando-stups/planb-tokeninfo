@@ -135,35 +135,12 @@ func hostModifier(upstreamURL *url.URL, original func(req *http.Request)) func(r
 }
 
 func (h *tokenInfoProxyHandler) Match(req *http.Request) bool {
-	if !options.AppSettings.UpstreamHasUUIDTokens {
-		return true
-	}
 	token := tokeninfo.AccessTokenFromRequest(req)
 	if token == "" {
 		return false
 	}
-	if len(token) != 36 {
-		return false
+	if options.AppSettings.UpstreamTokenRegexp == nil {
+		return true
 	}
-	for i, c := range token {
-		// 82fb6428-767d-411e-a3a1-6c6007a15df4
-		// 012345678901234567890123456789012345
-		//           1         2         3
-		switch i {
-		case 8, 13, 18, 23:
-			if c != '-' {
-				return false
-			}
-		default:
-			switch {
-			case c < '0':
-				return false
-			case c > '9' && c < 'a':
-				return false
-			case c > 'f':
-				return false
-			}
-		}
-	}
-	return true
+	return options.AppSettings.UpstreamTokenRegexp.MatchString(token)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -15,7 +16,7 @@ type Settings struct {
 	UpstreamTokenInfoURL              *url.URL
 	UpstreamCacheMaxSize              int64
 	UpstreamCacheTTL                  time.Duration
-	UpstreamHasUUIDTokens             bool
+	UpstreamTokenRegexp               *regexp.Regexp
 	OpenIDProviderConfigurationURL    *url.URL
 	OpenIDProviderRefreshInterval     time.Duration
 	HTTPClientTimeout                 time.Duration
@@ -115,8 +116,10 @@ func LoadFromEnvironment() error {
 		settings.OpenIDProviderRefreshInterval = d
 	}
 
-	if b := getBoolean("UPSTREAM_UUID_TOKENS", false); b {
-		settings.UpstreamHasUUIDTokens = true
+	if r, err := getRegexp("UPSTREAM_TOKEN_REGEXP", nil); err != nil {
+		return fmt.Errorf("Failed to compile regexp: %s", err)
+	} else {
+		settings.UpstreamTokenRegexp = r
 	}
 
 	if d := getDuration("HTTP_CLIENT_TIMEOUT", 0); d > 0 {
@@ -171,16 +174,20 @@ func getInt(v string, def int) int {
 	return i
 }
 
-func getBoolean(v string, def bool) bool {
+func getRegexp(v string, def *regexp.Regexp) (re *regexp.Regexp, err error) {
 	s, ok := os.LookupEnv(v)
 	if !ok {
-		return def
+		return def, nil
 	}
-	b, err := strconv.ParseBool(s)
-	if err != nil {
-		return def
-	}
-	return b
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%s", r)
+			re = def
+		}
+	}()
+
+	re = regexp.MustCompilePOSIX(s)
+	return
 }
 
 func getDuration(v string, def time.Duration) time.Duration {
