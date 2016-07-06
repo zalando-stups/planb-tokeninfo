@@ -15,6 +15,7 @@ type Settings struct {
 	UpstreamTokenInfoURL              *url.URL
 	UpstreamCacheMaxSize              int64
 	UpstreamCacheTTL                  time.Duration
+	UpstreamHasUUIDTokens             bool
 	OpenIDProviderConfigurationURL    *url.URL
 	OpenIDProviderRefreshInterval     time.Duration
 	HTTPClientTimeout                 time.Duration
@@ -66,6 +67,7 @@ func defaultSettings() *Settings {
 // variables are:
 //
 //      UPSTREAM_TOKENINFO_URL
+//      UPSTREAM_UUID_TOKENS
 //      OPENID_PROVIDER_CONFIGURATION_URL
 //	REVOCATION_PROVIDER_URL
 //
@@ -112,6 +114,10 @@ func LoadFromEnvironment() error {
 
 	if d := getDuration("OPENID_PROVIDER_REFRESH_INTERVAL", 0); d > 0 {
 		settings.OpenIDProviderRefreshInterval = d
+	}
+
+	if b := getBoolean("UPSTREAM_UUID_TOKENS", false); b {
+		settings.UpstreamHasUUIDTokens = true
 	}
 
 	if d := getDuration("HTTP_CLIENT_TIMEOUT", 0); d > 0 {
@@ -164,6 +170,18 @@ func getInt(v string, def int) int {
 		return def
 	}
 	return i
+}
+
+func getBoolean(v string, def bool) bool {
+	s, ok := os.LookupEnv(v)
+	if !ok {
+		return def
+	}
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		return def
+	}
+	return b
 }
 
 func getDuration(v string, def time.Duration) time.Duration {

@@ -7,11 +7,13 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"time"
+
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/karlseguin/ccache"
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
-	"time"
+	"github.com/zalando/planb-tokeninfo/options"
 )
 
 type tokenInfoProxyHandler struct {
@@ -22,7 +24,7 @@ type tokenInfoProxyHandler struct {
 
 // NewTokenInfoProxyHandler returns an http.Handler that proxies every Request to the server
 // at the upstreamURL
-func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) http.Handler {
+func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) tokeninfo.Handler {
 	log.Printf("Upstream tokeninfo is %s with %v cache (%d max size)", upstreamURL, cacheTTL, cacheMaxSize)
 	p := httputil.NewSingleHostReverseProxy(upstreamURL)
 	p.Director = hostModifier(upstreamURL, p.Director)
@@ -129,4 +131,38 @@ func hostModifier(upstreamURL *url.URL, original func(req *http.Request)) func(r
 		req.Host = upstreamURL.Host
 		req.URL.Path = upstreamURL.Path
 	}
+}
+
+func (h *tokenInfoProxyHandler) Match(req *http.Request) bool {
+	if !options.AppSettings.UpstreamHasUUIDTokens {
+		return true
+	}
+	token := tokeninfo.AccessTokenFromRequest(req)
+	if token == "" {
+		return false
+	}
+	if len(token) != 36 {
+		return false
+	}
+	for i, c := range token {
+		// 82fb6428-767d-411e-a3a1-6c6007a15df4
+		// 012345678901234567890123456789012345
+		//           1         2         3
+		switch i {
+		case 8, 13, 18, 23:
+			if c != '-' {
+				return false
+			}
+		default:
+			switch {
+			case c < '0':
+				return false
+			case c > '9' && c < 'a':
+				return false
+			case c > 'f':
+				return false
+			}
+		}
+	}
+	return true
 }

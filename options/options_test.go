@@ -30,6 +30,26 @@ func TestGetString(t *testing.T) {
 	}
 }
 
+func TestGetBool(t *testing.T) {
+	for _, test := range []struct {
+		def  bool
+		val  string
+		want bool
+	}{
+		{false, "false", false},
+		{false, "true", true},
+		{false, "1", true},
+		{false, "0", false},
+		{false, "", false},
+	} {
+		os.Clearenv()
+		os.Setenv("MYENV", test.val)
+		if s := getBoolean("MYENV", test.def); s != test.want {
+			t.Errorf("Failed to retrieve the correct value from the environment. Wanted %t, got %t", test.want, s)
+		}
+	}
+}
+
 func TestGetUrl(t *testing.T) {
 	for _, test := range []struct {
 		name      string

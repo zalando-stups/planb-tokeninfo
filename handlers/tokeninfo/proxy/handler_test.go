@@ -2,12 +2,14 @@ package tokeninfoproxy
 
 import (
 	"fmt"
-	"github.com/afex/hystrix-go/hystrix"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/afex/hystrix-go/hystrix"
+	"github.com/zalando/planb-tokeninfo/options"
 )
 
 const testTokenInfo = `{"access_token": "xxx","cn": "John Doe","expires_in": 42,"grant_type": "password","realm":"/services","scope":["uid","cn"],"token_type":"Bearer","uid":"jdoe"}` + "\n"
@@ -204,5 +206,70 @@ func TestUpstreamTimeout(t *testing.T) {
 
 	if w.Code != http.StatusGatewayTimeout {
 		t.Errorf("Response code should be 504 Gateway Timeout but was %d %s instead", w.Code, http.StatusText(w.Code))
+	}
+}
+
+func TestRoutingMatchUUID(t *testing.T) {
+	options.AppSettings.UpstreamHasUUIDTokens = true
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	upstream := fmt.Sprintf("http://%s", server.Listener.Addr())
+	url, _ := url.Parse(upstream)
+	h := NewTokenInfoProxyHandler(url, 0, 0)
+
+	for _, test := range []struct {
+		url  string
+		want bool
+	}{
+		{"http://example.com/oauth2/tokeninfo", false},
+		{"http://example.com/oauth2/tokeninfo?access_token", false},
+		{"http://example.com/oauth2/tokeninfo?access_token=foo", false},
+		{"http://example.com/oauth2/tokeninfo?access_token=header.claims.signature", false},
+		{"http://example.com/oauth1/tokeninfo?access_token=df79b952-5192-44ca-b8db-acdfdef4d7e0", true},
+		{"http://example.com/oauth1/tokeninfo?access_token=Xf79b952-5192-44ca-b8db-acdfdef4d7e0", false},
+	} {
+		req, _ := http.NewRequest("GET", test.url, nil)
+		match := h.Match(req)
+		if match != test.want {
+			t.Errorf("Matching fail for URL %q. Wanted %t, got %t", test.url, test.want, match)
+		}
+
+	}
+}
+func TestRoutingMatchDefault(t *testing.T) {
+	options.AppSettings.UpstreamHasUUIDTokens = false
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	upstream := fmt.Sprintf("http://%s", server.Listener.Addr())
+	url, _ := url.Parse(upstream)
+	h := NewTokenInfoProxyHandler(url, 0, 0)
+
+	for _, test := range []struct {
+		url  string
+		want bool
+	}{
+		{"http://example.com/oauth2/tokeninfo", true},
+		{"http://example.com/oauth2/tokeninfo?access_token", true},
+		{"http://example.com/oauth2/tokeninfo?access_token=foo", true},
+		{"http://example.com/oauth2/tokeninfo?access_token=header.claims.signature", true},
+		{"http://example.com/oauth1/tokeninfo?access_token=df79b952-5192-44ca-b8db-acdfdef4d7e0", true},
+		{"http://example.com/oauth1/tokeninfo?access_token=Xf79b952-5192-44ca-b8db-acdfdef4d7e0", true},
+	} {
+		req, _ := http.NewRequest("GET", test.url, nil)
+		match := h.Match(req)
+		if match != test.want {
+			t.Errorf("Matching fail for URL %q. Wanted %t, got %t", test.url, test.want, match)
+		}
+
 	}
 }
