@@ -14,6 +14,7 @@ import (
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/jwt"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/proxy"
+	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/unknown"
 	"github.com/zalando/planb-tokeninfo/ht"
 	"github.com/zalando/planb-tokeninfo/keyloader/openid"
 	"github.com/zalando/planb-tokeninfo/options"
@@ -44,10 +45,11 @@ func main() {
 	kl := openid.NewCachingOpenIDProviderLoader(settings.OpenIDProviderConfigurationURL)
 	crp := revoke.NewCachingRevokeProvider(settings.RevocationProviderUrl)
 	jh := jwthandler.New(kl, crp)
+	uh := unknownhandler.New()
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthcheck.NewHandler(kl, version))
-	mux.Handle("/oauth2/tokeninfo", tokeninfo.NewHandler(ph, jh))
+	mux.Handle("/oauth2/tokeninfo", tokeninfo.NewHandler(uh, jh, ph))
 	mux.Handle("/oauth2/connect/keys", jwks.NewHandler(kl))
 	log.Fatal(http.ListenAndServe(settings.ListenAddress, mux))
 }

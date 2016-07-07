@@ -82,6 +82,9 @@ The following environment variables are supported:
     Maximum number of entries for upstream token cache. It defaults to 10000.
 ``UPSTREAM_CACHE_TTL``
     The TTL for upstream token cache entries. It defaults to 60 seconds. Zero will disable the cache. See also `Time based settings`_
+``UPSTREAM_TOKEN_REGEXP``
+    The upstream uses tokens which match this (POSIX) regexp, default is to accept any token for upstream. Tokens not
+    matching this regexp will be responsed with a default error and not passed to upstream.
 ``REVOCATION_PROVIDER_URL``
     URL of of the Revocation service.
 ``REVOCATION_PROVIDER_REFRESH_INTERVAL``

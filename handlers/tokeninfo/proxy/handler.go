@@ -7,11 +7,13 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"time"
+
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/karlseguin/ccache"
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
-	"time"
+	"github.com/zalando/planb-tokeninfo/options"
 )
 
 type tokenInfoProxyHandler struct {
@@ -20,9 +22,10 @@ type tokenInfoProxyHandler struct {
 	cacheTTL time.Duration
 }
 
-// NewTokenInfoProxyHandler returns an http.Handler that proxies every Request to the server
-// at the upstreamURL
-func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) http.Handler {
+// NewTokenInfoProxyHandler returns an tokeninfo.Handler that proxies every Request to the server
+// at the upstreamURL when the env var UPSTREAM_TOKEN_REGEXP is unset. When set to a POSIX regexp
+// value it will just proxy requests where the token match.
+func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) tokeninfo.Handler {
 	log.Printf("Upstream tokeninfo is %s with %v cache (%d max size)", upstreamURL, cacheTTL, cacheMaxSize)
 	p := httputil.NewSingleHostReverseProxy(upstreamURL)
 	p.Director = hostModifier(upstreamURL, p.Director)
@@ -129,4 +132,15 @@ func hostModifier(upstreamURL *url.URL, original func(req *http.Request)) func(r
 		req.Host = upstreamURL.Host
 		req.URL.Path = upstreamURL.Path
 	}
+}
+
+func (h *tokenInfoProxyHandler) Match(req *http.Request) bool {
+	token := tokeninfo.AccessTokenFromRequest(req)
+	if token == "" {
+		return false
+	}
+	if options.AppSettings.UpstreamTokenRegexp == nil {
+		return true
+	}
+	return options.AppSettings.UpstreamTokenRegexp.MatchString(token)
 }

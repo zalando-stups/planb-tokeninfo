@@ -1,9 +1,11 @@
 package options
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -26,6 +28,33 @@ func TestGetString(t *testing.T) {
 		}
 		if s := getString(test.envGet, test.def); s != test.want {
 			t.Errorf("Failed to retrieve the correct value from the environment. Wanted %q, got %q", test.want, s)
+		}
+	}
+}
+
+func TestGetRegexp(t *testing.T) {
+	for _, test := range []struct {
+		def  *regexp.Regexp
+		val  string
+		want *regexp.Regexp
+	}{
+		{nil, "(", nil},
+		{nil, ".", regexp.MustCompile(`.`)},
+		{nil, "[[:xdigit:]]", regexp.MustCompilePOSIX(`[[:xdigit:]]`)},
+	} {
+		os.Clearenv()
+		os.Setenv("REGEXP", test.val)
+		s, err := getRegexp("REGEXP", test.def)
+		if test.want == nil {
+			if err == nil {
+				t.Errorf("Failed to retrieve the correct value from the environment. Wanted error, got %q", test.want)
+			} else {
+				fmt.Fprintf(os.Stderr, "Successfully got the error: %s", err)
+			}
+		} else {
+			if test.want.String() != s.String() {
+				t.Errorf("Failed to retrieve the correct value from the environment. Wanted %q, got %q", test.want, s)
+			}
 		}
 	}
 }
