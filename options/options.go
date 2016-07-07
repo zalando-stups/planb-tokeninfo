@@ -179,15 +179,7 @@ func getRegexp(v string, def *regexp.Regexp) (re *regexp.Regexp, err error) {
 	if !ok {
 		return def, nil
 	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("%s", r)
-			re = def
-		}
-	}()
-
-	re = regexp.MustCompilePOSIX(s)
-	return
+	return regexp.CompilePOSIX(s)
 }
 
 func getDuration(v string, def time.Duration) time.Duration {

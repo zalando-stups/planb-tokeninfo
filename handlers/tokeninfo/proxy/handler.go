@@ -23,8 +23,8 @@ type tokenInfoProxyHandler struct {
 }
 
 // NewTokenInfoProxyHandler returns an tokeninfo.Handler that proxies every Request to the server
-// at the upstreamURL when the env var UPSTREAM_TOKEN_REGEXP  is unset. When set to a POSIX regexp
-// value the upstreamURL will just get tokens which match this regexp.
+// at the upstreamURL when the env var UPSTREAM_TOKEN_REGEXP is unset. When set to a POSIX regexp
+// value it will just proxy requests where the token match.
 func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) tokeninfo.Handler {
 	log.Printf("Upstream tokeninfo is %s with %v cache (%d max size)", upstreamURL, cacheTTL, cacheMaxSize)
 	p := httputil.NewSingleHostReverseProxy(upstreamURL)
