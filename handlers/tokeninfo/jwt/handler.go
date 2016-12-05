@@ -13,6 +13,7 @@ import (
 	"github.com/zalando/planb-tokeninfo/keyloader"
 	"github.com/zalando/planb-tokeninfo/revoke"
 	"github.com/dgrijalva/jwt-go/request"
+	"github.com/zalando/planb-tokeninfo/processor"
 )
 
 type jwtHandler struct {
@@ -38,7 +39,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err == nil && ti != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := ti.Marshal(w); err != nil {
+		if err := Marshal(ti, w); err != nil {
 			fmt.Println("Error serializing the token info: ", err)
 		} else {
 			measureRequest(start, fmt.Sprintf("planb.tokeninfo.jwt.%s.requests", ti.Realm))
@@ -57,7 +58,7 @@ func (h *jwtHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tie.Write(w)
 }
 
-func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
+func (h *jwtHandler) validateToken(req *http.Request) (*processor.TokenInfo, error) {
 	start := time.Now()
 	token, err := request.ParseFromRequest(req, request.OAuth2Extractor, jwtValidator(h.keyLoader))
 	if err != nil {
@@ -74,7 +75,7 @@ func (h *jwtHandler) validateToken(req *http.Request) (*TokenInfo, error) {
 		log.Println("Failed to validate token: ", ErrRevokedToken)
 		return nil, ErrRevokedToken
 	}
-	return newTokenInfo(token, time.Now())
+	return NewTokenInfo(token, time.Now())
 }
 
 // Checks if the Request contains a JWT that can be handled by this Handler

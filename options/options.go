@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"github.com/zalando/planb-tokeninfo/processor"
 )
 
 // The Settings type contains the application configurable options
@@ -24,6 +25,7 @@ type Settings struct {
 	RevocationRefreshTolerance        time.Duration
 	RevocationProviderUrl             *url.URL
 	HashingSalt                       string
+	JwtProcessors                     map[string]processor.JwtProcessor
 }
 
 const (
@@ -58,6 +60,7 @@ func defaultSettings() *Settings {
 		RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 		RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
 		HashingSalt:                       defaultHashingSalt,
+		JwtProcessors:                     make(map[string]processor.JwtProcessor),
 	}
 }
 
@@ -72,23 +75,23 @@ func defaultSettings() *Settings {
 // The remaining options have sane defaults and are not mandatory
 func LoadFromEnvironment() error {
 	settings := defaultSettings()
-	url, err := getURL("UPSTREAM_TOKENINFO_URL")
+	tokeninfoURL, err := getURL("UPSTREAM_TOKENINFO_URL")
 	if err != nil {
 		return fmt.Errorf("Error with UPSTREAM_TOKENINFO_URL: %v\n", err)
 	}
-	settings.UpstreamTokenInfoURL = url
+	settings.UpstreamTokenInfoURL = tokeninfoURL
 
-	url, err = getURL("OPENID_PROVIDER_CONFIGURATION_URL")
-	if err != nil || url == nil {
+	tokeninfoURL, err = getURL("OPENID_PROVIDER_CONFIGURATION_URL")
+	if err != nil || tokeninfoURL == nil {
 		return fmt.Errorf("Invalid OPENID_PROVIDER_CONFIGURATION_URL: %v\n", err)
 	}
-	settings.OpenIDProviderConfigurationURL = url
+	settings.OpenIDProviderConfigurationURL = tokeninfoURL
 
-	url, err = getURL("REVOCATION_PROVIDER_URL")
-	if err != nil || url == nil {
+	tokeninfoURL, err = getURL("REVOCATION_PROVIDER_URL")
+	if err != nil || tokeninfoURL == nil {
 		return fmt.Errorf("Invalid REVOCATION_PROVIDER_URL: %v\n", err)
 	}
-	settings.RevocationProviderUrl = url
+	settings.RevocationProviderUrl = tokeninfoURL
 
 	if s := getString("REVOCATION_HASHING_SALT", ""); s != "" {
 		settings.HashingSalt = s

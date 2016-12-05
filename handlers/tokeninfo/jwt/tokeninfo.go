@@ -1,49 +1,41 @@
 package jwthandler
 
 import (
-	"encoding/json"
 	"errors"
-	"io"
 	"log"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/zalando/planb-tokeninfo/options"
+	"github.com/zalando/planb-tokeninfo/processor"
+	"io"
+	"encoding/json"
+	"strings"
 )
 
 const (
-	jwtClaimScope = "scope"
-	jwtClaimSub   = "sub"
-	jwtClaimRealm = "realm"
-	jwtClaimAzp   = "azp"
-	jwtClaimExp   = "exp"
+	JwtClaimScope  = "scope"
+	JwtClaimSub    = "sub"
+	JwtClaimRealm  = "realm"
+	JwtClaimAzp    = "azp"
+	JwtClaimExp    = "exp"
+	JwtClaimIssuer = "iss"
 )
 
 var (
 	// ErrInvalidClaimScope should be used whenever the scope claim is invalid or missing in the JWT
 	ErrInvalidClaimScope = errors.New("Invalid claim: scope")
-	// ErrInvalidClaimSub should be used whenever the scope sub is invalid or missing in the JWT
-	ErrInvalidClaimSub = errors.New("Invalid claim: sub")
 	// ErrInvalidClaimRealm should be used whenever the scope realm is invalid or missing in the JWT
 	ErrInvalidClaimRealm = errors.New("Invalid claim: realm")
+	// ErrInvalidClaimSub should be used whenever the claim sub is invalid or missing in the JWT
+	ErrInvalidClaimSub = errors.New("Invalid claim: sub")
+	// ErrInvalidClaimAzp should be used whenever the claim azp is invalid or missing in the JWT
 	ErrInvalidClaimAzp   = errors.New("Invalid claim: azp")
-	// ErrInvalidClaimExp should be used whenever the scope exp is invalid or missing in the JWT
+	// ErrInvalidClaimExp should be used whenever the claim exp is invalid or missing in the JWT
 	ErrInvalidClaimExp = errors.New("Invalid claim: exp")
 )
 
-// TokenInfo type is used to serialize a JWT validation result in a standard Token Info JSON format
-type TokenInfo struct {
-	AccessToken  string   `json:"access_token"`
-	RefreshToken string   `json:"refresh_token,omitempty"`
-	UID          string   `json:"uid"`
-	GrantType    string   `json:"grant_type"`
-	Scope        []string `json:"scope"`
-	Realm        string   `json:"realm"`
-	ClientId     string   `json:"client_id"`
-	TokenType    string   `json:"token_type"`
-	ExpiresIn    int      `json:"expires_in"`
-}
-
-func (ti *TokenInfo) Marshal(w io.Writer) error {
+func Marshal(ti *processor.TokenInfo, w io.Writer) error {
 	m := make(map[string]interface{})
 	m["access_token"] = ti.AccessToken
 	if ti.RefreshToken != "" {
@@ -74,41 +66,41 @@ func (ti *TokenInfo) Marshal(w io.Writer) error {
 	return json.NewEncoder(w).Encode(m)
 }
 
-func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
-	scopes, ok := claimAsStrings(t, jwtClaimScope)
+func defaultNewTokenInfo(t *jwt.Token, timeBase time.Time) (*processor.TokenInfo, error) {
+	scopes, ok := ClaimAsStrings(t, JwtClaimScope)
 	if !ok {
 		return nil, ErrInvalidClaimScope
 	}
 
-	sub, ok := claimAsString(t, jwtClaimSub)
+	sub, ok := ClaimAsString(t, JwtClaimSub)
 	if !ok {
 		return nil, ErrInvalidClaimSub
 	}
 
-	realm, ok := claimAsString(t, jwtClaimRealm)
+	realm, ok := ClaimAsString(t, JwtClaimRealm)
 	if !ok {
 		return nil, ErrInvalidClaimRealm
 	}
 
 	clientId := ""
 	if claims, ok := t.Claims.(jwt.MapClaims); ok {
-		_, has := claims[jwtClaimAzp]
+		_, has := claims[JwtClaimAzp]
 		if has {
-			clientId, ok = claimAsString(t, jwtClaimAzp)
+			clientId, ok = ClaimAsString(t, JwtClaimAzp)
 			if !ok {
 				return nil, ErrInvalidClaimAzp
 			}
 		}
 	}
 
-	exp, ok := claimAsInt64(t, jwtClaimExp)
+	exp, ok := ClaimAsInt64(t, JwtClaimExp)
 	if !ok {
 		return nil, ErrInvalidClaimExp
 	}
 
 	expiresIn := int(time.Unix(exp, 0).Sub(timeBase).Seconds())
 
-	return &TokenInfo{
+	return &processor.TokenInfo{
 		AccessToken: t.Raw,
 		UID:         sub,
 		GrantType:   "password",
@@ -120,23 +112,35 @@ func newTokenInfo(t *jwt.Token, timeBase time.Time) (*TokenInfo, error) {
 	}, nil
 }
 
-func claimAsStrings(t *jwt.Token, claim string) ([]string, bool) {
+func NewTokenInfo(t *jwt.Token, timeBase time.Time) (*processor.TokenInfo, error) {
+	issuer, ok := ClaimAsString(t, JwtClaimIssuer)
+	if ok {
+		jwtprocessor, found := options.AppSettings.JwtProcessors[issuer]
+		if found {
+			log.Printf("token matched processor for issuer %s", issuer)
+			return jwtprocessor.Process(t, timeBase)
+		}
+	}
+	return defaultNewTokenInfo(t, timeBase)
+}
+
+func ClaimAsStrings(t *jwt.Token, claim string) ([]string, bool) {
 	if c, ok := getClaim(t, claim); ok {
 		value, ok := c.([]interface{})
 		if !ok {
 			log.Printf("Invalid string array value for claim %q = %v", claim, c)
 			return nil, false
 		}
-		strings := make([]string, len(value))
+		result:= make([]string, len(value))
 		for i, scope := range value {
-			strings[i] = scope.(string)
+			result[i] = scope.(string)
 		}
-		return strings, true
+		return result, true
 	}
 	return nil, false
 }
 
-func claimAsString(t *jwt.Token, claim string) (string, bool) {
+func ClaimAsString(t *jwt.Token, claim string) (string, bool) {
 	if c, ok := getClaim(t, claim); ok {
 		value, ok := c.(string)
 		if !ok {
@@ -148,7 +152,7 @@ func claimAsString(t *jwt.Token, claim string) (string, bool) {
 	return "", false
 }
 
-func claimAsInt64(t *jwt.Token, claim string) (int64, bool) {
+func ClaimAsInt64(t *jwt.Token, claim string) (int64, bool) {
 	c, ok := getClaim(t, claim)
 	if !ok {
 		return 0, false
@@ -166,11 +170,20 @@ func getClaim(t *jwt.Token, claim string) (interface{}, bool) {
 	if claims, ok := t.Claims.(jwt.MapClaims); ok {
 		c, has := claims[claim]
 		if !has {
-			log.Printf("Missing claim %q for token %v", claim, t.Raw)
+			log.Printf("Missing claim %q for token %v", claim, maskToken(t.Raw))
 			return "", false
 		}
 		return c, true
 	}
-	log.Printf("Missing claim %q for token %v", claim, t.Raw)
+	log.Printf("Missing claim %q for token", claim)
 	return "", false
+}
+
+func maskToken(rawToken string) string {
+	indexOfSignature := strings.LastIndex(rawToken, ".")
+	if indexOfSignature > -1 {
+		// return signature of JWT as masked token
+		return rawToken[indexOfSignature:]
+	}
+	return ""
 }

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
+	"github.com/zalando/planb-tokeninfo/processor"
 )
 
 func TestGetString(t *testing.T) {
@@ -247,6 +248,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -272,6 +274,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -297,6 +300,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -322,6 +326,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -347,6 +352,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -374,6 +380,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -401,6 +408,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -426,6 +434,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -451,6 +460,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: 30 * time.Second,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -476,6 +486,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       "TestSalt",
 				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},
@@ -501,6 +512,7 @@ func TestLoading(t *testing.T) {
 				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
 				HashingSalt:                       defaultHashingSalt,
 				RevocationRefreshTolerance:        30 * time.Second,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
 			},
 			false,
 		},

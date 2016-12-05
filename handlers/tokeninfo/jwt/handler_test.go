@@ -14,6 +14,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"github.com/zalando/planb-tokeninfo/processor"
 )
 
 type mockKeyLoader int
@@ -92,7 +93,7 @@ func TestHandler(t *testing.T) {
 		}
 
 		if test.wantCode == http.StatusOK {
-			var ti TokenInfo
+			var ti processor.TokenInfo
 			if err := json.NewDecoder(w.Body).Decode(&ti); err != nil {
 				t.Error("Could not recover TokenInfo from response: ", err)
 			}
