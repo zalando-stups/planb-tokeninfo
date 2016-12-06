@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/zalando/planb-tokeninfo/options"
+	"github.com/zalando/planb-tokeninfo/processor"
 )
 
 func TestTokenInfo(t *testing.T) {
 	for _, test := range []struct {
 		token     jwt.Token
-		want      *TokenInfo
+		want      *processor.TokenInfo
 		wantError bool
 	}{
 		{jwt.Token{}, nil, true},
@@ -44,7 +46,7 @@ func TestTokenInfo(t *testing.T) {
 				"sub":   "foo",
 				"realm": "/test",
 				"exp":   float64(43)}},
-			&TokenInfo{
+			&processor.TokenInfo{
 				GrantType: "password",
 				TokenType: "Bearer",
 				Scope:     []string{"uid"},
@@ -59,7 +61,7 @@ func TestTokenInfo(t *testing.T) {
 				"realm": "/test",
 				"azp":   "myclient-123",
 				"exp":   float64(43)}},
-			&TokenInfo{
+			&processor.TokenInfo{
 				GrantType: "password",
 				TokenType: "Bearer",
 				Scope:     []string{},
@@ -69,7 +71,55 @@ func TestTokenInfo(t *testing.T) {
 				ExpiresIn: 1},
 			false},
 	} {
-		ti, err := newTokenInfo(&test.token, time.Unix(42, 0))
+		ti, err := NewTokenInfo(&test.token, time.Unix(42, 0))
+
+		if test.wantError && err == nil {
+			t.Error("Wanted an error but got none")
+		}
+
+		if !reflect.DeepEqual(ti, test.want) {
+			t.Errorf("Unexpected token info. Wanted %v, got %v", test.want, ti)
+		}
+	}
+}
+
+type TestJWTProcessor struct {
+
+}
+
+func (jwtProcessor TestJWTProcessor) Process(t *jwt.Token, timeBase time.Time) (*processor.TokenInfo, error) {
+	return &processor.TokenInfo{
+		AccessToken: t.Raw,
+		UID:         "uid",
+		GrantType:   "mygrant",
+		Scope:       []string{},
+		Realm:       "/test",
+		ClientId:    "client",
+		TokenType:   "Bearer",
+		ExpiresIn:   42,
+	}, nil
+}
+
+func TestJwtProcessor(t *testing.T) {
+	options.AppSettings.JwtProcessors["test-processor"] = TestJWTProcessor{}
+	for _, test := range []struct {
+		token     jwt.Token
+		want      *processor.TokenInfo
+		wantError bool
+	}{
+		{
+			jwt.Token{Claims: jwt.MapClaims{"iss": "test-processor"}},
+			&processor.TokenInfo{
+				GrantType: "mygrant",
+				TokenType: "Bearer",
+				Scope:     []string{},
+				UID:       "uid",
+				Realm:     "/test",
+				ClientId:  "client",
+				ExpiresIn: 42},
+			false},
+	} {
+		ti, err := NewTokenInfo(&test.token, time.Unix(42, 0))
 
 		if test.wantError && err == nil {
 			t.Error("Wanted an error but got none")
@@ -84,16 +134,16 @@ func TestTokenInfo(t *testing.T) {
 func TestMarshal(t *testing.T) {
 
 	for _, test := range []struct {
-		token *TokenInfo
+		token *processor.TokenInfo
 		want  string
 	}{
-		{&TokenInfo{},
+		{&processor.TokenInfo{},
 			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
-		{&TokenInfo{RefreshToken: "foo"},
+		{&processor.TokenInfo{RefreshToken: "foo"},
 			"{\"access_token\":\"\",\"expires_in\":0,\"grant_type\":\"\",\"realm\":\"\",\"refresh_token\":\"foo\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
-		{&TokenInfo{ClientId: "client-123"},
+		{&processor.TokenInfo{ClientId: "client-123"},
 			"{\"access_token\":\"\",\"client_id\":\"client-123\",\"expires_in\":0,\"grant_type\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
-		{&TokenInfo{
+		{&processor.TokenInfo{
 			GrantType: "password",
 			TokenType: "Bearer",
 			Scope:     []string{"uid", "foo", "bar"},
@@ -103,7 +153,7 @@ func TestMarshal(t *testing.T) {
 			"{\"access_token\":\"\",\"bar\":true,\"expires_in\":1,\"foo\":true,\"grant_type\":\"password\",\"realm\":\"/test\",\"scope\":[\"uid\",\"foo\",\"bar\"],\"token_type\":\"Bearer\",\"uid\":\"foo\"}\n"},
 	} {
 		buf := new(bytes.Buffer)
-		test.token.Marshal(buf)
+		Marshal(test.token, buf)
 		s := buf.String()
 		if s != test.want {
 			t.Errorf("Unexpected serialization. Wanted %v, got %v", test.want, s)
