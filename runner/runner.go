@@ -12,6 +12,7 @@ import (
 	"github.com/zalando/planb-tokeninfo/handlers/jwks"
 	"github.com/zalando/planb-tokeninfo/handlers/metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
+	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/errorall"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/jwt"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo/proxy"
 	"github.com/zalando/planb-tokeninfo/ht"
@@ -35,7 +36,12 @@ func Run(settings *options.Settings) {
 	ht.UserAgent = fmt.Sprintf("%v/%s", os.Args[0], version)
 	setupMetrics(settings)
 
-	ph := tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL, settings.UpstreamCacheMaxSize, settings.UpstreamCacheTTL)
+	var ph http.Handler
+	if settings.UpstreamTokenInfoURL != nil {
+		ph = tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL, settings.UpstreamCacheMaxSize, settings.UpstreamCacheTTL)
+	} else {
+		ph = errorall.NewErrorAllHandler()
+	}
 	kl := openid.NewCachingOpenIDProviderLoader(settings.OpenIDProviderConfigurationURL)
 	crp := revoke.NewCachingRevokeProvider(settings.RevocationProviderUrl)
 	jh := jwthandler.New(kl, crp)
