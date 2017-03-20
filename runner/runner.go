@@ -26,7 +26,9 @@ func setupMetrics(s *options.Settings) {
 	gometrics.RegisterRuntimeMemStats(gometrics.DefaultRegistry)
 	go gometrics.CaptureRuntimeMemStats(gometrics.DefaultRegistry, 60*time.Second)
 	http.Handle("/metrics", metrics.Default)
-	go http.ListenAndServe(s.MetricsListenAddress, nil)
+	go func() {
+		log.Printf("ERROR: %s", http.ListenAndServe(s.MetricsListenAddress, nil))
+	}()
 }
 
 func Run(settings *options.Settings) {
