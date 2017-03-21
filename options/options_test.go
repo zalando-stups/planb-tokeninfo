@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
 	"github.com/zalando/planb-tokeninfo/processor"
 )
 
@@ -122,8 +123,24 @@ func TestLoading(t *testing.T) {
 		{map[string]string{}, nil, true},
 		{
 			map[string]string{"UPSTREAM_TOKENINFO_URL": ""},
-			nil,
-			true,
+			&Settings{
+				UpstreamTokenInfoURL:              nil,
+				OpenIDProviderConfigurationURL:    nil,
+				RevocationProviderUrl:             nil,
+				UpstreamCacheMaxSize:              defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:                  defaultUpstreamCacheTTL,
+				HTTPClientTimeout:                 defaultHTTPClientTimeout,
+				HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
+				OpenIDProviderRefreshInterval:     defaultOpenIDRefreshInterval,
+				ListenAddress:                     defaultListenAddress,
+				MetricsListenAddress:              defaultMetricsListenAddress,
+				RevocationCacheTTL:                defaultRevocationCacheTTL,
+				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
+				HashingSalt:                       defaultHashingSalt,
+				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
+			},
+			false,
 		},
 		{
 			map[string]string{"UPSTREAM_TOKENINFO_URL": "http://example.com"},
