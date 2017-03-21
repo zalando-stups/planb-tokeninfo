@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dgrijalva/jwt-go/request"
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"github.com/zalando/planb-tokeninfo/keyloader"
-	"github.com/zalando/planb-tokeninfo/revoke"
-	"github.com/dgrijalva/jwt-go/request"
 	"github.com/zalando/planb-tokeninfo/processor"
+	"github.com/zalando/planb-tokeninfo/revoke"
 )
 
 type jwtHandler struct {

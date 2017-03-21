@@ -116,12 +116,14 @@ func TestGetDuration(t *testing.T) {
 func TestLoading(t *testing.T) {
 	exampleCom, _ := url.Parse("http://example.com")
 	for _, test := range []struct {
+		name     string
 		env      map[string]string
 		want     *Settings
 		wantFail bool
 	}{
-		{map[string]string{}, nil, true},
+		{"empty", map[string]string{}, nil, true},
 		{
+			"UPSTREAM_TOKENINFO_URL empty",
 			map[string]string{"UPSTREAM_TOKENINFO_URL": ""},
 			&Settings{
 				UpstreamTokenInfoURL:              nil,
@@ -143,18 +145,53 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"UPSTREAM_TOKENINFO_URL set",
 			map[string]string{"UPSTREAM_TOKENINFO_URL": "http://example.com"},
-			nil,
-			true,
+			&Settings{
+				UpstreamTokenInfoURL:              nil,
+				OpenIDProviderConfigurationURL:    nil,
+				RevocationProviderUrl:             nil,
+				UpstreamCacheMaxSize:              defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:                  defaultUpstreamCacheTTL,
+				HTTPClientTimeout:                 defaultHTTPClientTimeout,
+				HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
+				OpenIDProviderRefreshInterval:     defaultOpenIDRefreshInterval,
+				ListenAddress:                     defaultListenAddress,
+				MetricsListenAddress:              defaultMetricsListenAddress,
+				RevocationCacheTTL:                defaultRevocationCacheTTL,
+				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
+				HashingSalt:                       defaultHashingSalt,
+				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
+			},
+			false,
 		},
 		{
+			"OPENID_PROVIDER_CONFIGURATION_URL set",
 			map[string]string{
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
 			},
-			nil,
-			true,
+			&Settings{
+				UpstreamTokenInfoURL:              nil,
+				OpenIDProviderConfigurationURL:    nil,
+				RevocationProviderUrl:             nil,
+				UpstreamCacheMaxSize:              defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:                  defaultUpstreamCacheTTL,
+				HTTPClientTimeout:                 defaultHTTPClientTimeout,
+				HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
+				OpenIDProviderRefreshInterval:     defaultOpenIDRefreshInterval,
+				ListenAddress:                     defaultListenAddress,
+				MetricsListenAddress:              defaultMetricsListenAddress,
+				RevocationCacheTTL:                defaultRevocationCacheTTL,
+				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
+				HashingSalt:                       defaultHashingSalt,
+				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
+			},
+			false,
 		},
 		{
+			"OPENID_PROVIDER_CONFIGURATION_URL empty",
 			map[string]string{
 				"OPENID_PROVIDER_CONFIGURATION_URL": "",
 			},
@@ -162,6 +199,7 @@ func TestLoading(t *testing.T) {
 			true,
 		},
 		{
+			"UPSTREAM_TOKENINFO_URL and OPENID_PROVIDER_CONFIGURATION_URL empty",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "",
@@ -170,6 +208,7 @@ func TestLoading(t *testing.T) {
 			true,
 		},
 		{
+			"UPSTREAM_TOKENINFO_URL empty, OPENID_PROVIDER_CONFIGURATION_URL set",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -178,6 +217,7 @@ func TestLoading(t *testing.T) {
 			true,
 		},
 		{
+			"UPSTREAM_TOKENINFO_URL set, OPENID_PROVIDER_CONFIGURATION_URL empty",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "",
@@ -186,6 +226,7 @@ func TestLoading(t *testing.T) {
 			true,
 		},
 		{
+			"REVOCATION_PROVIDER_URL empty",
 			map[string]string{
 				"REVOCATION_PROVIDER_URL": "",
 			},
@@ -193,6 +234,7 @@ func TestLoading(t *testing.T) {
 			true,
 		},
 		{
+			"REVOCATION_PROVIDER_URL set",
 			map[string]string{
 				"REVOCATION_PROVIDER_URL": "http://example.com",
 			},
@@ -200,6 +242,7 @@ func TestLoading(t *testing.T) {
 			true,
 		},
 		{
+			"UPSTREAM_TOKENINFO_URL, REVOCATION_PROVIDER_URL empty, OPENID_PROVIDER_CONFIGURATION_URL set",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -209,6 +252,7 @@ func TestLoading(t *testing.T) {
 			true,
 		},
 		{
+			"1",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "",
@@ -217,16 +261,9 @@ func TestLoading(t *testing.T) {
 			nil,
 			true,
 		},
+		// "2" was same as "4"
 		{
-			map[string]string{
-				"UPSTREAM_TOKENINFO_URL":            "",
-				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
-				"REVOCATION_PROVIDER_URL":           "http://example.com",
-			},
-			nil,
-			true,
-		},
-		{
+			"3",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "",
@@ -236,15 +273,33 @@ func TestLoading(t *testing.T) {
 			true,
 		},
 		{
+			"4",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
 				"REVOCATION_PROVIDER_URL":           "http://example.com",
 			},
-			nil,
-			true,
+			&Settings{
+				UpstreamTokenInfoURL:              nil,
+				OpenIDProviderConfigurationURL:    exampleCom,
+				RevocationProviderUrl:             exampleCom,
+				UpstreamCacheMaxSize:              defaultUpstreamCacheMaxSize,
+				UpstreamCacheTTL:                  defaultUpstreamCacheTTL,
+				HTTPClientTimeout:                 defaultHTTPClientTimeout,
+				HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
+				OpenIDProviderRefreshInterval:     defaultOpenIDRefreshInterval,
+				ListenAddress:                     defaultListenAddress,
+				MetricsListenAddress:              defaultMetricsListenAddress,
+				RevocationCacheTTL:                defaultRevocationCacheTTL,
+				RevocationProviderRefreshInterval: defaultRevokeProviderRefreshInterval,
+				HashingSalt:                       defaultHashingSalt,
+				RevocationRefreshTolerance:        defaultRevocationRereshTolerance,
+				JwtProcessors:                     make(map[string]processor.JwtProcessor),
+			},
+			false,
 		},
 		{
+			"5",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -270,6 +325,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"6",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -296,6 +352,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"7",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -322,6 +379,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"8",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -348,6 +406,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"9",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -374,6 +433,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"10",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"UPSTREAM_CACHE_MAX_SIZE":           "123456789",
@@ -402,6 +462,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"11",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"UPSTREAM_CACHE_MAX_SIZE":           "0",
@@ -430,6 +491,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"12",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -456,6 +518,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"13",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":               "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL":    "http://example.com",
@@ -482,6 +545,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"14",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -508,6 +572,7 @@ func TestLoading(t *testing.T) {
 			false,
 		},
 		{
+			"15",
 			map[string]string{
 				"UPSTREAM_TOKENINFO_URL":            "http://example.com",
 				"OPENID_PROVIDER_CONFIGURATION_URL": "http://example.com",
@@ -541,11 +606,11 @@ func TestLoading(t *testing.T) {
 		err := LoadFromEnvironment()
 		if test.wantFail {
 			if err == nil {
-				t.Error("Wanted failure to load settings but it seems that it succeeded: ", test)
+				t.Errorf("TEST %s: Wanted failure to load settings but it seems that it succeeded: %s", test.name, test)
 			}
 		} else {
 			if !reflect.DeepEqual(AppSettings, test.want) {
-				t.Errorf("Settings mismatch.\nWanted %v\nGot %v", test.want, AppSettings)
+				t.Errorf("TEST %s: Settings mismatch.\nWanted %v\nGot %v", test.name, test.want, AppSettings)
 			}
 		}
 	}
