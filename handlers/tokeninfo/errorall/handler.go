@@ -2,7 +2,9 @@ package errorall
 
 import (
 	"net/http"
+	"fmt"
 
+	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 )
 
@@ -15,10 +17,20 @@ func NewErrorAllHandler() http.Handler {
 
 // ServeHTTP returns an error for all requests
 func (h *errorAllHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var tie tokeninfo.Error
 	if tokeninfo.AccessTokenFromRequest(req) == "" {
-		tokeninfo.ErrInvalidRequest.Write(w)
-		return
+		tie = tokeninfo.ErrInvalidRequest
+	} else {
+		tie = tokeninfo.ErrInvalidToken
 	}
-	tokeninfo.ErrInvalidToken.Write(w)
+	registerError(tie)
+	tie.Write(w)
 	return
+}
+
+func registerError(err tokeninfo.Error) {
+	key := fmt.Sprintf("planb.tokeninfo.nonjwt.errors.%s", err.Error)
+	if c, ok := metrics.DefaultRegistry.GetOrRegister(key, metrics.NewCounter).(metrics.Counter); ok {
+		c.Inc(1)
+	}
 }
