@@ -7,8 +7,6 @@ import (
 	"net/url"
 	"testing"
 	"time"
-
-	"github.com/afex/hystrix-go/hystrix"
 )
 
 const testTokenInfo = `{"access_token": "xxx","cn": "John Doe","expires_in": 42,"grant_type": "password","realm":"/services","scope":["uid","cn"],"token_type":"Bearer","uid":"jdoe"}` + "\n"
@@ -27,7 +25,7 @@ func TestProxy(t *testing.T) {
 
 	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url, 0, time.Second*0)
+	h := NewTokenInfoProxyHandler(url, 0, time.Second*0, time.Second*1)
 	invalid := `{"error":"invalid_request","error_description":"Access Token not valid"}` + "\n"
 	for _, it := range []struct {
 		query    string
@@ -72,7 +70,7 @@ func TestHostHeader(t *testing.T) {
 
 	upstream = fmt.Sprintf("http://%s/upstream-tokeninfo", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url, 0, time.Second*0)
+	h := NewTokenInfoProxyHandler(url, 0, time.Second*0, time.Second*1)
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "http://example.com/oauth2/tokeninfo?access_token=foo", nil)
@@ -95,7 +93,7 @@ func TestCache(t *testing.T) {
 
 	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url, 10, 1*time.Second)
+	h := NewTokenInfoProxyHandler(url, 10, 1*time.Second, time.Second*1)
 	for i, it := range []struct {
 		query     string
 		wantCode  int
@@ -147,7 +145,7 @@ func TestCacheDisabled(t *testing.T) {
 
 	upstream = fmt.Sprintf("http://%s", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url, 10, 0)
+	h := NewTokenInfoProxyHandler(url, 10, 0, time.Second*1)
 	for _, it := range []struct {
 		query     string
 		wantCode  int
@@ -189,18 +187,11 @@ func TestUpstreamTimeout(t *testing.T) {
 
 	upstream := fmt.Sprintf("http://%s", server.Listener.Addr())
 	url, _ := url.Parse(upstream)
-	h := NewTokenInfoProxyHandler(url, 0, 0)
+	h := NewTokenInfoProxyHandler(url, 0, 0, time.Millisecond*1)
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "/oauth2/tokeninfo?access_token=foo", nil)
 
-	hystrix.ConfigureCommand("proxy", hystrix.CommandConfig{
-		Timeout:                1,
-		MaxConcurrentRequests:  hystrix.DefaultMaxConcurrent,
-		RequestVolumeThreshold: hystrix.DefaultVolumeThreshold,
-		SleepWindow:            hystrix.DefaultSleepWindow,
-		ErrorPercentThreshold:  hystrix.DefaultErrorPercentThreshold,
-	})
 	h.ServeHTTP(w, r)
 
 	if w.Code != http.StatusGatewayTimeout {

@@ -40,7 +40,7 @@ func Run(settings *options.Settings) {
 
 	var ph http.Handler
 	if settings.UpstreamTokenInfoURL != nil {
-		ph = tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL, settings.UpstreamCacheMaxSize, settings.UpstreamCacheTTL)
+		ph = tokeninfoproxy.NewTokenInfoProxyHandler(settings.UpstreamTokenInfoURL, settings.UpstreamCacheMaxSize, settings.UpstreamCacheTTL, settings.UpstreamTimeout)
 	} else {
 		ph = errorall.NewErrorAllHandler()
 	}
