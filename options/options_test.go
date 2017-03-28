@@ -606,11 +606,11 @@ func TestLoading(t *testing.T) {
 		err := LoadFromEnvironment()
 		if test.wantFail {
 			if err == nil {
-				t.Errorf("TEST %s: Wanted failure to load settings but it seems that it succeeded: %s", test.name, test)
+				t.Errorf("TEST %s: Wanted failure to load settings but it seems that it succeeded: %+v", test.name, test)
 			}
 		} else {
 			if !reflect.DeepEqual(AppSettings, test.want) {
-				t.Errorf("TEST %s: Settings mismatch.\nWanted %v\nGot %v", test.name, test.want, AppSettings)
+				t.Errorf("TEST %s: Settings mismatch.\nWanted %v\nGot %+v", test.name, test.want, AppSettings)
 			}
 		}
 	}
