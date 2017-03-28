@@ -2,12 +2,13 @@ package breaker
 
 import (
 	"fmt"
-	"github.com/afex/hystrix-go/hystrix"
-	"github.com/rcrowley/go-metrics"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/afex/hystrix-go/hystrix"
+	"github.com/rcrowley/go-metrics"
 )
 
 func TestCircuitBreaker(t *testing.T) {

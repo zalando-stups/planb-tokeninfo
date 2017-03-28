@@ -28,7 +28,7 @@ lint:
 	@golint ./...
 
 goimports:
-	@goimports ./...
+	@goimports -w .
 
 check: fmt vet lint
 

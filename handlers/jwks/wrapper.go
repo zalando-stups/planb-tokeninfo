@@ -6,9 +6,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/zalando/planb-tokeninfo/keyloader/openid/jwk"
 	"math/big"
 	"reflect"
+
+	"github.com/zalando/planb-tokeninfo/keyloader/openid/jwk"
 )
 
 type jwksWrapper struct {

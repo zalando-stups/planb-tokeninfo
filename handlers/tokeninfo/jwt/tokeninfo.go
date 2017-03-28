@@ -1,16 +1,16 @@
 package jwthandler
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"log"
+	"strings"
 	"time"
 
-	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/zalando/planb-tokeninfo/options"
 	"github.com/zalando/planb-tokeninfo/processor"
-	"io"
-	"strings"
 )
 
 const (

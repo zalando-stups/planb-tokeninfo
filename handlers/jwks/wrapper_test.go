@@ -3,8 +3,9 @@ package jwks
 import (
 	"crypto/dsa"
 	"encoding/json"
-	"github.com/zalando/planb-tokeninfo/keyloader/openid/jwk"
 	"testing"
+
+	"github.com/zalando/planb-tokeninfo/keyloader/openid/jwk"
 )
 
 func TestWrapper(t *testing.T) {
