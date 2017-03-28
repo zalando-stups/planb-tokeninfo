@@ -84,7 +84,6 @@ func TestTokenInfo(t *testing.T) {
 }
 
 type TestJWTProcessor struct {
-
 }
 
 func (jwtProcessor TestJWTProcessor) Process(t *jwt.Token, timeBase time.Time) (*processor.TokenInfo, error) {

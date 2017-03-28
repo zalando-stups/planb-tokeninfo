@@ -6,12 +6,13 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/zalando/planb-tokeninfo/keyloader/openid/jwk"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/zalando/planb-tokeninfo/keyloader/openid/jwk"
 )
 
 const (

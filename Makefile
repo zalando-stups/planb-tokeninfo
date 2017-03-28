@@ -7,7 +7,7 @@ SOURCES = $(shell find $(ROOT_DIR) -name "*.go")
 TARGET = build/planb-tokeninfo
 VERSION ?= latest
 
-.PHONY: all fmt test clean
+.PHONY: all fmt vet lint goimports check test clean
 
 all: $(TARGET)
 
@@ -20,6 +20,17 @@ $(TARGET): $(SOURCES)
 
 fmt:
 	@go fmt ./...
+
+vet:
+	@go vet ./...
+
+lint:
+	@golint ./...
+
+goimports:
+	@goimports -w .
+
+check: fmt vet lint
 
 test:
 	go test -timeout=5s github.com/zalando/planb-tokeninfo/...

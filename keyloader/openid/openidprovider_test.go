@@ -3,13 +3,14 @@ package openid
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/zalando/planb-tokeninfo/caching"
-	"github.com/zalando/planb-tokeninfo/keyloader"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/zalando/planb-tokeninfo/caching"
+	"github.com/zalando/planb-tokeninfo/keyloader"
 )
 
 func init() {

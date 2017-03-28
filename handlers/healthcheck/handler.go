@@ -2,8 +2,9 @@ package healthcheck
 
 import (
 	"fmt"
-	"github.com/zalando/planb-tokeninfo/keyloader"
 	"net/http"
+
+	"github.com/zalando/planb-tokeninfo/keyloader"
 )
 
 type handler struct {

@@ -1,9 +1,10 @@
 package revoke
 
 import (
-	"github.com/zalando/planb-tokeninfo/options"
 	"log"
 	"time"
+
+	"github.com/zalando/planb-tokeninfo/options"
 )
 
 // Cache structure holds all channels for available thread safe operations.
@@ -24,7 +25,7 @@ type request struct {
 	res chan interface{}
 }
 
-func incrementClaimCount (r *request, n map[string]int) {
+func incrementClaimCount(r *request, n map[string]int) {
 	if r.val.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
 		n[r.val.(*Revocation).Data["names"].(string)] += 1
 	}

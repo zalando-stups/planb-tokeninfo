@@ -2,9 +2,10 @@ package jwks
 
 import (
 	"encoding/json"
-	"github.com/zalando/planb-tokeninfo/keyloader"
 	"log"
 	"net/http"
+
+	"github.com/zalando/planb-tokeninfo/keyloader"
 )
 
 type jwksHandler struct {
