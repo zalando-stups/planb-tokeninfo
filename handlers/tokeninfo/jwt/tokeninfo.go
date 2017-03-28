@@ -63,6 +63,10 @@ func Marshal(ti *processor.TokenInfo, w io.Writer) error {
 		m["client_id"] = ti.ClientId
 	}
 
+	for k, v := range ti.Metadata {
+		m[k] = v
+	}
+
 	return json.NewEncoder(w).Encode(m)
 }
 
