@@ -63,7 +63,7 @@ func Marshal(ti *processor.TokenInfo, w io.Writer) error {
 		m["client_id"] = ti.ClientId
 	}
 
-	for k, v := range ti.Metadata {
+	for k, v := range ti.PrivateClaims {
 		m[k] = v
 	}
 

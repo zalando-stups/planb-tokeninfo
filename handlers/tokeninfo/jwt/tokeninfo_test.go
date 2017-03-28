@@ -151,6 +151,9 @@ func TestMarshal(t *testing.T) {
 			Realm:     "/test",
 			ExpiresIn: 1},
 			"{\"access_token\":\"\",\"bar\":true,\"expires_in\":1,\"foo\":true,\"grant_type\":\"password\",\"realm\":\"/test\",\"scope\":[\"uid\",\"foo\",\"bar\"],\"token_type\":\"Bearer\",\"uid\":\"foo\"}\n"},
+		{&processor.TokenInfo{
+			PrivateClaims: map[string]string{"foo": "bar"}},
+			"{\"access_token\":\"\",\"expires_in\":0,\"foo\":\"bar\",\"grant_type\":\"\",\"realm\":\"\",\"scope\":null,\"token_type\":\"\",\"uid\":\"\"}\n"},
 	} {
 		buf := new(bytes.Buffer)
 		Marshal(test.token, buf)
