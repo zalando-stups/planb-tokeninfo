@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/karlseguin/ccache"
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
-	"time"
 )
 
 type tokenInfoProxyHandler struct {

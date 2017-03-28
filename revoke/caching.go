@@ -1,9 +1,10 @@
 package revoke
 
 import (
-	"github.com/zalando/planb-tokeninfo/options"
 	"log"
 	"time"
+
+	"github.com/zalando/planb-tokeninfo/options"
 )
 
 // Cache structure holds all channels for available thread safe operations.

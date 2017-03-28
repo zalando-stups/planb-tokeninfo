@@ -6,8 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
-	"github.com/zalando/planb-tokeninfo/processor"
-	"github.com/zalando/planb-tokeninfo/revoke"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +13,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/zalando/planb-tokeninfo/processor"
+	"github.com/zalando/planb-tokeninfo/revoke"
 )
 
 type mockKeyLoader int

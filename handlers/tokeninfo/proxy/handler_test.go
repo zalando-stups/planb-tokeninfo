@@ -2,12 +2,13 @@ package tokeninfoproxy
 
 import (
 	"fmt"
-	"github.com/afex/hystrix-go/hystrix"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/afex/hystrix-go/hystrix"
 )
 
 const testTokenInfo = `{"access_token": "xxx","cn": "John Doe","expires_in": 42,"grant_type": "password","realm":"/services","scope":["uid","cn"],"token_type":"Bearer","uid":"jdoe"}` + "\n"

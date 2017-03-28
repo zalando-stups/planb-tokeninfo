@@ -1,11 +1,12 @@
 package errorall
 
 import (
-	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"
 )
 
 type testHandler struct {

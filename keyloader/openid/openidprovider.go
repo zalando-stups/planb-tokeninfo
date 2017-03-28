@@ -2,20 +2,20 @@ package openid
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"reflect"
 
-	"errors"
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/breaker"
 	"github.com/zalando/planb-tokeninfo/caching"
 	"github.com/zalando/planb-tokeninfo/keyloader"
 	"github.com/zalando/planb-tokeninfo/keyloader/openid/jwk"
 	"github.com/zalando/planb-tokeninfo/options"
-	"net/http"
 )
 
 // http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
