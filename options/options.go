@@ -15,6 +15,7 @@ type Settings struct {
 	ListenAddress                     string
 	MetricsListenAddress              string
 	UpstreamTokenInfoURL              *url.URL
+	UpstreamTimeout                   time.Duration
 	UpstreamCacheMaxSize              int64
 	UpstreamCacheTTL                  time.Duration
 	OpenIDProviderConfigurationURL    *url.URL
@@ -34,6 +35,7 @@ const (
 	defaultMetricsListenAddress          = ":9020"
 	defaultUpstreamCacheMaxSize          = 10000
 	defaultUpstreamCacheTTL              = 60 * time.Second
+	defaultUpstreamTimeout               = 1 * time.Second
 	defaultOpenIDRefreshInterval         = 30 * time.Second
 	defaultHTTPClientTimeout             = 10 * time.Second
 	defaultHTTPClientTLSTimeout          = 10 * time.Second
@@ -54,6 +56,7 @@ func defaultSettings() *Settings {
 		MetricsListenAddress:              defaultMetricsListenAddress,
 		UpstreamCacheMaxSize:              defaultUpstreamCacheMaxSize,
 		UpstreamCacheTTL:                  defaultUpstreamCacheTTL,
+		UpstreamTimeout:                   defaultUpstreamTimeout,
 		OpenIDProviderRefreshInterval:     defaultOpenIDRefreshInterval,
 		HTTPClientTimeout:                 defaultHTTPClientTimeout,
 		HTTPClientTLSTimeout:              defaultHTTPClientTLSTimeout,
@@ -115,6 +118,10 @@ func LoadFromEnvironment() error {
 
 	if d := getDuration("UPSTREAM_CACHE_TTL", -1); d > -1 {
 		settings.UpstreamCacheTTL = d
+	}
+
+	if d := getDuration("UPSTREAM_TIMEOUT", -1); d > -1 {
+		settings.UpstreamTimeout = d
 	}
 
 	if d := getDuration("OPENID_PROVIDER_REFRESH_INTERVAL", 0); d > 0 {

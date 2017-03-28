@@ -18,16 +18,22 @@ type tokenInfoProxyHandler struct {
 	upstream *httputil.ReverseProxy
 	cache    *ccache.Cache
 	cacheTTL time.Duration
+	timeout  time.Duration
 }
+
+const proxyCommand = "proxy"
 
 // NewTokenInfoProxyHandler returns an http.Handler that proxies every Request to the server
 // at the upstreamURL
-func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration) http.Handler {
+func NewTokenInfoProxyHandler(upstreamURL *url.URL, cacheMaxSize int64, cacheTTL time.Duration, timeout time.Duration) http.Handler {
 	log.Printf("Upstream tokeninfo is %s with %v cache (%d max size)", upstreamURL, cacheTTL, cacheMaxSize)
 	p := httputil.NewSingleHostReverseProxy(upstreamURL)
 	p.Director = hostModifier(upstreamURL, p.Director)
 	cache := ccache.New(ccache.Configure().MaxSize(cacheMaxSize))
-	return &tokenInfoProxyHandler{upstream: p, cache: cache, cacheTTL: cacheTTL}
+	hystrix.ConfigureCommand(proxyCommand, hystrix.CommandConfig{
+		Timeout: int(timeout.Seconds() * 1000),
+	})
+	return &tokenInfoProxyHandler{upstream: p, cache: cache, cacheTTL: cacheTTL, timeout: timeout}
 }
 
 func newResponseBuffer(w http.ResponseWriter) *responseBuffer {
@@ -81,7 +87,7 @@ func (h *tokenInfoProxyHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		}
 	}
 	incCounter("planb.tokeninfo.proxy.cache.misses")
-	err := hystrix.Do("proxy", func() error {
+	err := hystrix.Do(proxyCommand, func() error {
 		upstreamStart := time.Now()
 		rw := newResponseBuffer(w)
 		rw.Header().Set("X-Cache", "MISS")
