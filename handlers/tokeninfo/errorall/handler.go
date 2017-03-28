@@ -1,8 +1,8 @@
 package errorall
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
 
 	"github.com/rcrowley/go-metrics"
 	"github.com/zalando/planb-tokeninfo/handlers/tokeninfo"

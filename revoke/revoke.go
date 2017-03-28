@@ -118,7 +118,7 @@ func (j *jsonRevocation) toRevocation() (*Revocation, error) {
 	}
 
 	if t := int(time.Now().Unix()); j.Data.IssuedBefore > t {
-		log.Printf("Invalid revocation data. IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %s", t, j.Data.IssuedBefore)
+		log.Printf("Invalid revocation data. IssuedBefore cannot be in the future. Now: %d, IssuedBefore: %d", t, j.Data.IssuedBefore)
 		return nil, ErrIssuedInFuture
 	}
 
