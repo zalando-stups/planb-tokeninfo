@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
+	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/zalando/planb-tokeninfo/options"
 	"github.com/zalando/planb-tokeninfo/processor"
 	"io"
-	"encoding/json"
 	"strings"
 )
 
@@ -30,7 +30,7 @@ var (
 	// ErrInvalidClaimSub should be used whenever the claim sub is invalid or missing in the JWT
 	ErrInvalidClaimSub = errors.New("Invalid claim: sub")
 	// ErrInvalidClaimAzp should be used whenever the claim azp is invalid or missing in the JWT
-	ErrInvalidClaimAzp   = errors.New("Invalid claim: azp")
+	ErrInvalidClaimAzp = errors.New("Invalid claim: azp")
 	// ErrInvalidClaimExp should be used whenever the claim exp is invalid or missing in the JWT
 	ErrInvalidClaimExp = errors.New("Invalid claim: exp")
 )
@@ -131,7 +131,7 @@ func ClaimAsStrings(t *jwt.Token, claim string) ([]string, bool) {
 			log.Printf("Invalid string array value for claim %q = %v", claim, c)
 			return nil, false
 		}
-		result:= make([]string, len(value))
+		result := make([]string, len(value))
 		for i, scope := range value {
 			result[i] = scope.(string)
 		}

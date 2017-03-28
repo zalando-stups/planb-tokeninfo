@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+
 	"github.com/zalando/planb-tokeninfo/processor"
 )
 
@@ -75,23 +76,26 @@ func defaultSettings() *Settings {
 // The remaining options have sane defaults and are not mandatory
 func LoadFromEnvironment() error {
 	settings := defaultSettings()
-	tokeninfoURL, err := getURL("UPSTREAM_TOKENINFO_URL")
-	if err != nil {
-		return fmt.Errorf("Error with UPSTREAM_TOKENINFO_URL: %v\n", err)
-	}
-	settings.UpstreamTokenInfoURL = tokeninfoURL
 
-	tokeninfoURL, err = getURL("OPENID_PROVIDER_CONFIGURATION_URL")
-	if err != nil || tokeninfoURL == nil {
+	if s := getString("UPSTREAM_TOKENINFO_URL", ""); s != "" {
+		tokeninfoURL, err := getURL("UPSTREAM_TOKENINFO_URL")
+		if err != nil {
+			return fmt.Errorf("Error with UPSTREAM_TOKENINFO_URL: %v\n", err)
+		}
+		settings.UpstreamTokenInfoURL = tokeninfoURL
+	}
+
+	openIDConfiguration, err := getURL("OPENID_PROVIDER_CONFIGURATION_URL")
+	if err != nil || openIDConfiguration == nil {
 		return fmt.Errorf("Invalid OPENID_PROVIDER_CONFIGURATION_URL: %v\n", err)
 	}
-	settings.OpenIDProviderConfigurationURL = tokeninfoURL
+	settings.OpenIDProviderConfigurationURL = openIDConfiguration
 
-	tokeninfoURL, err = getURL("REVOCATION_PROVIDER_URL")
-	if err != nil || tokeninfoURL == nil {
+	revocationURL, err := getURL("REVOCATION_PROVIDER_URL")
+	if err != nil || revocationURL == nil {
 		return fmt.Errorf("Invalid REVOCATION_PROVIDER_URL: %v\n", err)
 	}
-	settings.RevocationProviderUrl = tokeninfoURL
+	settings.RevocationProviderUrl = revocationURL
 
 	if s := getString("REVOCATION_HASHING_SALT", ""); s != "" {
 		settings.HashingSalt = s

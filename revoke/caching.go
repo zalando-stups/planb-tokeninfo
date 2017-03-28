@@ -24,7 +24,7 @@ type request struct {
 	res chan interface{}
 }
 
-func incrementClaimCount (r *request, n map[string]int) {
+func incrementClaimCount(r *request, n map[string]int) {
 	if r.val.(*Revocation).Type == REVOCATION_TYPE_CLAIM {
 		n[r.val.(*Revocation).Data["names"].(string)] += 1
 	}

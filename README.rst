@@ -47,7 +47,6 @@ Running
 .. code-block:: bash
 
     $ export OPENID_PROVIDER_CONFIGURATION_URL=https://planb-provider.example.org/.well-known/openid-configuration
-    $ export UPSTREAM_TOKENINFO_URL=https://auth.example.org/oauth2/tokeninfo
     $ export REVOCATION_PROVIDER_URL=https://planb-revocation.example.org/revocations
     $ $GOPATH/bin/planb-tokeninfo  # start server on port 9021
 
@@ -77,7 +76,7 @@ The following environment variables are supported:
 ``OPENID_PROVIDER_REFRESH_INTERVAL``
     The OpenID Connect configuration refresh interval. See `Time based settings`_
 ``UPSTREAM_TOKENINFO_URL``
-    URL of upstream OAuth 2 token info for non-JWT Bearer tokens.
+    URL of upstream OAuth 2 token info for non-JWT Bearer tokens. Optional.
 ``UPSTREAM_CACHE_MAX_SIZE``
     Maximum number of entries for upstream token cache. It defaults to 10000.
 ``UPSTREAM_CACHE_TTL``
