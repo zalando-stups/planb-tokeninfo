@@ -174,12 +174,11 @@ func getClaim(t *jwt.Token, claim string) (interface{}, bool) {
 	if claims, ok := t.Claims.(jwt.MapClaims); ok {
 		c, has := claims[claim]
 		if !has {
-			log.Printf("Missing claim %q for token %v", claim, maskToken(t.Raw))
 			return "", false
 		}
 		return c, true
 	}
-	log.Printf("Missing claim %q for token", claim)
+	log.Printf("Missing claim %q for token %v", claim, maskToken(t.Raw))	
 	return "", false
 }
 
