@@ -178,7 +178,6 @@ func getClaim(t *jwt.Token, claim string) (interface{}, bool) {
 		}
 		return c, true
 	}
-	log.Printf("Missing claim %q for token %v", claim, maskToken(t.Raw))	
 	return "", false
 }
 
