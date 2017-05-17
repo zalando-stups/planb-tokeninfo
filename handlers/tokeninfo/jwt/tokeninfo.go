@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -121,7 +120,6 @@ func NewTokenInfo(t *jwt.Token, timeBase time.Time) (*processor.TokenInfo, error
 	if ok {
 		jwtprocessor, found := options.AppSettings.JwtProcessors[issuer]
 		if found {
-			log.Printf("token matched processor for issuer %s", issuer)
 			return jwtprocessor.Process(t, timeBase)
 		}
 	}
@@ -179,13 +177,4 @@ func getClaim(t *jwt.Token, claim string) (interface{}, bool) {
 		return c, true
 	}
 	return "", false
-}
-
-func maskToken(rawToken string) string {
-	indexOfSignature := strings.LastIndex(rawToken, ".")
-	if indexOfSignature > -1 {
-		// return signature of JWT as masked token
-		return rawToken[indexOfSignature:]
-	}
-	return ""
 }
