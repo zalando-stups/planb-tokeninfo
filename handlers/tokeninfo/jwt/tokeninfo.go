@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
