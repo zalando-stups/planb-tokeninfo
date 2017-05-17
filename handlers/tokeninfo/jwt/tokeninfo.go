@@ -179,12 +179,3 @@ func getClaim(t *jwt.Token, claim string) (interface{}, bool) {
 	}
 	return "", false
 }
-
-func maskToken(rawToken string) string {
-	indexOfSignature := strings.LastIndex(rawToken, ".")
-	if indexOfSignature > -1 {
-		// return signature of JWT as masked token
-		return rawToken[indexOfSignature:]
-	}
-	return ""
-}
