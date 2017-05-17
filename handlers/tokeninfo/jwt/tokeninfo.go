@@ -121,7 +121,6 @@ func NewTokenInfo(t *jwt.Token, timeBase time.Time) (*processor.TokenInfo, error
 	if ok {
 		jwtprocessor, found := options.AppSettings.JwtProcessors[issuer]
 		if found {
-			log.Printf("token matched processor for issuer %s", issuer)
 			return jwtprocessor.Process(t, timeBase)
 		}
 	}
